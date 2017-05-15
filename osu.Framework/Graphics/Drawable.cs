@@ -410,7 +410,7 @@ namespace osu.Framework.Graphics
                 break;
             }
 
-            if (!addToList || !Precision.AlmostEquals(1, DrawInfo.Colour.AverageColour.Linear.A))
+            if (!addToList || !Precision.AlmostEquals(1, Alpha))
                 return;
 
             var selfOccluder = this as IOccluder;

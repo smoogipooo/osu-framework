@@ -390,7 +390,7 @@ namespace osu.Framework.Graphics.Containers
                 child.ComputeOcclusions(maskingBounds, occluders);
             }
 
-            if (!addToList || !Precision.AlmostEquals(1, DrawInfo.Colour.AverageColour.Linear.A))
+            if (!addToList || !Precision.AlmostEquals(1, Alpha))
                 return;
 
             var occluder = this as IOccluder;
