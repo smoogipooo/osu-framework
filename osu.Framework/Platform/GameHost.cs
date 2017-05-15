@@ -230,6 +230,8 @@ namespace osu.Framework.Platform
                     new Vector2(config.Get<int>(FrameworkConfig.Width), config.Get<int>(FrameworkConfig.Height));
 
             Root.UpdateSubTree();
+            Root.ComputeOcclusions(Root.ScreenSpaceDrawQuad.AABBFloat);
+
             using (var buffer = DrawRoots.Get(UsageType.Write))
                 buffer.Object = Root.GenerateDrawNodeSubtree(buffer.Index, Root.ScreenSpaceDrawQuad.AABBFloat);
         }

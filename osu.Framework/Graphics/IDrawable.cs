@@ -7,6 +7,7 @@ using osu.Framework.Timing;
 using OpenTK;
 using osu.Framework.Graphics.Transforms;
 using System;
+using osu.Framework.Graphics.Primitives;
 
 namespace osu.Framework.Graphics
 {
@@ -27,6 +28,8 @@ namespace osu.Framework.Graphics
         /// The parent of this drawable in the scene graph.
         /// </summary>
         IContainer Parent { get; }
+
+        IConvexPolygon OcclusionPolygon { get; }
 
         /// <summary>
         /// Whether this drawable is present for any sort of user-interaction.

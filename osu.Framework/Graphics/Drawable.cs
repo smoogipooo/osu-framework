@@ -26,6 +26,7 @@ using OpenTK.Input;
 using KeyboardState = osu.Framework.Input.KeyboardState;
 using MouseState = osu.Framework.Input.MouseState;
 using osu.Framework.Allocation;
+using osu.Framework.MathUtils;
 
 namespace osu.Framework.Graphics
 {
@@ -390,6 +391,31 @@ namespace osu.Framework.Graphics
         /// </summary>
         protected virtual void Update()
         {
+        }
+
+        public bool IsOccluded { get; private set; }
+        public virtual void ComputeOcclusions(RectangleF maskingBounds, List<IOccluder> occluders = null, bool addToList = true)
+        {
+            // Todo: Doesn't properly account for proxies
+
+            IsOccluded = false;
+
+            foreach (IOccluder occluder in occluders)
+            {
+                if (!occluder.Occludes(this, maskingBounds))
+                    continue;
+
+                IsOccluded = true;
+                FrameStatistics.Increment(StatisticsCounterType.Occluded);
+                break;
+            }
+
+            if (!addToList || !Precision.AlmostEquals(1, DrawInfo.Colour.AverageColour.Linear.A))
+                return;
+
+            var selfOccluder = this as IOccluder;
+            if (selfOccluder != null)
+                occluders.Add(selfOccluder);
         }
 
         #endregion
@@ -1268,6 +1294,8 @@ namespace osu.Framework.Graphics
         public virtual Quad ScreenSpaceDrawQuad => screenSpaceDrawQuadBacking.EnsureValid()
             ? screenSpaceDrawQuadBacking.Value
             : screenSpaceDrawQuadBacking.Refresh(ComputeScreenSpaceDrawQuad);
+
+        public IConvexPolygon OcclusionPolygon => ScreenSpaceDrawQuad;
 
         private Cached<DrawInfo> drawInfoBacking = new Cached<DrawInfo>();
 

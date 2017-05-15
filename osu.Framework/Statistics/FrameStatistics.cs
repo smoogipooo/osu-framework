@@ -37,6 +37,7 @@ namespace osu.Framework.Statistics
                 case StatisticsCounterType.VerticesDraw:
                 case StatisticsCounterType.VerticesUpl:
                 case StatisticsCounterType.KiloPixels:
+                case StatisticsCounterType.Occluded:
                     return target.Threads[3].Monitor;
 
                 case StatisticsCounterType.MouseEvents:
@@ -117,6 +118,7 @@ namespace osu.Framework.Statistics
         VerticesDraw,
         VerticesUpl,
         KiloPixels,
+        Occluded,
 
         TasksRun,
         Tracks,

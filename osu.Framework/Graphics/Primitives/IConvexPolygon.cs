@@ -2,6 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using OpenTK;
+using System;
 
 namespace osu.Framework.Graphics.Primitives
 {
@@ -57,6 +58,29 @@ namespace osu.Framework.Graphics.Primitives
         public static bool Intersects(this IConvexPolygon first, IConvexPolygon second)
         {
             return first.Intersects(ref second);
+        }
+
+        public static bool Occludes(this IConvexPolygon first, ref IConvexPolygon second, ref RectangleF maskingBounds)
+        {
+            IConvexPolygon maskingPolygon = Quad.FromRectangle(maskingBounds);
+
+            for (int a = 0; a < first.AxisCount; a++)
+            {
+                Vector2 axis = first.GetAxis(a).Normal;
+
+                float minFirst, maxFirst, minSecond, maxSecond, minMask, maxMask;
+                projectionRange(ref axis, ref first, out minFirst, out maxFirst);
+                projectionRange(ref axis, ref second, out minSecond, out maxSecond);
+                projectionRange(ref axis, ref maskingPolygon, out minMask, out maxMask);
+
+                minSecond = Math.Max(minMask, minSecond);
+                maxSecond = Math.Min(maxMask, maxSecond);
+
+                if (minFirst > minSecond || maxFirst < maxSecond)
+                    return false;
+            }
+
+            return true;
         }
 
         private static void projectionRange(ref Vector2 axis, ref IConvexPolygon polygon, out float min, out float max)

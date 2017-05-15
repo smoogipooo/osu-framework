@@ -17,6 +17,7 @@ using osu.Framework.Graphics.Transforms;
 using osu.Framework.Timing;
 using osu.Framework.Caching;
 using System.Threading.Tasks;
+using osu.Framework.MathUtils;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -371,6 +372,32 @@ namespace osu.Framework.Graphics.Containers
         {
         }
 
+        public override void ComputeOcclusions(RectangleF maskingBounds, List<IOccluder> occluders = null, bool addToList = true)
+        {
+            if (occluders == null)
+                occluders = new List<IOccluder>();
+            else
+                base.ComputeOcclusions(maskingBounds, occluders, false);
+
+            if (IsOccluded)
+                return;
+
+            for (int i = internalChildren.Count - 1; i >= 0; i--)
+            {
+                T child = internalChildren[i];
+                if (!child.IsLoaded)
+                    continue;
+                child.ComputeOcclusions(maskingBounds, occluders);
+            }
+
+            if (!addToList || !Precision.AlmostEquals(1, DrawInfo.Colour.AverageColour.Linear.A))
+                return;
+
+            var occluder = this as IOccluder;
+            if (occluder != null)
+                occluders.Add(occluder);
+        }
+
         #endregion
 
         #region Caching & invalidation
@@ -527,6 +554,9 @@ namespace osu.Framework.Graphics.Containers
                 if (!drawable.IsPresent)
                     continue;
 
+                if (drawable.IsOccluded)
+                    continue;
+
                 // We are consciously missing out on potential flattening (due to lack of covariance)
                 // in order to be able to let this loop be over integers instead of using
                 // IContainerEnumerable<Drrawable>.AliveChildren which measures to be a _major_ slowdown.
@@ -565,6 +595,9 @@ namespace osu.Framework.Graphics.Containers
         {
             // No need for a draw node at all if there are no children and we are not glowing.
             if (internalChildren.AliveItems.Count == 0 && CanBeFlattened)
+                return null;
+
+            if (IsOccluded)
                 return null;
 
             ContainerDrawNode cNode = base.GenerateDrawNodeSubtree(treeIndex, bounds) as ContainerDrawNode;

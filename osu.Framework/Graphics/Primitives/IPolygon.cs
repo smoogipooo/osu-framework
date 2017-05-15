@@ -30,5 +30,7 @@ namespace osu.Framework.Graphics.Primitives
         /// <param name="index">The index of the axis to retrieve.</param>
         /// <returns>The axis.</returns>
         Axis GetAxis(int index);
+
+        RectangleF AABBFloat { get; }
     }
 }
