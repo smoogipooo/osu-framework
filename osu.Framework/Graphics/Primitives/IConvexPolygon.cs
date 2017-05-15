@@ -2,6 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using OpenTK;
+using osu.Framework.MathUtils;
 using System;
 
 namespace osu.Framework.Graphics.Primitives
@@ -67,16 +68,21 @@ namespace osu.Framework.Graphics.Primitives
             for (int a = 0; a < first.AxisCount; a++)
             {
                 Vector2 axis = first.GetAxis(a).Normal;
+             
+                // We need precise intersection information
+                axis.Normalize();
 
                 float minFirst, maxFirst, minSecond, maxSecond, minMask, maxMask;
                 projectionRange(ref axis, ref first, out minFirst, out maxFirst);
                 projectionRange(ref axis, ref second, out minSecond, out maxSecond);
                 projectionRange(ref axis, ref maskingPolygon, out minMask, out maxMask);
 
+                minFirst = Math.Max(minMask, minFirst);
+                maxFirst = Math.Min(maxMask, maxFirst);
                 minSecond = Math.Max(minMask, minSecond);
                 maxSecond = Math.Min(maxMask, maxSecond);
 
-                if (minFirst > minSecond || maxFirst < maxSecond)
+                if (Precision.DefinitelyBigger(minFirst, minSecond) || Precision.DefinitelyBigger(maxSecond, maxFirst))
                     return false;
             }
 
