@@ -1,4 +1,4 @@
-#include "sh_Utils.h"
+﻿#include "sh_Utils.h"
 
 attribute vec2 m_Position;
 attribute vec4 m_Colour;
@@ -12,6 +12,7 @@ varying vec4 v_Colour;
 varying vec2 v_TexCoord;
 varying vec4 v_TexRect;
 varying vec2 v_BlendRange;
+varying float v_Depth;
 
 uniform mat4 g_ProjMatrix;
 uniform mat3 g_ToMaskingSpace;
@@ -26,5 +27,6 @@ void main(void)
 	v_TexCoord = m_TexCoord;
 	v_TexRect = m_TexRect;
 	v_BlendRange = m_BlendRange;
+	v_Depth = m_Depth;
 	gl_Position = g_ProjMatrix * vec4(m_Position, m_Depth, 1.0);
 }

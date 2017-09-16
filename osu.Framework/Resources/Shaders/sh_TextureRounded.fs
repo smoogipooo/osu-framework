@@ -17,7 +17,6 @@ uniform float g_BorderThickness;
 uniform vec4 g_BorderColour;
 
 uniform float g_MaskingBlendRange;
-
 uniform float g_AlphaExponent;
 
 uniform bool g_DiscardInner;

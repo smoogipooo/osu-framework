@@ -343,7 +343,7 @@ namespace osu.Framework.Graphics.OpenGL
                 return;
             Ortho = ortho;
 
-            ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(Ortho.Left, Ortho.Right, Ortho.Bottom, Ortho.Top, -1, 1);
+            ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(Ortho.Left, Ortho.Right, Ortho.Bottom, Ortho.Top, 1, -1);
             Shader.SetGlobalProperty(@"g_ProjMatrix", ProjectionMatrix);
 
             UpdateScissorToCurrentViewportAndOrtho();

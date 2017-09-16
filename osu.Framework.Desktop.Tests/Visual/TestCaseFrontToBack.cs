@@ -3,9 +3,11 @@
 
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
@@ -32,7 +34,7 @@ namespace osu.Framework.Desktop.Tests.Visual
                 AutoSizeAxes = Axes.Y,
             };
 
-            for (int i = 25; i <= 500; i += 25)
+            for (int i = 2; i <= 5; i += 1)
             {
                 var c = i;
                 buttonFlow.Add(new Button
@@ -48,7 +50,9 @@ namespace osu.Framework.Desktop.Tests.Visual
                             backgroundContainer.Add(new Box
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Colour = new Color4(RNG.NextSingle(0, 1), RNG.Next(0, 1), RNG.Next(0, 1), 1)
+                                Colour = Color4.White.Opacity(0.1f),
+                                Height = (j + 1f) / c,
+                                Depth = j
                             });
                         }
                     }
@@ -79,11 +83,9 @@ namespace osu.Framework.Desktop.Tests.Visual
         private class FrontToBackContainer : Container
         {
             public bool Enabled;
-
             protected override bool CanBeFlattened => false;
 
             protected override DrawNode CreateDrawNode() => new FrontToBackContainerDrawNode();
-
             private readonly FrontToBackContainerSharedData shared = new FrontToBackContainerSharedData();
 
             protected override void ApplyDrawNode(DrawNode node)
@@ -97,7 +99,7 @@ namespace osu.Framework.Desktop.Tests.Visual
 
             private class FrontToBackContainerSharedData
             {
-                public readonly QuadBatch<TexturedVertex3D> QuadBatch = new QuadBatch<TexturedVertex3D>(200, 10);
+                public readonly QuadBatch<TexturedVertex2D> QuadBatch = new QuadBatch<TexturedVertex2D>(200, 10);
             }
 
             private class FrontToBackContainerDrawNode : CompositeDrawNode
@@ -117,25 +119,23 @@ namespace osu.Framework.Desktop.Tests.Visual
                     if (Children == null)
                         return;
 
-                    GL.Enable(EnableCap.DepthTest);
+                    GLWrapper.SetDepthTest(true);
+                    GL.DepthFunc(DepthFunction.Lequal);
 
                     for (int i = Children.Count - 1; i >= 0; --i)
                     {
                         int c = i;
                         Children[i].Draw(a =>
                         {
-                            Shared.QuadBatch.Add(new TexturedVertex3D
-                            {
-                                Position = new Vector3(a.Position.X, a.Position.Y, c),
-                                Colour = a.Colour,
-                                TexturePosition = a.TexturePosition
-                            });
+                            // Keep it between [-1,0] for some reason :/
+                            // Todo: Google up why  ^^
+                            a.Depth = -(float)c / (Children.Count - 1);
+                            Shared.QuadBatch.Add(a);
                         });
                     }
 
                     Shared.QuadBatch.Draw();
-
-                    GL.Disable(EnableCap.DepthTest);
+                    GLWrapper.SetDepthTest(false);
                 }
             }
         }
