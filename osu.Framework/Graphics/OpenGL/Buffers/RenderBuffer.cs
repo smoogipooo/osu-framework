@@ -54,22 +54,24 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         internal void Bind(int frameBuffer)
         {
             // Check if we're already bound
-            if (info != null)
+            if (info != null && info.FrameBufferID == frameBuffer && info.Size == Size)
                 return;
+            else if (info == null)
+            {
+                if (!render_buffer_cache.ContainsKey(Format))
+                    render_buffer_cache[Format] = new Stack<RenderBufferInfo>();
 
-            if (!render_buffer_cache.ContainsKey(Format))
-                render_buffer_cache[Format] = new Stack<RenderBufferInfo>();
+                // Make sure we have renderbuffers available
+                if (render_buffer_cache[Format].Count == 0)
+                    render_buffer_cache[Format].Push(new RenderBufferInfo
+                    {
+                        RenderBufferID = GL.GenRenderbuffer(),
+                        FrameBufferID = -1
+                    });
 
-            // Make sure we have renderbuffers available
-            if (render_buffer_cache[Format].Count == 0)
-                render_buffer_cache[Format].Push(new RenderBufferInfo
-                {
-                    RenderBufferID = GL.GenRenderbuffer(),
-                    FrameBufferID = -1
-                });
-
-            // Get a renderbuffer from the cache
-            info = render_buffer_cache[Format].Pop();
+                // Get a renderbuffer from the cache
+                info = render_buffer_cache[Format].Pop();
+            }
 
             // Check if we need to update the size
             if (info.Size != Size)
@@ -90,7 +92,13 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
                 switch (Format)
                 {
                     case RenderbufferInternalFormat.DepthComponent16:
+                    case RenderbufferInternalFormat.DepthComponent24:
+                    case RenderbufferInternalFormat.DepthComponent32f:
                         GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, info.RenderBufferID);
+                        break;
+                    case RenderbufferInternalFormat.Depth24Stencil8:
+                    case RenderbufferInternalFormat.Depth32fStencil8:
+                        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, info.RenderBufferID);
                         break;
                     case RenderbufferInternalFormat.Rgb565:
                     case RenderbufferInternalFormat.Rgb5A1:
@@ -98,7 +106,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
                         GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, RenderbufferTarget.Renderbuffer, info.RenderBufferID);
                         break;
                     case RenderbufferInternalFormat.StencilIndex8:
-                        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, info.RenderBufferID);
+                        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.StencilAttachment, RenderbufferTarget.Renderbuffer, info.RenderBufferID);
                         break;
                 }
 

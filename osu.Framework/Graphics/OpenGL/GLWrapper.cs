@@ -215,6 +215,23 @@ namespace osu.Framework.Graphics.OpenGL
                 GL.Disable(EnableCap.DepthTest);
         }
 
+        private static bool? lastStencilTest;
+
+        public static void SetStencilTest(bool enabled)
+        {
+            if (lastStencilTest == enabled)
+                return;
+
+            lastStencilTest = enabled;
+
+            FlushCurrentBatch();
+
+            if (enabled)
+                GL.Enable(EnableCap.StencilTest);
+            else
+                GL.Disable(EnableCap.StencilTest);
+        }
+
         private static BlendingInfo lastBlendingInfo;
         private static bool? lastBlendingEnabledState;
 

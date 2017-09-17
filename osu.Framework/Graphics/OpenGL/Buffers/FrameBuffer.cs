@@ -11,7 +11,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
 {
     public class FrameBuffer : IDisposable
     {
-        private int lastFramebuffer;
+        private int lastFramebuffer = -1;
         private int frameBuffer = -1;
 
         public TextureGL Texture { get; private set; }
@@ -88,6 +88,9 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
                     return;
                 size = value;
 
+                if (Texture == null)
+                    return;
+
                 Texture.Width = (int)Math.Ceiling(size.X);
                 Texture.Height = (int)Math.Ceiling(size.Y);
                 Texture.SetData(new TextureUpload(new byte[0]));
@@ -107,6 +110,14 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             attachedRenderBuffers.Add(new RenderBuffer(format));
         }
 
+        public void Attach(RenderBuffer renderBuffer)
+        {
+            if (attachedRenderBuffers.Contains(renderBuffer))
+                return;
+
+            attachedRenderBuffers.Add(renderBuffer);
+        }
+
         /// <summary>
         /// Binds the framebuffer.
         /// <para>Does not clear the buffer or reset the viewport/ortho.</para>
@@ -116,7 +127,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             if (frameBuffer == -1)
                 return;
 
-            if (lastFramebuffer == frameBuffer)
+            if (isBound)
                 return;
 
             // Bind framebuffer and all its renderbuffers

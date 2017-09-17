@@ -16,6 +16,8 @@ using osu.Framework.Testing;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES20;
+using osu.Framework.Graphics.OpenGL.Buffers;
+using osu.Framework.Graphics.Primitives;
 
 namespace osu.Framework.Desktop.Tests.Visual
 {
@@ -34,7 +36,7 @@ namespace osu.Framework.Desktop.Tests.Visual
                 AutoSizeAxes = Axes.Y,
             };
 
-            for (int i = 2; i <= 5; i += 1)
+            for (int i = 25; i <= 500; i += 25)
             {
                 var c = i;
                 buttonFlow.Add(new Button
@@ -50,7 +52,7 @@ namespace osu.Framework.Desktop.Tests.Visual
                             backgroundContainer.Add(new Box
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Colour = Color4.White.Opacity(0.1f),
+                                Colour = Color4.White.Multiply((j + 1f) / c),
                                 Height = (j + 1f) / c,
                                 Depth = j
                             });
@@ -88,11 +90,17 @@ namespace osu.Framework.Desktop.Tests.Visual
             protected override DrawNode CreateDrawNode() => new FrontToBackContainerDrawNode();
             private readonly FrontToBackContainerSharedData shared = new FrontToBackContainerSharedData();
 
+            private FrameBuffer colourBuffer = new FrameBuffer();
+            private RenderBuffer stencilBuffer = new RenderBuffer(OpenTK.Graphics.ES30.RenderbufferInternalFormat.Depth24Stencil8);
+
             protected override void ApplyDrawNode(DrawNode node)
             {
                 var n = (FrontToBackContainerDrawNode)node;
                 n.Shared = shared;
                 n.Enabled = Enabled;
+                n.ColourBuffer = colourBuffer;
+                n.StencilBuffer = stencilBuffer;
+                n.ScreenSpaceDrawRectangle = ScreenSpaceDrawQuad.AABBFloat;
 
                 base.ApplyDrawNode(n);
             }
@@ -104,6 +112,11 @@ namespace osu.Framework.Desktop.Tests.Visual
 
             private class FrontToBackContainerDrawNode : CompositeDrawNode
             {
+                public FrameBuffer ColourBuffer;
+                public RenderBuffer StencilBuffer;
+
+                public RectangleF ScreenSpaceDrawRectangle;
+
                 public bool Enabled;
                 public new FrontToBackContainerSharedData Shared;
 
@@ -119,23 +132,53 @@ namespace osu.Framework.Desktop.Tests.Visual
                     if (Children == null)
                         return;
 
-                    GLWrapper.SetDepthTest(true);
-                    GL.DepthFunc(DepthFunction.Lequal);
-
-                    for (int i = Children.Count - 1; i >= 0; --i)
+                    if (!ColourBuffer.IsInitialized)
                     {
-                        int c = i;
-                        Children[i].Draw(a =>
-                        {
-                            // Keep it between [-1,0] for some reason :/
-                            // Todo: Google up why  ^^
-                            a.Depth = -(float)c / (Children.Count - 1);
-                            Shared.QuadBatch.Add(a);
-                        });
+                        ColourBuffer.Initialize();
+                        ColourBuffer.Attach(StencilBuffer);
                     }
 
-                    Shared.QuadBatch.Draw();
-                    GLWrapper.SetDepthTest(false);
+                    ColourBuffer.Size = ScreenSpaceDrawRectangle.Size;
+
+                    var forStencilUniform = Shader.GetUniform<bool>("g_ForStencil");
+
+                    GLWrapper.SetStencilTest(true);
+                    ColourBuffer.Bind();
+
+                    GL.StencilFunc(StencilFunction.Equal, 0xFF, 0xFF);
+                    GL.StencilOp(StencilOp.Zero, StencilOp.Zero, StencilOp.Zero);
+                    GL.ClearStencil(0xFF);
+                    GLWrapper.ClearColour(Color4.Black);
+
+                    for (int i = Children.Count - 1; i >= 0; i--)
+                    {
+                        // Colour pass
+                        GL.ColorMask(true, true, true, true);
+                        GL.StencilMask(0);
+
+                        forStencilUniform.Value = true;
+                        Children[i].Draw(a => Shared.QuadBatch.Add(a));
+                        Shared.QuadBatch.Draw();
+
+                        // Stencil pass
+                        GL.ColorMask(false, false, false, false);
+                        GL.StencilMask(0xFF);
+
+                        forStencilUniform.Value = true;
+                        Children[i].Draw(a => Shared.QuadBatch.Add(a));
+                        Shared.QuadBatch.Draw();
+                    }
+
+                    forStencilUniform.Value = false;
+                    GL.ColorMask(true, true, true, true);
+
+                    ColourBuffer.Unbind();
+                    GLWrapper.SetStencilTest(false);
+
+                    RectangleF textureRect = new RectangleF(0, ColourBuffer.Texture.Height, ColourBuffer.Texture.Width, -ColourBuffer.Texture.Height);
+
+                    if (ColourBuffer.Texture.Bind())
+                        ColourBuffer.Texture.DrawQuad(ScreenSpaceDrawRectangle, textureRect, Color4.White);
                 }
             }
         }
