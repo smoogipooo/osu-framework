@@ -90,19 +90,38 @@ namespace osu.Framework.Desktop.Tests.Visual
             protected override DrawNode CreateDrawNode() => new FrontToBackContainerDrawNode();
             private readonly FrontToBackContainerSharedData shared = new FrontToBackContainerSharedData();
 
-            private FrameBuffer colourBuffer = new FrameBuffer();
-            private RenderBuffer stencilBuffer = new RenderBuffer(OpenTK.Graphics.ES30.RenderbufferInternalFormat.Depth24Stencil8);
+            private readonly FrameBuffer[] colourBuffers = new FrameBuffer[3];
+            private readonly RenderBuffer[] stencilBuffers = new RenderBuffer[3];
+
+            private int bufferIndex;
+
+            public FrontToBackContainer()
+            {
+                for (int i = 0; i < colourBuffers.Length; i++)
+                {
+                    colourBuffers[i] = new FrameBuffer();
+                    stencilBuffers[i] = new RenderBuffer(OpenTK.Graphics.ES30.RenderbufferInternalFormat.Depth24Stencil8);
+                }
+            }
 
             protected override void ApplyDrawNode(DrawNode node)
             {
                 var n = (FrontToBackContainerDrawNode)node;
                 n.Shared = shared;
                 n.Enabled = Enabled;
-                n.ColourBuffer = colourBuffer;
-                n.StencilBuffer = stencilBuffer;
+                n.ColourBuffer = colourBuffers[bufferIndex];
+                n.StencilBuffer = stencilBuffers[bufferIndex];
                 n.ScreenSpaceDrawRectangle = ScreenSpaceDrawQuad.AABBFloat;
 
                 base.ApplyDrawNode(n);
+            }
+
+            protected override void Update()
+            {
+                base.Update();
+
+                Invalidate(Invalidation.DrawNode);
+                bufferIndex = (bufferIndex + 1) % colourBuffers.Length;
             }
 
             private class FrontToBackContainerSharedData
