@@ -156,7 +156,7 @@ namespace osu.Framework.Desktop.Tests.Visual
                         GL.ColorMask(true, true, true, true);
                         GL.StencilMask(0);
 
-                        forStencilUniform.Value = true;
+                        forStencilUniform.Value = false;
                         Children[i].Draw(a => Shared.QuadBatch.Add(a));
                         Shared.QuadBatch.Draw();
 
