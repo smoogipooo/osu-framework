@@ -128,30 +128,53 @@ namespace osu.Framework.Desktop.Tests.Visual
 
                     GLWrapper.SetStencilTest(true);
 
-                    GL.StencilFunc(StencilFunction.Equal, 0xFF, 0xFF);
-                    GL.StencilOp(StencilOp.Zero, StencilOp.Zero, StencilOp.Zero);
+                    GL.StencilOp(StencilOp.Keep, StencilOp.Replace, StencilOp.Replace);
 
+                    // Perform a pre-pass to fill the stencil buffer
+                    forStencilUniform.Value = true;
+                    GL.ColorMask(false, false, false, false);
+                    GL.StencilMask(255);
+
+                    byte currentOccluder = 255;
                     for (int i = Children.Count - 1; i >= 0; i--)
                     {
-                        // Colour pass
-                        GL.ColorMask(true, true, true, true);
-                        GL.StencilMask(0);
+                        if (!Children[i].Occluder)
+                            continue;
 
-                        forStencilUniform.Value = false;
+                        GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
                         Children[i].Draw(a => Shared.QuadBatch.Add(a));
                         Shared.QuadBatch.Draw();
 
-                        // Stencil pass
-                        GL.ColorMask(false, false, false, false);
-                        GL.StencilMask(0xFF);
+                        currentOccluder--;
 
-                        forStencilUniform.Value = true;
-                        Children[i].Draw(a => Shared.QuadBatch.Add(a));
-                        Shared.QuadBatch.Draw();
+                        if (currentOccluder < 0)
+                            throw new Exception("Can't have more than 256 occluders.");
                     }
 
+                    if (Children[0].Occluder)
+                        currentOccluder++;
+
+                    // Perform the colour pass - this can be done back-to-front due to the above stencil generation
                     forStencilUniform.Value = false;
+                    GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
+                    GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Keep);
                     GL.ColorMask(true, true, true, true);
+                    GL.StencilMask(0);
+
+                    foreach (var child in Children)
+                    {
+                        child.Draw(vertexAction);
+
+                        if (child.Occluder)
+                        {
+                            GLWrapper.FlushCurrentBatch();
+
+                            currentOccluder++;
+                            GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
+                        }
+                    }
+
+                    GLWrapper.FlushCurrentBatch();
 
                     GLWrapper.SetStencilTest(false);
                 }
