@@ -22,7 +22,7 @@ namespace osu.Framework.Platform
         public bool CursorInWindow { get; private set; }
 
         protected GameWindow(int width, int height)
-            : base(width, height, new GraphicsMode(GraphicsMode.Default.ColorFormat, GraphicsMode.Default.Depth, GraphicsMode.Default.Stencil, GraphicsMode.Default.Samples, GraphicsMode.Default.AccumulatorFormat, 3))
+            : base(width, height, new GraphicsMode(GraphicsMode.Default.ColorFormat, GraphicsMode.Default.Depth, 8, GraphicsMode.Default.Samples, GraphicsMode.Default.AccumulatorFormat, 3))
         {
             Closing += (sender, e) => e.Cancel = ExitRequested?.Invoke() ?? false;
             Closed += (sender, e) => Exited?.Invoke();

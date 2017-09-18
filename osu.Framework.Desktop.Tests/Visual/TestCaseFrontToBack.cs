@@ -90,38 +90,14 @@ namespace osu.Framework.Desktop.Tests.Visual
             protected override DrawNode CreateDrawNode() => new FrontToBackContainerDrawNode();
             private readonly FrontToBackContainerSharedData shared = new FrontToBackContainerSharedData();
 
-            private readonly FrameBuffer[] colourBuffers = new FrameBuffer[3];
-            private readonly RenderBuffer[] stencilBuffers = new RenderBuffer[3];
-
-            private int bufferIndex;
-
-            public FrontToBackContainer()
-            {
-                for (int i = 0; i < colourBuffers.Length; i++)
-                {
-                    colourBuffers[i] = new FrameBuffer();
-                    stencilBuffers[i] = new RenderBuffer(OpenTK.Graphics.ES30.RenderbufferInternalFormat.Depth24Stencil8);
-                }
-            }
-
             protected override void ApplyDrawNode(DrawNode node)
             {
                 var n = (FrontToBackContainerDrawNode)node;
                 n.Shared = shared;
                 n.Enabled = Enabled;
-                n.ColourBuffer = colourBuffers[bufferIndex];
-                n.StencilBuffer = stencilBuffers[bufferIndex];
                 n.ScreenSpaceDrawRectangle = ScreenSpaceDrawQuad.AABBFloat;
 
                 base.ApplyDrawNode(n);
-            }
-
-            protected override void Update()
-            {
-                base.Update();
-
-                Invalidate(Invalidation.DrawNode);
-                bufferIndex = (bufferIndex + 1) % colourBuffers.Length;
             }
 
             private class FrontToBackContainerSharedData
@@ -131,9 +107,6 @@ namespace osu.Framework.Desktop.Tests.Visual
 
             private class FrontToBackContainerDrawNode : CompositeDrawNode
             {
-                public FrameBuffer ColourBuffer;
-                public RenderBuffer StencilBuffer;
-
                 public RectangleF ScreenSpaceDrawRectangle;
 
                 public bool Enabled;
@@ -151,23 +124,12 @@ namespace osu.Framework.Desktop.Tests.Visual
                     if (Children == null)
                         return;
 
-                    if (!ColourBuffer.IsInitialized)
-                    {
-                        ColourBuffer.Initialize();
-                        ColourBuffer.Attach(StencilBuffer);
-                    }
-
-                    ColourBuffer.Size = ScreenSpaceDrawRectangle.Size;
-
                     var forStencilUniform = Shader.GetUniform<bool>("g_ForStencil");
 
                     GLWrapper.SetStencilTest(true);
-                    ColourBuffer.Bind();
 
                     GL.StencilFunc(StencilFunction.Equal, 0xFF, 0xFF);
                     GL.StencilOp(StencilOp.Zero, StencilOp.Zero, StencilOp.Zero);
-                    GL.ClearStencil(0xFF);
-                    GLWrapper.ClearColour(Color4.Black);
 
                     for (int i = Children.Count - 1; i >= 0; i--)
                     {
@@ -191,13 +153,7 @@ namespace osu.Framework.Desktop.Tests.Visual
                     forStencilUniform.Value = false;
                     GL.ColorMask(true, true, true, true);
 
-                    ColourBuffer.Unbind();
                     GLWrapper.SetStencilTest(false);
-
-                    RectangleF textureRect = new RectangleF(0, ColourBuffer.Texture.Height, ColourBuffer.Texture.Width, -ColourBuffer.Texture.Height);
-
-                    if (ColourBuffer.Texture.Bind())
-                        ColourBuffer.Texture.DrawQuad(ScreenSpaceDrawRectangle, textureRect, Color4.White);
                 }
             }
         }

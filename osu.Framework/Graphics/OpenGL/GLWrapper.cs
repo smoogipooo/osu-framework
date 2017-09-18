@@ -110,13 +110,15 @@ namespace osu.Framework.Graphics.OpenGL
         // We initialize to an invalid value such that we are not missing an initial GL.ClearColor call.
         private static Color4 clearColour = new Color4(-1, -1, -1, -1);
 
-        public static void ClearColour(Color4 c)
+        public static void ClearColour(Color4 colour)
         {
-            if (clearColour != c)
+            if (clearColour != colour)
             {
-                clearColour = c;
+                clearColour = colour;
                 GL.ClearColor(clearColour);
             }
+
+            GL.ClearStencil(0xFF);
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
         }
