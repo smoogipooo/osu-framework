@@ -96,7 +96,7 @@ namespace osu.Framework.Graphics.Containers
                 frameBuffer.Texture.DrawQuad(drawRectangle, textureRect, colourInfo);
         }
 
-        private void drawChildren(Action<TexturedVertex2D> vertexAction, Vector2 frameBufferSize)
+        private void drawChildren(Action<TexturedVertex2D> vertexAction, Vector2 frameBufferSize, ref byte currentOccluder)
         {
             // Fill the frame buffer with drawn children
             using (bindFrameBuffer(currentFrameBuffer, frameBufferSize))
@@ -106,7 +106,7 @@ namespace osu.Framework.Graphics.Containers
                 GLWrapper.PushOrtho(ScreenSpaceDrawRectangle);
 
                 GLWrapper.ClearColour(BackgroundColour);
-                base.Draw(vertexAction);
+                base.Draw(vertexAction, ref currentOccluder);
 
                 GLWrapper.PopOrtho();
             }
@@ -169,7 +169,7 @@ namespace osu.Framework.Graphics.Containers
         // we do not want to allocate a third buffer for nothing and hence we start with 0.
         private int originalIndex => DrawOriginal && (BlurRadius.X > 0 || BlurRadius.Y > 0) ? 2 : 0;
 
-        public override void Draw(Action<TexturedVertex2D> vertexAction)
+        public override void Draw(Action<TexturedVertex2D> vertexAction, ref byte currentOccluder)
         {
             currentFrameBufferIndex = originalIndex;
 
@@ -180,7 +180,7 @@ namespace osu.Framework.Graphics.Containers
 
                 using (establishFrameBufferViewport(frameBufferSize))
                 {
-                    drawChildren(vertexAction, frameBufferSize);
+                    drawChildren(vertexAction, frameBufferSize, ref currentOccluder);
 
                     // Blur post-processing in case a blur radius is defined.
                     if (BlurRadius.X > 0 || BlurRadius.Y > 0)

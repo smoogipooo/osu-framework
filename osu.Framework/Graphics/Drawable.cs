@@ -1477,6 +1477,7 @@ namespace osu.Framework.Graphics
         {
             node.DrawInfo = DrawInfo;
             node.InvalidationID = invalidationID;
+            node.Occluder = this is IOccluder;
         }
 
         /// <summary>

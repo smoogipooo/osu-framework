@@ -108,9 +108,9 @@ namespace osu.Framework.Graphics.UserInterface
             }
         }
 
-        public override void Draw(Action<TexturedVertex2D> vertexAction)
+        public override void Draw(Action<TexturedVertex2D> vertexAction, ref byte currentOccluder)
         {
-            base.Draw(vertexAction);
+            base.Draw(vertexAction, ref currentOccluder);
 
             if (Texture == null || Texture.IsDisposed)
                 return;

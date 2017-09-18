@@ -4,6 +4,8 @@
 using osu.Framework.Graphics.OpenGL;
 using System;
 using osu.Framework.Graphics.OpenGL.Vertices;
+using OpenTK.Graphics.ES20;
+using System.Diagnostics;
 
 namespace osu.Framework.Graphics
 {
@@ -26,7 +28,9 @@ namespace osu.Framework.Graphics
         /// </summary>
         public long InvalidationID;
 
-        public bool Occluder;
+        internal bool Occluder;
+
+        private bool performOcclusion = true;
 
         /// <summary>
         /// Draws this draw node to the screen.
@@ -34,9 +38,40 @@ namespace osu.Framework.Graphics
         /// <param name="vertexAction">The action to be performed on each vertex of
         /// the draw node in order to draw it if required. This is primarily used by
         /// textured sprites.</param>
-        public virtual void Draw(Action<TexturedVertex2D> vertexAction)
+        public virtual void Draw(Action<TexturedVertex2D> vertexAction, ref byte currentOccluder)
         {
+            if (performOcclusion && Occluder)
+            {
+                GLWrapper.FlushCurrentBatch();
+
+                currentOccluder++;
+                GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
+            }
+
             GLWrapper.SetBlend(DrawInfo.Blending);
+        }
+
+        public virtual void DrawOcclusion(Action<TexturedVertex2D> vertexAction, ref byte currentOccluder)
+        {
+            if (Occluder)
+            {
+                if (currentOccluder == 0)
+                {
+                    Debug.Fail("Scene graph contains more than 256 occluders. Any further occluders will not act as occluders.");
+                    return;
+                }
+
+                GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
+
+                performOcclusion = false;
+                Draw(vertexAction, ref currentOccluder);
+                performOcclusion = true;
+
+                GLWrapper.FlushCurrentBatch();
+
+                if (currentOccluder > 0)
+                    currentOccluder--;
+            }
         }
     }
 }

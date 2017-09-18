@@ -196,7 +196,7 @@ namespace osu.Framework.Graphics.Containers
                 Shared.VertexBatch = new QuadBatch<TexturedVertex2D>(clampedAmountChildren * 2, 500);
         }
 
-        public override void Draw(Action<TexturedVertex2D> vertexAction)
+        public override void Draw(Action<TexturedVertex2D> vertexAction, ref byte currentOccluder)
         {
             if (CustomVertexAction == null)
             {
@@ -209,7 +209,7 @@ namespace osu.Framework.Graphics.Containers
             else
                 vertexAction = CustomVertexAction;
 
-            base.Draw(vertexAction);
+            base.Draw(vertexAction, ref currentOccluder);
 
             drawEdgeEffect();
             if (MaskingInfo != null)
@@ -223,10 +223,18 @@ namespace osu.Framework.Graphics.Containers
 
             if (Children != null)
                 foreach (DrawNode child in Children)
-                    child.Draw(vertexAction);
+                    child.Draw(vertexAction, ref currentOccluder);
 
             if (MaskingInfo != null)
                 GLWrapper.PopMaskingInfo();
+        }
+
+        public override void DrawOcclusion(Action<TexturedVertex2D> vertexAction, ref byte currentOccluder)
+        {
+            base.DrawOcclusion(vertexAction, ref currentOccluder);
+
+            for (int i = Children.Count - 1; i >= 0; i--)
+                Children[i].DrawOcclusion(vertexAction, ref currentOccluder);
         }
     }
 }

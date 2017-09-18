@@ -274,7 +274,8 @@ namespace osu.Framework.Platform
                 {
                     if (buffer?.Object != null && buffer.FrameId != lastDrawFrameId)
                     {
-                        buffer.Object.Draw(null);
+                        byte currentOccluder = 255;
+                        buffer.Object.Draw(null, ref currentOccluder);
                         lastDrawFrameId = buffer.FrameId;
                         break;
                     }
@@ -397,7 +398,7 @@ namespace osu.Framework.Platform
 
         private void bootstrapSceneGraph(Game game)
         {
-            var root = new UserInputManager { Child = game };
+            var root = new OccludingContainer { Child = new UserInputManager { Child = game } };
 
             Dependencies.Cache(root);
             Dependencies.Cache(game);

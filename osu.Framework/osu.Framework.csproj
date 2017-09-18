@@ -121,12 +121,14 @@
     <Compile Include="Graphics\Containers\CustomizableTextContainer.cs" />
     <Compile Include="Graphics\Containers\DelayedLoadWrapper.cs" />
     <Compile Include="Graphics\Containers\IFillFlowContainer.cs" />
+    <Compile Include="Graphics\Containers\OccludingContainer.cs" />
     <Compile Include="Graphics\Effects\GlowEffect.cs" />
     <Compile Include="Graphics\Effects\OutlineEffect.cs" />
     <Compile Include="Graphics\Containers\IBufferedContainer.cs" />
     <Compile Include="Graphics\Cursor\CursorEffectContainer.cs" />
     <Compile Include="Graphics\Cursor\IHasCustomTooltip.cs" />
     <Compile Include="Graphics\Cursor\ITooltip.cs" />
+    <Compile Include="Graphics\IOccluder.cs" />
     <Compile Include="Graphics\Primitives\RectangleI.cs" />
     <Compile Include="Graphics\Primitives\Vector2I.cs" />
     <Compile Include="Graphics\Shapes\Circle.cs" />

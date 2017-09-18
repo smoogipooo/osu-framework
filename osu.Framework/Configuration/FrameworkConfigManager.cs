@@ -34,6 +34,7 @@ namespace osu.Framework.Configuration
             Set(FrameworkSetting.ActiveInputHandlers, string.Empty);
             Set(FrameworkSetting.CursorSensitivity, 1.0, 0.1, 6);
             Set(FrameworkSetting.Locale, string.Empty);
+            Set(FrameworkSetting.OcclusionOptimisations, true);
         }
 
         public FrameworkConfigManager(Storage storage)
@@ -69,6 +70,8 @@ namespace osu.Framework.Configuration
         ShowUnicode,
         Locale,
         ActiveInputHandlers,
-        CursorSensitivity
+        CursorSensitivity,
+
+        OcclusionOptimisations
     }
 }

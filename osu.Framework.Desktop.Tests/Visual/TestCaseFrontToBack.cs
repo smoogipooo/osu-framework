@@ -24,12 +24,12 @@ namespace osu.Framework.Desktop.Tests.Visual
 {
     internal class TestCaseFrontToBack : TestCase
     {
-        private FrontToBackContainer backgroundContainer;
+        private Container backgroundContainer;
 
         [BackgroundDependencyLoader]
         private void load()
         {
-            Add(backgroundContainer = new FrontToBackContainer { RelativeSizeAxes = Axes.Both });
+            Add(backgroundContainer = new Container { RelativeSizeAxes = Axes.Both });
 
             var buttonFlow = new FillFlowContainer
             {
@@ -73,10 +73,8 @@ namespace osu.Framework.Desktop.Tests.Visual
 
             var clickAction = new Action(() =>
             {
-                backgroundContainer.Enabled = !backgroundContainer.Enabled;
                 backgroundContainer.Invalidate(Invalidation.DrawNode);
 
-                enableButton.Text = backgroundContainer.Enabled ? "Disable ftb" : "Enable ftb";
             });
 
             enableButton.Action = clickAction;
@@ -85,103 +83,8 @@ namespace osu.Framework.Desktop.Tests.Visual
             Add(buttonFlow);
         }
 
-        private class OccludingBox : Box
+        private class OccludingBox : Box, IOccluder
         {
-            protected override DrawNode CreateDrawNode() => new OccludingBoxDrawNode();
-
-            private class OccludingBoxDrawNode : SpriteDrawNode
-            {
-                public OccludingBoxDrawNode()
-                {
-                    Occluder = true;
-                }
-            }
-        }
-
-        private class FrontToBackContainer : Container
-        {
-            public bool Enabled;
-            protected override bool CanBeFlattened => false;
-
-            protected override DrawNode CreateDrawNode() => new FrontToBackContainerDrawNode();
-
-            protected override void ApplyDrawNode(DrawNode node)
-            {
-                var n = (FrontToBackContainerDrawNode)node;
-                n.Enabled = Enabled;
-                n.ScreenSpaceDrawRectangle = ScreenSpaceDrawQuad.AABBFloat;
-
-                base.ApplyDrawNode(n);
-            }
-
-            private class FrontToBackContainerDrawNode : CompositeDrawNode
-            {
-                public RectangleF ScreenSpaceDrawRectangle;
-
-                public bool Enabled;
-
-                public override void Draw(Action<TexturedVertex2D> vertexAction)
-                {
-                    if (!Enabled)
-                    {
-                        foreach (DrawNode c in Children)
-                            c.Draw(vertexAction);
-                        return;
-                    }
-
-                    if (Children == null)
-                        return;
-
-                    var forStencilUniform = Shader.GetUniform<bool>("g_ForStencil");
-
-                    GLWrapper.SetStencilTest(true);
-
-                    GL.StencilOp(StencilOp.Keep, StencilOp.Replace, StencilOp.Replace);
-
-                    // Perform a pre-pass to fill the stencil buffer
-                    forStencilUniform.Value = true;
-                    GL.ColorMask(false, false, false, false);
-                    GL.StencilMask(255);
-
-                    byte currentOccluder = 255;
-                    for (int i = Children.Count - 1; i >= 0; i--)
-                    {
-                        if (!Children[i].Occluder)
-                            continue;
-
-                        GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
-                        Children[i].Draw(vertexAction);
-                        GLWrapper.FlushCurrentBatch();
-
-                        currentOccluder--;
-
-                        if (currentOccluder < 0)
-                            throw new Exception("Can't have more than 256 occluders.");
-                    }
-
-                    // Perform the colour pass - this can be done back-to-front due to the above stencil generation
-                    forStencilUniform.Value = false;
-                    GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
-                    GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Keep);
-                    GL.ColorMask(true, true, true, true);
-                    GL.StencilMask(0);
-
-                    foreach (var child in Children)
-                    {
-                        if (child.Occluder)
-                        {
-                            GLWrapper.FlushCurrentBatch();
-
-                            currentOccluder++;
-                            GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
-                        }
-
-                        child.Draw(vertexAction);
-                    }
-
-                    GLWrapper.SetStencilTest(false);
-                }
-            }
         }
     }
 }
