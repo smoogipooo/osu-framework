@@ -88,21 +88,14 @@ namespace osu.Framework.Desktop.Tests.Visual
             protected override bool CanBeFlattened => false;
 
             protected override DrawNode CreateDrawNode() => new FrontToBackContainerDrawNode();
-            private readonly FrontToBackContainerSharedData shared = new FrontToBackContainerSharedData();
 
             protected override void ApplyDrawNode(DrawNode node)
             {
                 var n = (FrontToBackContainerDrawNode)node;
-                n.Shared = shared;
                 n.Enabled = Enabled;
                 n.ScreenSpaceDrawRectangle = ScreenSpaceDrawQuad.AABBFloat;
 
                 base.ApplyDrawNode(n);
-            }
-
-            private class FrontToBackContainerSharedData
-            {
-                public readonly QuadBatch<TexturedVertex2D> QuadBatch = new QuadBatch<TexturedVertex2D>(200, 10);
             }
 
             private class FrontToBackContainerDrawNode : CompositeDrawNode
@@ -110,7 +103,6 @@ namespace osu.Framework.Desktop.Tests.Visual
                 public RectangleF ScreenSpaceDrawRectangle;
 
                 public bool Enabled;
-                public new FrontToBackContainerSharedData Shared;
 
                 public override void Draw(Action<TexturedVertex2D> vertexAction)
                 {
@@ -142,8 +134,8 @@ namespace osu.Framework.Desktop.Tests.Visual
                             continue;
 
                         GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
-                        Children[i].Draw(a => Shared.QuadBatch.Add(a));
-                        Shared.QuadBatch.Draw();
+                        Children[i].Draw(vertexAction);
+                        GLWrapper.FlushCurrentBatch();
 
                         currentOccluder--;
 
@@ -173,8 +165,6 @@ namespace osu.Framework.Desktop.Tests.Visual
                             GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
                         }
                     }
-
-                    GLWrapper.FlushCurrentBatch();
 
                     GLWrapper.SetStencilTest(false);
                 }
