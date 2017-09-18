@@ -143,9 +143,6 @@ namespace osu.Framework.Desktop.Tests.Visual
                             throw new Exception("Can't have more than 256 occluders.");
                     }
 
-                    if (Children[0].Occluder)
-                        currentOccluder++;
-
                     // Perform the colour pass - this can be done back-to-front due to the above stencil generation
                     forStencilUniform.Value = false;
                     GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
@@ -155,8 +152,6 @@ namespace osu.Framework.Desktop.Tests.Visual
 
                     foreach (var child in Children)
                     {
-                        child.Draw(vertexAction);
-
                         if (child.Occluder)
                         {
                             GLWrapper.FlushCurrentBatch();
@@ -164,6 +159,8 @@ namespace osu.Framework.Desktop.Tests.Visual
                             currentOccluder++;
                             GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
                         }
+
+                        child.Draw(vertexAction);
                     }
 
                     GLWrapper.SetStencilTest(false);
