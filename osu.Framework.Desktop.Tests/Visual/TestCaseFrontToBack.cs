@@ -18,6 +18,7 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.ES20;
 using osu.Framework.Graphics.OpenGL.Buffers;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Sprites;
 
 namespace osu.Framework.Desktop.Tests.Visual
 {
@@ -57,6 +58,8 @@ namespace osu.Framework.Desktop.Tests.Visual
                                 Depth = j
                             });
                         }
+
+                        backgroundContainer.Add(new OccludingBox { RelativeSizeAxes = Axes.Both });
                     }
                 });
             }
@@ -80,6 +83,19 @@ namespace osu.Framework.Desktop.Tests.Visual
 
             buttonFlow.Add(enableButton);
             Add(buttonFlow);
+        }
+
+        private class OccludingBox : Box
+        {
+            protected override DrawNode CreateDrawNode() => new OccludingBoxDrawNode();
+
+            private class OccludingBoxDrawNode : SpriteDrawNode
+            {
+                public OccludingBoxDrawNode()
+                {
+                    Occluder = true;
+                }
+            }
         }
 
         private class FrontToBackContainer : Container

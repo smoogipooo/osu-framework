@@ -26,7 +26,7 @@ namespace osu.Framework.Graphics
         /// </summary>
         public long InvalidationID;
 
-        public bool Occluder = true;
+        public bool Occluder;
 
         /// <summary>
         /// Draws this draw node to the screen.
