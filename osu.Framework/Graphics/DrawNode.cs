@@ -4,6 +4,7 @@
 using osu.Framework.Graphics.OpenGL;
 using System;
 using osu.Framework.Graphics.OpenGL.Vertices;
+using OpenTK.Graphics.ES30;
 
 namespace osu.Framework.Graphics
 {
@@ -30,6 +31,12 @@ namespace osu.Framework.Graphics
 
         public virtual void DrawDepth(Action<TexturedVertex2D> vertexAction)
         {
+            if (DrawInfo.Blending.Destination == BlendingFactorDest.One)
+                return;
+
+            if (DrawInfo.Colour.MinAlpha < 1)
+                return;
+
             Draw(vertexAction);
         }
 

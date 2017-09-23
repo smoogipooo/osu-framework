@@ -11,6 +11,7 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Colour;
 using System;
 using osu.Framework.Graphics.OpenGL.Vertices;
+using OpenTK.Graphics.ES30;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -198,6 +199,12 @@ namespace osu.Framework.Graphics.Containers
 
         public override void DrawDepth(Action<TexturedVertex2D> vertexAction)
         {
+            if (DrawInfo.Blending.Destination == BlendingFactorDest.One)
+                return;
+
+            if (DrawInfo.Colour.MinAlpha < 1)
+                return;
+
             if (CustomVertexAction == null)
             {
                 updateVertexBatch();
