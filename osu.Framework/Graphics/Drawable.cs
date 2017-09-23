@@ -1445,6 +1445,9 @@ namespace osu.Framework.Graphics
 
         #region DrawNode
 
+        internal static int DepthIndex;
+        internal static Drawable LastDrawable;
+
         private readonly DrawNode[] drawNodes = new DrawNode[3];
 
         /// <summary>
@@ -1465,6 +1468,12 @@ namespace osu.Framework.Graphics
                 ApplyDrawNode(node);
                 FrameStatistics.Increment(StatisticsCounterType.DrawNodeAppl);
             }
+
+            if (LastDrawable != null && LastDrawable.ScreenSpaceDrawQuad.AABBFloat.IntersectsWith(this.ScreenSpaceDrawQuad.AABBFloat))
+                DepthIndex++;
+            node.DepthIndex = DepthIndex;
+
+            LastDrawable = this;
 
             return node;
         }

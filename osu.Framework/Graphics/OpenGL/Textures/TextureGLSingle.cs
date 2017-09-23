@@ -19,6 +19,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
     internal class TextureGLSingle : TextureGL
     {
         public const int MAX_MIPMAP_LEVELS = 3;
+        private const float depth_increment = 0.00001f;
 
         private static readonly Action<TexturedVertex2D> default_quad_action;
         private static readonly Action<TexturedVertex2D> default_triangle_action;
@@ -138,7 +139,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
             return texRect;
         }
 
-        public override void DrawTriangle(Triangle vertexTriangle, RectangleF? textureRect, ColourInfo drawColour, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null)
+        public override void DrawTriangle(Triangle vertexTriangle, int depthIndex, RectangleF? textureRect, ColourInfo drawColour, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null)
         {
             if (IsDisposed)
                 throw new ObjectDisposedException(ToString(), "Can not draw a triangle with a disposed texture.");
@@ -157,6 +158,8 @@ namespace osu.Framework.Graphics.OpenGL.Textures
             SRGBColour topColour = (drawColour.TopLeft + drawColour.TopRight) / 2;
             SRGBColour bottomColour = (drawColour.BottomLeft + drawColour.BottomRight) / 2;
 
+            float depth = 1f - depth_increment * (depthIndex + 1);
+
             // Left triangle half
             vertexAction(new TexturedVertex2D
             {
@@ -165,6 +168,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
                 Colour = topColour.Linear,
+                Depth = depth,
             });
             vertexAction(new TexturedVertex2D
             {
@@ -173,6 +177,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
                 Colour = drawColour.BottomLeft.Linear,
+                Depth = depth,
             });
             vertexAction(new TexturedVertex2D
             {
@@ -181,6 +186,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
                 Colour = bottomColour.Linear,
+                Depth = depth,
             });
 
             // Right triangle half
@@ -191,6 +197,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
                 Colour = topColour.Linear,
+                Depth = depth,
             });
             vertexAction(new TexturedVertex2D
             {
@@ -199,6 +206,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
                 Colour = bottomColour.Linear,
+                Depth = depth,
             });
             vertexAction(new TexturedVertex2D
             {
@@ -207,12 +215,13 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = inflationAmount,
                 Colour = drawColour.BottomRight.Linear,
+                Depth = depth,
             });
 
             FrameStatistics.Add(StatisticsCounterType.Pixels, (long)vertexTriangle.ConservativeArea);
         }
 
-        public override void DrawQuad(Quad vertexQuad, RectangleF? textureRect, ColourInfo drawColour, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null)
+        public override void DrawQuad(Quad vertexQuad, int depthIndex, RectangleF? textureRect, ColourInfo drawColour, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null)
         {
             if (IsDisposed)
                 throw new ObjectDisposedException(ToString(), "Can not draw a quad with a disposed texture.");
@@ -225,6 +234,8 @@ namespace osu.Framework.Graphics.OpenGL.Textures
             if (vertexAction == null)
                 vertexAction = default_quad_action;
 
+            float depth = 1f - depth_increment * (depthIndex + 1);
+
             vertexAction(new TexturedVertex2D
             {
                 Position = vertexQuad.BottomLeft,
@@ -232,6 +243,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = blendRange,
                 Colour = drawColour.BottomLeft.Linear,
+                Depth = depth,
             });
             vertexAction(new TexturedVertex2D
             {
@@ -240,6 +252,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = blendRange,
                 Colour = drawColour.BottomRight.Linear,
+                Depth = depth,
             });
             vertexAction(new TexturedVertex2D
             {
@@ -248,6 +261,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = blendRange,
                 Colour = drawColour.TopRight.Linear,
+                Depth = depth,
             });
             vertexAction(new TexturedVertex2D
             {
@@ -256,6 +270,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 TextureRect = new Vector4(texRect.Left, texRect.Top, texRect.Right, texRect.Bottom),
                 BlendRange = blendRange,
                 Colour = drawColour.TopLeft.Linear,
+                Depth = depth,
             });
 
             FrameStatistics.Add(StatisticsCounterType.Pixels, (long)vertexQuad.ConservativeArea);

@@ -30,7 +30,7 @@ namespace osu.Framework.Graphics.Sprites
 
         protected virtual void Blit(Action<TexturedVertex2D> vertexAction)
         {
-            Texture.DrawQuad(ScreenSpaceDrawQuad, DrawInfo.Colour, null, vertexAction,
+            Texture.DrawQuad(ScreenSpaceDrawQuad, DepthIndex, DrawInfo.Colour, null, vertexAction,
                 new Vector2(InflationAmount.X / DrawRectangle.Width, InflationAmount.Y / DrawRectangle.Height));
         }
 

@@ -19,6 +19,7 @@ using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
+using osu.Framework.Graphics.Shaders;
 using osu.Framework.Input;
 using osu.Framework.Input.Handlers;
 using osu.Framework.Localisation;
@@ -241,7 +242,11 @@ namespace osu.Framework.Platform
 
             Root.UpdateSubTree();
             using (var buffer = DrawRoots.Get(UsageType.Write))
+            {
+                Drawable.DepthIndex = 0;
+                Drawable.LastDrawable = null;
                 buffer.Object = Root.GenerateDrawNodeSubtree(buffer.Index, Root.ScreenSpaceDrawQuad.AABBFloat);
+            }
         }
 
         protected virtual void DrawInitialize()
@@ -274,7 +279,34 @@ namespace osu.Framework.Platform
                 {
                     if (buffer?.Object != null && buffer.FrameId != lastDrawFrameId)
                     {
+                        GLWrapper.SetDepthTest(true);
+                        GL.DepthMask(true);
+                        GL.ClearDepth(1);
+                        GL.Clear(ClearBufferMask.DepthBufferBit);
+                        GL.DepthMask(false);
+
+                        if (depthPrePass)
+                        {
+                            Shader.SetGlobalProperty("g_ForStencil", true);
+
+                            GL.ColorMask(false, false, false, false);
+                            GL.DepthMask(true);
+
+                            GL.DepthFunc(DepthFunction.Less);
+
+                            buffer.Object.DrawDepth(null);
+
+                            GLWrapper.FlushCurrentBatch(); // Todo: This shouldn't be needed
+                            Shader.SetGlobalProperty("g_ForStencil", false);
+
+                            GL.ColorMask(true, true, true, true);
+                            GL.DepthMask(false);
+
+                            GL.DepthFunc(DepthFunction.Lequal);
+                        }
+
                         buffer.Object.Draw(null);
+
                         lastDrawFrameId = buffer.FrameId;
                         break;
                     }
@@ -434,6 +466,7 @@ namespace osu.Framework.Platform
         private InvokeOnDisposal inputPerformanceCollectionPeriod;
 
         private Bindable<GCLatencyMode> activeGCMode;
+        private Bindable<bool> depthPrePass;
 
         private Bindable<FrameSync> frameSyncMode;
 
@@ -452,6 +485,8 @@ namespace osu.Framework.Platform
             {
                 GCSettings.LatencyMode = IsActive ? newMode : GCLatencyMode.Interactive;
             };
+
+            depthPrePass = debugConfig.GetBindable<bool>(DebugSetting.DepthPrePass);
 
             frameSyncMode = config.GetBindable<FrameSync>(FrameworkSetting.FrameSync);
             frameSyncMode.ValueChanged += newMode =>

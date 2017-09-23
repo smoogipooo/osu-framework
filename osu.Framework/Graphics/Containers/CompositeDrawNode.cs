@@ -163,7 +163,7 @@ namespace osu.Framework.Graphics.Containers
             colour.BottomRight.MultiplyAlpha(DrawInfo.Colour.BottomRight.Linear.A);
 
             Texture.WhitePixel.DrawQuad(
-                ScreenSpaceMaskingQuad.Value,
+                ScreenSpaceMaskingQuad.Value, DepthIndex,
                 colour, null, null, null,
                 // HACK HACK HACK. We re-use the unused vertex blend range to store the original
                 // masking blend range when rendering edge effects. This is needed for smooth inner edges
@@ -194,6 +194,40 @@ namespace osu.Framework.Graphics.Containers
             int clampedAmountChildren = MathHelper.Clamp(Children.Count, 1, 1000);
             if (mayHaveOwnVertexBatch(clampedAmountChildren) && (Shared.VertexBatch == null || Shared.VertexBatch.Size < clampedAmountChildren))
                 Shared.VertexBatch = new QuadBatch<TexturedVertex2D>(clampedAmountChildren * 2, 500);
+        }
+
+        public override void DrawDepth(Action<TexturedVertex2D> vertexAction)
+        {
+            if (CustomVertexAction == null)
+            {
+                updateVertexBatch();
+
+                // Prefer to use own vertex batch instead of the parent-owned one.
+                if (Shared.VertexBatch != null)
+                    vertexAction = Shared.VertexBatch.Add;
+            }
+            else
+                vertexAction = CustomVertexAction;
+
+            base.Draw(vertexAction);
+
+            if (MaskingInfo != null)
+            {
+                MaskingInfo info = MaskingInfo.Value;
+                if (info.BorderThickness > 0)
+                    info.BorderColour *= DrawInfo.Colour.AverageColour;
+
+                GLWrapper.PushMaskingInfo(info);
+            }
+
+            if (Children != null)
+            {
+                for (int i = Children.Count - 1; i >= 0; i--)
+                    Children[i].DrawDepth(vertexAction);
+            }
+
+            if (MaskingInfo != null)
+                GLWrapper.PopMaskingInfo();
         }
 
         public override void Draw(Action<TexturedVertex2D> vertexAction)

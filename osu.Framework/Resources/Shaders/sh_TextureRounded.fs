@@ -108,7 +108,7 @@ void main(void)
 	if (colourWeight <= 0.0)
 	{
 		gl_FragColor = toSRGB(vec4(g_BorderColour.rgb, g_BorderColour.a * alphaFactor));
-		if (g_ForStencil && gl_FragColor.a < 1)
+		if (g_ForStencil && gl_FragColor.a < 1.0)
 			discard;
 		return;
 	}
@@ -117,6 +117,6 @@ void main(void)
 		colourWeight * vec4(v_Colour.rgb, v_Colour.a * alphaFactor) * texture2D(m_Sampler, v_TexCoord, -0.9) +
 		(1.0 - colourWeight) * g_BorderColour);
 
-	if (g_ForStencil && gl_FragColor.a < 1)
+	if (g_ForStencil && gl_FragColor.a < 1.0)
 		discard;
 }

@@ -18,6 +18,7 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.ES20;
 using osu.Framework.Graphics.OpenGL.Buffers;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Shaders;
 
 namespace osu.Framework.Desktop.Tests.Visual
 {
@@ -51,6 +52,7 @@ namespace osu.Framework.Desktop.Tests.Visual
                         {
                             backgroundContainer.Add(new Box
                             {
+                                EdgeSmoothness = new Vector2(2),
                                 RelativeSizeAxes = Axes.Both,
                                 Colour = Color4.White.Multiply((j + 1f) / c),
                                 Height = (j + 1f) / c,
@@ -108,62 +110,55 @@ namespace osu.Framework.Desktop.Tests.Visual
                 {
                     if (!Enabled)
                     {
-                        foreach (DrawNode c in Children)
-                            c.Draw(vertexAction);
+                        base.Draw(vertexAction);
                         return;
                     }
 
                     if (Children == null)
                         return;
 
-                    var forStencilUniform = Shader.GetUniform<bool>("g_ForStencil");
+                    GLWrapper.SetDepthTest(true);
 
-                    GLWrapper.SetStencilTest(true);
+                    Shader.SetGlobalProperty("g_ForStencil", true);
 
-                    GL.StencilOp(StencilOp.Keep, StencilOp.Replace, StencilOp.Replace);
-
-                    // Perform a pre-pass to fill the stencil buffer
-                    forStencilUniform.Value = true;
                     GL.ColorMask(false, false, false, false);
-                    GL.StencilMask(255);
+                    GL.DepthMask(true);
 
-                    byte currentOccluder = 255;
+                    GL.DepthFunc(DepthFunction.Less);
+                    GL.ClearDepth(1);
+                    GL.Clear(ClearBufferMask.DepthBufferBit);
+
+                    const float depthIncrement = 1f / ushort.MaxValue;
+
                     for (int i = Children.Count - 1; i >= 0; i--)
                     {
-                        if (!Children[i].Occluder)
-                            continue;
-
-                        GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
-                        Children[i].Draw(vertexAction);
-                        GLWrapper.FlushCurrentBatch();
-
-                        currentOccluder--;
-
-                        if (currentOccluder < 0)
-                            throw new Exception("Can't have more than 256 occluders.");
-                    }
-
-                    // Perform the colour pass - this can be done back-to-front due to the above stencil generation
-                    forStencilUniform.Value = false;
-                    GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
-                    GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Keep);
-                    GL.ColorMask(true, true, true, true);
-                    GL.StencilMask(0);
-
-                    foreach (var child in Children)
-                    {
-                        if (child.Occluder)
+                        float d = 1f - depthIncrement * (i + 1);
+                        Children[i].Draw(v =>
                         {
-                            GLWrapper.FlushCurrentBatch();
-
-                            currentOccluder++;
-                            GL.StencilFunc(StencilFunction.Gequal, currentOccluder, 0xFF);
-                        }
-
-                        child.Draw(vertexAction);
+                            v.Depth = d;
+                            vertexAction(v);
+                        });
                     }
 
-                    GLWrapper.SetStencilTest(false);
+                    GLWrapper.FlushCurrentBatch(); // Todo: This shouldn't be needed
+                    Shader.SetGlobalProperty("g_ForStencil", false);
+
+                    GL.ColorMask(true, true, true, true);
+                    GL.DepthMask(false);
+
+                    GL.DepthFunc(DepthFunction.Lequal);
+
+                    for (int i = 0; i < Children.Count; i++)
+                    {
+                        float d = 1f - depthIncrement * (i + 1);
+                        Children[i].Draw(v =>
+                        {
+                            v.Depth = d;
+                            vertexAction(v);
+                        });
+                    }
+
+                    GLWrapper.SetDepthTest(false);
                 }
             }
         }

@@ -105,6 +105,8 @@ namespace osu.Framework.Graphics.OpenGL
                 BlendRange = 1,
                 AlphaExponent = 1,
             }, true);
+
+            Shader.SetGlobalProperty("g_ForStencil", false);
         }
 
         // We initialize to an invalid value such that we are not missing an initial GL.ClearColor call.
@@ -117,8 +119,6 @@ namespace osu.Framework.Graphics.OpenGL
                 clearColour = colour;
                 GL.ClearColor(clearColour);
             }
-
-            GL.ClearStencil(0xFF);
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
         }

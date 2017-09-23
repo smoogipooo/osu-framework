@@ -189,18 +189,18 @@ namespace osu.Framework.Graphics.Textures
             return TextureGL.GetTextureRect(TextureBounds(textureRect));
         }
 
-        public void DrawTriangle(Triangle vertexTriangle, ColourInfo colour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null)
+        public void DrawTriangle(Triangle vertexTriangle, int depthIndex, ColourInfo colour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null)
         {
             if (TextureGL == null || !TextureGL.Bind()) return;
 
-            TextureGL.DrawTriangle(vertexTriangle, TextureBounds(textureRect), colour, vertexAction, inflationPercentage);
+            TextureGL.DrawTriangle(vertexTriangle, depthIndex, TextureBounds(textureRect), colour, vertexAction, inflationPercentage);
         }
 
-        public void DrawQuad(Quad vertexQuad, ColourInfo colour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null)
+        public void DrawQuad(Quad vertexQuad, int depthIndex, ColourInfo colour, RectangleF? textureRect = null, Action<TexturedVertex2D> vertexAction = null, Vector2? inflationPercentage = null, Vector2? blendRangeOverride = null)
         {
             if (TextureGL == null || !TextureGL.Bind()) return;
 
-            TextureGL.DrawQuad(vertexQuad, TextureBounds(textureRect), colour, vertexAction, inflationPercentage, blendRangeOverride);
+            TextureGL.DrawQuad(vertexQuad, depthIndex, TextureBounds(textureRect), colour, vertexAction, inflationPercentage, blendRangeOverride);
         }
 
         public override string ToString() => $@"{AssetName} ({Width}, {Height})";

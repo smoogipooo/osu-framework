@@ -26,7 +26,12 @@ namespace osu.Framework.Graphics
         /// </summary>
         public long InvalidationID;
 
-        public bool Occluder = true;
+        public int DepthIndex;
+
+        public virtual void DrawDepth(Action<TexturedVertex2D> vertexAction)
+        {
+            Draw(vertexAction);
+        }
 
         /// <summary>
         /// Draws this draw node to the screen.

@@ -93,7 +93,7 @@ namespace osu.Framework.Graphics.Containers
             RectangleF textureRect = new RectangleF(0, frameBuffer.Texture.Height, frameBuffer.Texture.Width, -frameBuffer.Texture.Height);
             if (frameBuffer.Texture.Bind())
                 // Color was already applied by base.Draw(); no need to re-apply. Thus we use White here.
-                frameBuffer.Texture.DrawQuad(drawRectangle, textureRect, colourInfo);
+                frameBuffer.Texture.DrawQuad(drawRectangle, DepthIndex, textureRect, colourInfo);
         }
 
         private void drawChildren(Action<TexturedVertex2D> vertexAction, Vector2 frameBufferSize)
@@ -169,8 +169,14 @@ namespace osu.Framework.Graphics.Containers
         // we do not want to allocate a third buffer for nothing and hence we start with 0.
         private int originalIndex => DrawOriginal && (BlurRadius.X > 0 || BlurRadius.Y > 0) ? 2 : 0;
 
+        public override void DrawDepth(Action<TexturedVertex2D> vertexAction)
+        {
+        }
+
         public override void Draw(Action<TexturedVertex2D> vertexAction)
         {
+            GLWrapper.SetDepthTest(false);
+
             currentFrameBufferIndex = originalIndex;
 
             Vector2 frameBufferSize = new Vector2((float)Math.Ceiling(ScreenSpaceDrawRectangle.Width), (float)Math.Ceiling(ScreenSpaceDrawRectangle.Height));
@@ -210,6 +216,7 @@ namespace osu.Framework.Graphics.Containers
             }
 
             // Blit the final framebuffer to screen.
+            GLWrapper.SetDepthTest(true);
             GLWrapper.SetBlend(new BlendingInfo(EffectBlending));
 
             ColourInfo effectColour = DrawInfo.Colour;

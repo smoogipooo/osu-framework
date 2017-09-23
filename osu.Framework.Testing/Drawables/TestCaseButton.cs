@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input;
 using OpenTK;
 using OpenTK.Graphics;
+using osu.Framework.Extensions.Color4Extensions;
 
 namespace osu.Framework.Testing.Drawables
 {
@@ -19,20 +20,26 @@ namespace osu.Framework.Testing.Drawables
 
         public readonly Type TestType;
 
+        private bool current;
         public bool Current
         {
+            get { return current; }
             set
             {
                 const float transition_duration = 100;
 
+                if (current == value)
+                    return;
+                current = value;
+
                 if (value)
                 {
-                    box.FadeColour(new Color4(220, 220, 220, 255), transition_duration);
+                    box.FadeColour(targetColour, 150);
                     text.FadeColour(Color4.Black, transition_duration);
                 }
                 else
                 {
-                    box.FadeColour(new Color4(140, 140, 140, 255), transition_duration);
+                    box.FadeColour(targetColour, 150);
                     text.FadeColour(Color4.White, transition_duration);
                 }
             }
@@ -55,8 +62,7 @@ namespace osu.Framework.Testing.Drawables
                 box = new Box
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Colour = new Color4(140, 140, 140, 255),
-                    Alpha = 0.7f
+                    Colour = targetColour,
                 },
                 text = new Container
                 {
@@ -91,14 +97,27 @@ namespace osu.Framework.Testing.Drawables
 
         protected override bool OnHover(InputState state)
         {
-            box.FadeTo(1, 150);
+            box.FadeColour(targetColour, 150);
             return true;
         }
 
         protected override void OnHoverLost(InputState state)
         {
-            box.FadeTo(0.7f, 150);
+            box.FadeColour(targetColour, 150);
             base.OnHoverLost(state);
+        }
+
+        private Color4 targetColour
+        {
+            get
+            {
+                Color4 c = Current ? new Color4(220, 220, 220, 255) : new Color4(140, 140, 140, 255);
+
+                if (!IsHovered)
+                    c = c.Multiply(0.7f);
+
+                return c;
+            }
         }
     }
 }
