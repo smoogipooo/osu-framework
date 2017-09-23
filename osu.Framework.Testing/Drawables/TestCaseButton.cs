@@ -114,7 +114,7 @@ namespace osu.Framework.Testing.Drawables
                 Color4 c = Current ? new Color4(220, 220, 220, 255) : new Color4(140, 140, 140, 255);
 
                 if (!IsHovered)
-                    c = c.Multiply(0.7f);
+                    c = c.Multiply(0.85f);
 
                 return c;
             }
