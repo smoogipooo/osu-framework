@@ -1469,10 +1469,7 @@ namespace osu.Framework.Graphics
                 FrameStatistics.Increment(StatisticsCounterType.DrawNodeAppl);
             }
 
-            if (LastDrawable != null && LastDrawable.ScreenSpaceDrawQuad.AABBFloat.IntersectsWith(this.ScreenSpaceDrawQuad.AABBFloat))
-                DepthIndex++;
-            node.DepthIndex = DepthIndex;
-
+            node.DepthIndex = DepthIndex++;
             LastDrawable = this;
 
             return node;
