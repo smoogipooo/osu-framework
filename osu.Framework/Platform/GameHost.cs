@@ -280,7 +280,7 @@ namespace osu.Framework.Platform
                     {
                         if (depthPrePass)
                         {
-                            Shader.SetGlobalProperty("g_ForStencil", true);
+                            Shader.SetGlobalProperty("g_ForDepth", true);
                             GLWrapper.PushDepthInfo(new DepthInfo
                             {
                                 DepthTest = true,
@@ -290,7 +290,7 @@ namespace osu.Framework.Platform
 
                             buffer.Object.DrawDepth(null);
 
-                            Shader.SetGlobalProperty("g_ForStencil", false);
+                            Shader.SetGlobalProperty("g_ForDepth", false);
                             GLWrapper.PopDepthInfo();
                         }
 
