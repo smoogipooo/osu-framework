@@ -105,7 +105,7 @@ namespace osu.Framework.Graphics.Containers
                 // We can do this by adding a translation component to our (orthogonal) projection matrix.
                 GLWrapper.PushOrtho(ScreenSpaceDrawRectangle);
 
-                GLWrapper.ClearColour(BackgroundColour);
+                GLWrapper.Clear(BackgroundColour, 1);
                 base.Draw(vertexAction);
 
                 GLWrapper.PopOrtho();

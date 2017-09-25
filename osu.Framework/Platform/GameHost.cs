@@ -256,7 +256,7 @@ namespace osu.Framework.Platform
             setVSyncMode();
 
             GLWrapper.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
-            GLWrapper.ClearColour(Color4.Black);
+            GLWrapper.Clear(Color4.Black, 1);
         }
 
         private long lastDrawFrameId;
@@ -269,7 +269,7 @@ namespace osu.Framework.Platform
             using (drawMonitor.BeginCollecting(PerformanceCollectionType.GLReset))
             {
                 GLWrapper.Reset(Root.DrawSize);
-                GLWrapper.ClearColour(Color4.Black);
+                GLWrapper.Clear(Color4.Black, 1);
             }
 
             while (!exitInitiated)

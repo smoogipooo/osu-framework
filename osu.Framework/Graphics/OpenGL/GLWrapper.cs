@@ -111,13 +111,20 @@ namespace osu.Framework.Graphics.OpenGL
 
         // We initialize to an invalid value such that we are not missing an initial GL.ClearColor call.
         private static Color4 clearColour = new Color4(-1, -1, -1, -1);
+        private static float clearDepth = -1;
 
-        public static void ClearColour(Color4 colour)
+        public static void Clear(Color4 colour, float depth)
         {
             if (clearColour != colour)
             {
                 clearColour = colour;
                 GL.ClearColor(clearColour);
+            }
+
+            if (clearDepth != depth)
+            {
+                clearDepth = depth;
+                GL.ClearDepth(clearDepth);
             }
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
