@@ -163,7 +163,7 @@ namespace osu.Framework.Graphics.Containers
         private EffectPlacement effectPlacement;
 
         /// <summary>
-        /// Whether the buffered effect should be drawn behind or in front of the original. 
+        /// Whether the buffered effect should be drawn behind or in front of the original.
         /// Behind by default. Does not have any effect if <see cref="DrawOriginal"/> is false.
         /// </summary>
         public EffectPlacement EffectPlacement
@@ -254,7 +254,10 @@ namespace osu.Framework.Graphics.Containers
         public BufferedContainer()
         {
             for (int i = 0; i < frameBuffers.Length; ++i)
+            {
                 frameBuffers[i] = new FrameBuffer();
+                frameBuffers[i].Attach(RenderbufferInternalFormat.DepthComponent24);
+            }
 
             // The initial draw cannot be cached, and thus we need to initialize
             // with a forced draw.
