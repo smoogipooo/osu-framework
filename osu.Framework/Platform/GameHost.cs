@@ -244,7 +244,6 @@ namespace osu.Framework.Platform
             using (var buffer = DrawRoots.Get(UsageType.Write))
             {
                 Drawable.DepthIndex = 0;
-                Drawable.LastDrawable = null;
                 buffer.Object = Root.GenerateDrawNodeSubtree(buffer.Index, Root.ScreenSpaceDrawQuad.AABBFloat);
             }
         }

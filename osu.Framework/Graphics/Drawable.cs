@@ -1446,7 +1446,6 @@ namespace osu.Framework.Graphics
         #region DrawNode
 
         internal static int DepthIndex;
-        internal static Drawable LastDrawable;
 
         private readonly DrawNode[] drawNodes = new DrawNode[3];
 
@@ -1470,7 +1469,6 @@ namespace osu.Framework.Graphics
             }
 
             node.DepthIndex = DepthIndex++;
-            LastDrawable = this;
 
             return node;
         }
