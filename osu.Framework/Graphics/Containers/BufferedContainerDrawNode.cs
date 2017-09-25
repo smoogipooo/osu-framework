@@ -101,14 +101,38 @@ namespace osu.Framework.Graphics.Containers
             // Fill the frame buffer with drawn children
             using (bindFrameBuffer(currentFrameBuffer, frameBufferSize))
             {
+                bool lastForDepth = Shader.GetGlobalProperty<bool>("g_ForDepth");
+
                 // We need to draw children as if they were zero-based to the top-left of the texture.
                 // We can do this by adding a translation component to our (orthogonal) projection matrix.
                 GLWrapper.PushOrtho(ScreenSpaceDrawRectangle);
-
                 GLWrapper.Clear(BackgroundColour, 1);
+
+                GLWrapper.PushDepthInfo(new DepthInfo
+                {
+                    DepthTest = true,
+                    DepthTestFunction = DepthFunction.Less,
+                    WriteDepth = true
+                });
+
+                Shader.SetGlobalProperty("g_ForDepth", true);
+                base.DrawDepth(vertexAction);
+
+                GLWrapper.PushDepthInfo(new DepthInfo
+                {
+                    DepthTest = true,
+                    DepthTestFunction = DepthFunction.Lequal,
+                    WriteDepth = false
+                });
+
+                Shader.SetGlobalProperty("g_ForDepth", false);
                 base.Draw(vertexAction);
 
+                GLWrapper.PopDepthInfo();
+                GLWrapper.PopDepthInfo(); // Second time since we pushed two times above
                 GLWrapper.PopOrtho();
+
+                Shader.SetGlobalProperty("g_ForDepth", lastForDepth);
             }
         }
 
@@ -171,12 +195,11 @@ namespace osu.Framework.Graphics.Containers
 
         public override void DrawDepth(Action<TexturedVertex2D> vertexAction)
         {
+            Draw(vertexAction);
         }
 
         public override void Draw(Action<TexturedVertex2D> vertexAction)
         {
-            GLWrapper.PushDepthInfo(new DepthInfo { DepthTest = false });
-
             currentFrameBufferIndex = originalIndex;
 
             Vector2 frameBufferSize = new Vector2((float)Math.Ceiling(ScreenSpaceDrawRectangle.Width), (float)Math.Ceiling(ScreenSpaceDrawRectangle.Height));
@@ -216,7 +239,6 @@ namespace osu.Framework.Graphics.Containers
             }
 
             // Blit the final framebuffer to screen.
-            GLWrapper.PopDepthInfo();
             GLWrapper.SetBlend(new BlendingInfo(EffectBlending));
 
             ColourInfo effectColour = DrawInfo.Colour;

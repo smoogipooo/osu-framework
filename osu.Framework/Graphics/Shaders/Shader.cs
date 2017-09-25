@@ -198,6 +198,8 @@ namespace osu.Framework.Graphics.Shaders
             }
         }
 
+        public static T GetGlobalProperty<T>(string name) => (T)global_properties[name];
+
         public static implicit operator int(Shader shader)
         {
             return shader.programID;

@@ -27,7 +27,7 @@ namespace osu.Framework.Graphics
         /// </summary>
         public long InvalidationID;
 
-        public int DepthIndex;
+        protected internal int DepthIndex { get; internal set; }
 
         public virtual void DrawDepth(Action<TexturedVertex2D> vertexAction)
         {
