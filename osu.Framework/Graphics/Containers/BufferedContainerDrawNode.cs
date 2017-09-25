@@ -175,7 +175,7 @@ namespace osu.Framework.Graphics.Containers
 
         public override void Draw(Action<TexturedVertex2D> vertexAction)
         {
-            GLWrapper.SetDepthTest(false);
+            GLWrapper.PushDepthInfo(new DepthInfo { DepthTest = false });
 
             currentFrameBufferIndex = originalIndex;
 
@@ -216,7 +216,7 @@ namespace osu.Framework.Graphics.Containers
             }
 
             // Blit the final framebuffer to screen.
-            GLWrapper.SetDepthTest(true);
+            GLWrapper.PopDepthInfo();
             GLWrapper.SetBlend(new BlendingInfo(EffectBlending));
 
             ColourInfo effectColour = DrawInfo.Colour;

@@ -278,30 +278,20 @@ namespace osu.Framework.Platform
                 {
                     if (buffer?.Object != null && buffer.FrameId != lastDrawFrameId)
                     {
-                        GLWrapper.SetDepthTest(true);
-                        GL.DepthMask(true);
-                        GL.ClearDepth(1);
-                        GL.Clear(ClearBufferMask.DepthBufferBit);
-                        GL.DepthMask(false);
-
                         if (depthPrePass)
                         {
                             Shader.SetGlobalProperty("g_ForStencil", true);
-
-                            GL.ColorMask(false, false, false, false);
-                            GL.DepthMask(true);
-
-                            GL.DepthFunc(DepthFunction.Less);
+                            GLWrapper.PushDepthInfo(new DepthInfo
+                            {
+                                DepthTest = true,
+                                WriteDepth = true,
+                                DepthTestFunction = DepthFunction.Less
+                            });
 
                             buffer.Object.DrawDepth(null);
 
-                            GLWrapper.FlushCurrentBatch(); // Todo: This shouldn't be needed
                             Shader.SetGlobalProperty("g_ForStencil", false);
-
-                            GL.ColorMask(true, true, true, true);
-                            GL.DepthMask(false);
-
-                            GL.DepthFunc(DepthFunction.Lequal);
+                            GLWrapper.PopDepthInfo();
                         }
 
                         buffer.Object.Draw(null);

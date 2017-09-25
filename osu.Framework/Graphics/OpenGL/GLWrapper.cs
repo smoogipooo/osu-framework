@@ -23,6 +23,7 @@ namespace osu.Framework.Graphics.OpenGL
     internal static class GLWrapper
     {
         public static MaskingInfo CurrentMaskingInfo { get; private set; }
+        public static DepthInfo CurrentDepthInfo { get; private set; }
         public static RectangleI Viewport { get; private set; }
         public static RectangleF Ortho { get; private set; }
         public static Matrix4 ProjectionMatrix { get; private set; }
@@ -72,8 +73,6 @@ namespace osu.Framework.Graphics.OpenGL
 
             lastBoundTexture = null;
 
-            lastDepthTest = null;
-
             lastBlendingInfo = new BlendingInfo();
             lastBlendingEnabledState = null;
 
@@ -89,6 +88,7 @@ namespace osu.Framework.Graphics.OpenGL
             viewport_stack.Clear();
             ortho_stack.Clear();
             masking_stack.Clear();
+            depth_info_stack.Clear();
             scissor_rect_stack.Clear();
 
             scissor_rect_stack.Push(new RectangleI(0, 0, (int)size.X, (int)size.Y));
@@ -105,6 +105,12 @@ namespace osu.Framework.Graphics.OpenGL
                 BlendRange = 1,
                 AlphaExponent = 1,
             }, true);
+
+            PushDepthInfo(new DepthInfo
+            {
+                WriteDepth = false,
+                DepthTest = false
+            });
 
             Shader.SetGlobalProperty("g_ForStencil", false);
         }
@@ -127,7 +133,15 @@ namespace osu.Framework.Graphics.OpenGL
                 GL.ClearDepth(clearDepth);
             }
 
+            // We have to force-enable writing to the colour and depth buffers to ensure they're cleared properly
+            GL.DepthMask(true);
+            GL.ColorMask(true, true, true, true);
+
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
+
+            // Reset the state of the masks
+            GL.DepthMask(CurrentDepthInfo.WriteDepth);
+            GL.ColorMask(!CurrentDepthInfo.WriteDepth, !CurrentDepthInfo.WriteDepth, !CurrentDepthInfo.WriteDepth, !CurrentDepthInfo.WriteDepth);
         }
 
         /// <summary>
@@ -205,23 +219,6 @@ namespace osu.Framework.Graphics.OpenGL
 
                 FrameStatistics.Increment(StatisticsCounterType.TextureBinds);
             }
-        }
-
-        private static bool? lastDepthTest;
-
-        public static void SetDepthTest(bool enabled)
-        {
-            if (lastDepthTest == enabled)
-                return;
-
-            lastDepthTest = enabled;
-
-            FlushCurrentBatch();
-
-            if (enabled)
-                GL.Enable(EnableCap.DepthTest);
-            else
-                GL.Disable(EnableCap.DepthTest);
         }
 
         private static bool? lastStencilTest;
@@ -486,6 +483,20 @@ namespace osu.Framework.Graphics.OpenGL
             UpdateScissorToCurrentViewportAndOrtho();
         }
 
+        private static void setDepthInfo()
+        {
+            FlushCurrentBatch();
+
+            if (CurrentDepthInfo.DepthTest)
+                GL.Enable(EnableCap.DepthTest);
+            else
+                GL.Disable(EnableCap.DepthTest);
+
+            GL.DepthFunc(CurrentDepthInfo.DepthTestFunction);
+            GL.DepthMask(CurrentDepthInfo.WriteDepth);
+            GL.ColorMask(!CurrentDepthInfo.WriteDepth, !CurrentDepthInfo.WriteDepth, !CurrentDepthInfo.WriteDepth, !CurrentDepthInfo.WriteDepth);
+        }
+
         internal static void FlushCurrentBatch()
         {
             lastActiveBatch?.Draw();
@@ -523,6 +534,32 @@ namespace osu.Framework.Graphics.OpenGL
 
             CurrentMaskingInfo = maskingInfo;
             setMaskingInfo(CurrentMaskingInfo, false, true);
+        }
+
+        private static readonly Stack<DepthInfo> depth_info_stack = new Stack<DepthInfo>();
+
+        public static void PushDepthInfo(DepthInfo depthInfo)
+        {
+            depth_info_stack.Push(depthInfo);
+            if (depthInfo.Equals(CurrentDepthInfo))
+                return;
+
+            CurrentDepthInfo = depthInfo;
+            setDepthInfo();
+        }
+
+        public static void PopDepthInfo()
+        {
+            Trace.Assert(depth_info_stack.Count > 1);
+
+            depth_info_stack.Pop();
+            DepthInfo depthInfo = depth_info_stack.Peek();
+
+            if (CurrentDepthInfo.Equals(depthInfo))
+                return;
+
+            CurrentDepthInfo = depthInfo;
+            setDepthInfo();
         }
 
         /// <summary>
@@ -689,15 +726,39 @@ namespace osu.Framework.Graphics.OpenGL
         public bool Equals(MaskingInfo other)
         {
             return
-                ScreenSpaceAABB == other.ScreenSpaceAABB &&
-                MaskingRect == other.MaskingRect &&
-                ToMaskingSpace == other.ToMaskingSpace &&
-                CornerRadius == other.CornerRadius &&
-                BorderThickness == other.BorderThickness &&
-                BorderColour.Equals(other.BorderColour) &&
-                BlendRange == other.BlendRange &&
-                AlphaExponent == other.AlphaExponent &&
-                Hollow == other.Hollow;
+                ScreenSpaceAABB == other.ScreenSpaceAABB
+                && MaskingRect == other.MaskingRect
+                && ToMaskingSpace == other.ToMaskingSpace
+                && CornerRadius == other.CornerRadius
+                && BorderThickness == other.BorderThickness
+                && BorderColour.Equals(other.BorderColour)
+                && BlendRange == other.BlendRange
+                && AlphaExponent == other.AlphaExponent
+                && Hollow == other.Hollow;
         }
+    }
+
+    public struct DepthInfo : IEquatable<DepthInfo>
+    {
+        /// <summary>
+        /// Whether depth testing should occur.
+        /// </summary>
+        public bool DepthTest;
+
+        /// <summary>
+        /// The function to use during depth testing.
+        /// </summary>
+        public DepthFunction DepthTestFunction;
+
+        /// <summary>
+        /// Whether the result should be written to the depth buffer. If false, colour will be written
+        /// to the colour buffer.
+        /// </summary>
+        public bool WriteDepth;
+
+        public bool Equals(DepthInfo other) =>
+            DepthTest == other.DepthTest
+            && DepthTestFunction == other.DepthTestFunction
+            && WriteDepth == other.WriteDepth;
     }
 }
