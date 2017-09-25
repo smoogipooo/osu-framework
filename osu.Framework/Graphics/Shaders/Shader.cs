@@ -186,6 +186,8 @@ namespace osu.Framework.Graphics.Shaders
         /// <param name="value">The uniform value.</param>
         public static void SetGlobalProperty(string name, object value)
         {
+            GLWrapper.FlushCurrentBatch();
+
             global_properties[name] = value;
 
             foreach (Shader shader in all_shaders)
