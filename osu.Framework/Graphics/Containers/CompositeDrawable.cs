@@ -584,7 +584,7 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="parentComposite">The <see cref="CompositeDrawable"/> whose children's DrawNodes to add.</param>
         /// <param name="target">The target list to fill with DrawNodes.</param>
         /// <param name="maskingBounds">The masking bounds. Children lying outside of them should be ignored.</param>
-        private static void addFromComposite(int treeIndex, ref int j, CompositeDrawable parentComposite, List<DrawNode> target, RectangleF maskingBounds)
+        private static void addFromComposite(int treeIndex, ref int j, CompositeDrawable parentComposite, List<DrawNode> target, RectangleF maskingBounds, bool shouldDrawDepth)
         {
             SortedList<Drawable> current = parentComposite.aliveInternalChildren;
             // ReSharper disable once ForCanBeConvertedToForeach
@@ -614,7 +614,7 @@ namespace osu.Framework.Graphics.Containers
                                              !maskingBounds.IntersectsWith(drawable.ScreenSpaceDrawQuad.AABBFloat);
 
                     if (!composite.IsMaskedAway)
-                        addFromComposite(treeIndex, ref j, composite, target, maskingBounds);
+                        addFromComposite(treeIndex, ref j, composite, target, maskingBounds, shouldDrawDepth && composite.ShouldDrawDepth);
 
                     continue;
                 }
@@ -623,7 +623,7 @@ namespace osu.Framework.Graphics.Containers
                 if (drawable.IsMaskedAway)
                     continue;
 
-                DrawNode next = drawable.GenerateDrawNodeSubtree(treeIndex, maskingBounds);
+                DrawNode next = drawable.GenerateDrawNodeSubtree(treeIndex, maskingBounds, shouldDrawDepth);
                 if (next == null)
                     continue;
 
@@ -636,13 +636,15 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        internal sealed override DrawNode GenerateDrawNodeSubtree(int treeIndex, RectangleF bounds)
+        internal sealed override DrawNode GenerateDrawNodeSubtree(int treeIndex, RectangleF bounds, bool shouldDrawDepth)
         {
             // No need for a draw node at all if there are no children and we are not glowing.
             if (aliveInternalChildren.Count == 0 && CanBeFlattened)
                 return null;
 
-            CompositeDrawNode cNode = base.GenerateDrawNodeSubtree(treeIndex, bounds) as CompositeDrawNode;
+            shouldDrawDepth &= ShouldDrawDepth;
+
+            CompositeDrawNode cNode = base.GenerateDrawNodeSubtree(treeIndex, bounds, shouldDrawDepth) as CompositeDrawNode;
             if (cNode == null)
                 return null;
 
@@ -660,7 +662,7 @@ namespace osu.Framework.Graphics.Containers
             List<DrawNode> target = cNode.Children;
 
             int j = 0;
-            addFromComposite(treeIndex, ref j, this, target, childBounds);
+            addFromComposite(treeIndex, ref j, this, target, childBounds, shouldDrawDepth);
 
             if (j < target.Count)
                 target.RemoveRange(j, target.Count - j);

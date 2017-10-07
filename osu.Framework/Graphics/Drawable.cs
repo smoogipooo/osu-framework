@@ -1445,15 +1445,22 @@ namespace osu.Framework.Graphics
 
         #region DrawNode
 
-        internal static int DepthIndex;
-
         private readonly DrawNode[] drawNodes = new DrawNode[3];
+
+        /// <summary>
+        /// Whether this <see cref="Drawable"/> is drawn into the depth buffer
+        /// during the depth pre-pass. This should be disabled if this <see cref="Drawable"/>
+        /// is mostly translucent.
+        /// </summary>
+        public bool ShouldDrawDepth = true;
+
+        internal static int DepthIndex;
 
         /// <summary>
         /// Generates the DrawNode for ourselves.
         /// </summary>
         /// <returns>A complete and updated DrawNode, or null if the DrawNode would be invisible.</returns>
-        internal virtual DrawNode GenerateDrawNodeSubtree(int treeIndex, RectangleF bounds)
+        internal virtual DrawNode GenerateDrawNodeSubtree(int treeIndex, RectangleF bounds, bool shouldDrawDepth)
         {
             DrawNode node = drawNodes[treeIndex];
             if (node == null)
@@ -1468,7 +1475,10 @@ namespace osu.Framework.Graphics
                 FrameStatistics.Increment(StatisticsCounterType.DrawNodeAppl);
             }
 
-            node.DepthIndex = DepthIndex++;
+            node.DepthIndex = DepthIndex;
+            node.ShouldDrawDepth = shouldDrawDepth && ShouldDrawDepth;
+            if (node.ShouldDrawDepth)
+                DepthIndex++;
 
             return node;
         }

@@ -199,10 +199,7 @@ namespace osu.Framework.Graphics.Containers
 
         public override void DrawDepth(Action<TexturedVertex2D> vertexAction)
         {
-            if (DrawInfo.Blending.Destination == BlendingFactorDest.One)
-                return;
-
-            if (DrawInfo.Colour.MinAlpha < 1)
+            if (!ShouldDrawDepth || DrawInfo.Blending.Destination == BlendingFactorDest.One || DrawInfo.Colour.MinAlpha < 1)
                 return;
 
             if (CustomVertexAction == null)
