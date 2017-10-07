@@ -488,8 +488,13 @@ namespace osu.Framework.Graphics.OpenGL
         {
             FlushCurrentBatch();
 
-            if (CurrentDepthInfo.DepthTest)
-                GL.Enable(EnableCap.DepthTest);
+            if (host.DepthTesting)
+            {
+                if (CurrentDepthInfo.DepthTest)
+                    GL.Enable(EnableCap.DepthTest);
+                else
+                    GL.Disable(EnableCap.DepthTest);
+            }
             else
                 GL.Disable(EnableCap.DepthTest);
 

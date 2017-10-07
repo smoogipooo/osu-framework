@@ -22,6 +22,7 @@ namespace osu.Framework.Configuration
             Set(DebugSetting.ActiveGCMode, GCLatencyMode.SustainedLowLatency);
             Set(DebugSetting.BypassCaching, false).ValueChanged += delegate { StaticCached.BypassCache = Get<bool>(DebugSetting.BypassCaching); };
             Set(DebugSetting.DepthPrePass, true);
+            Set(DebugSetting.DepthTesting, true);
         }
     }
 
@@ -30,5 +31,6 @@ namespace osu.Framework.Configuration
         ActiveGCMode,
         BypassCaching,
         DepthPrePass,
+        DepthTesting,
     }
 }

@@ -456,6 +456,7 @@ namespace osu.Framework.Platform
 
         private Bindable<GCLatencyMode> activeGCMode;
         private Bindable<bool> depthPrePass;
+        public Bindable<bool> DepthTesting { get; private set; }
 
         private Bindable<FrameSync> frameSyncMode;
 
@@ -476,6 +477,7 @@ namespace osu.Framework.Platform
             };
 
             depthPrePass = debugConfig.GetBindable<bool>(DebugSetting.DepthPrePass);
+            DepthTesting = debugConfig.GetBindable<bool>(DebugSetting.DepthTesting);
 
             frameSyncMode = config.GetBindable<FrameSync>(FrameworkSetting.FrameSync);
             frameSyncMode.ValueChanged += newMode =>
