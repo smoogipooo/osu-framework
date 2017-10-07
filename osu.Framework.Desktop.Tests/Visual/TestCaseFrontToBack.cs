@@ -63,104 +63,12 @@ namespace osu.Framework.Desktop.Tests.Visual
                 });
             }
 
-            Button enableButton = new Button
-            {
-                Size = new Vector2(200, 50),
-                Text = "Enable ftb",
-                BackgroundColour = new Color4(0.1f, 0.1f, 0.1f, 1),
-            };
-
-            var clickAction = new Action(() =>
-            {
-                backgroundContainer.Enabled = !backgroundContainer.Enabled;
-                backgroundContainer.Invalidate(Invalidation.DrawNode);
-
-                enableButton.Text = backgroundContainer.Enabled ? "Disable ftb" : "Enable ftb";
-            });
-
-            enableButton.Action = clickAction;
-
-            buttonFlow.Add(enableButton);
             Add(buttonFlow);
         }
 
         private class FrontToBackContainer : Container
         {
-            public bool Enabled;
             protected override bool CanBeFlattened => false;
-
-            protected override DrawNode CreateDrawNode() => new FrontToBackContainerDrawNode();
-
-            protected override void ApplyDrawNode(DrawNode node)
-            {
-                var n = (FrontToBackContainerDrawNode)node;
-                n.Enabled = Enabled;
-                n.ScreenSpaceDrawRectangle = ScreenSpaceDrawQuad.AABBFloat;
-
-                base.ApplyDrawNode(n);
-            }
-
-            private class FrontToBackContainerDrawNode : CompositeDrawNode
-            {
-                public RectangleF ScreenSpaceDrawRectangle;
-
-                public bool Enabled;
-
-                public override void Draw(Action<TexturedVertex2D> vertexAction)
-                {
-                    if (!Enabled)
-                    {
-                        base.Draw(vertexAction);
-                        return;
-                    }
-
-                    if (Children == null)
-                        return;
-
-                    GLWrapper.SetDepthTest(true);
-
-                    Shader.SetGlobalProperty("g_ForStencil", true);
-
-                    GL.ColorMask(false, false, false, false);
-                    GL.DepthMask(true);
-
-                    GL.DepthFunc(DepthFunction.Less);
-                    GL.ClearDepth(1);
-                    GL.Clear(ClearBufferMask.DepthBufferBit);
-
-                    const float depthIncrement = 1f / ushort.MaxValue;
-
-                    for (int i = Children.Count - 1; i >= 0; i--)
-                    {
-                        float d = 1f - depthIncrement * (i + 1);
-                        Children[i].Draw(v =>
-                        {
-                            v.Depth = d;
-                            vertexAction(v);
-                        });
-                    }
-
-                    GLWrapper.FlushCurrentBatch(); // Todo: This shouldn't be needed
-                    Shader.SetGlobalProperty("g_ForStencil", false);
-
-                    GL.ColorMask(true, true, true, true);
-                    GL.DepthMask(false);
-
-                    GL.DepthFunc(DepthFunction.Lequal);
-
-                    for (int i = 0; i < Children.Count; i++)
-                    {
-                        float d = 1f - depthIncrement * (i + 1);
-                        Children[i].Draw(v =>
-                        {
-                            v.Depth = d;
-                            vertexAction(v);
-                        });
-                    }
-
-                    GLWrapper.SetDepthTest(false);
-                }
-            }
         }
     }
 }
