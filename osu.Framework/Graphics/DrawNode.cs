@@ -25,7 +25,7 @@ namespace osu.Framework.Graphics
         /// <see cref="Drawable"/>. Whenever the invalidation state of this draw node disagrees
         /// with the state of its <see cref="Drawable"/> it has to be updated.
         /// </summary>
-        public long InvalidationID;
+        internal long InvalidationID;
 
         protected internal int DepthIndex { get; internal set; }
 
