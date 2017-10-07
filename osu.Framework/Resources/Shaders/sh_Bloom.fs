@@ -73,5 +73,5 @@ void main(void)
 
     sum.r += redtint;
 
-	gl_FragColor = v_Colour * sum;
+    gl_FragColor = v_Colour * sum;
 }
