@@ -113,7 +113,7 @@ namespace osu.Framework.Graphics.OpenGL
                 DepthTestFunction = DepthFunction.Lequal
             });
 
-            Shader.SetGlobalProperty("g_ForStencil", false);
+            Shader.SetGlobalProperty("g_ForDepth", false);
         }
 
         // We initialize to an invalid value such that we are not missing an initial GL.ClearColor call.
