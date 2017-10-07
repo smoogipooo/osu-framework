@@ -149,6 +149,12 @@ namespace osu.Framework.Graphics.Containers
                 DestinationAlpha = BlendingFactorDest.Zero,
             });
 
+            GLWrapper.PushDepthInfo(new DepthInfo
+            {
+                DepthTest = false,
+                WriteDepth = false
+            });
+
             using (bindFrameBuffer(target, source.Size))
             {
                 BlurShader.GetUniform<int>(@"g_Radius").Value = kernelRadius;
@@ -162,6 +168,8 @@ namespace osu.Framework.Graphics.Containers
                 drawFrameBufferToBackBuffer(source, new RectangleF(0, 0, source.Texture.Width, source.Texture.Height), ColourInfo.SingleColour(Color4.White));
                 BlurShader.Unbind();
             }
+
+            GLWrapper.PopDepthInfo();
         }
 
         private int currentFrameBufferIndex;
