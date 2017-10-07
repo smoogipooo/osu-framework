@@ -14,7 +14,6 @@ uniform vec2 g_TexSize;
 uniform int g_Radius;
 uniform float g_Sigma;
 uniform vec2 g_BlurDirection;
-uniform bool g_ForDepth;
 
 float computeGauss(in float x, in float sigma)
 {
@@ -45,6 +44,4 @@ vec4 blur(sampler2D tex, int radius, vec2 direction, vec2 texCoord, vec2 texSize
 void main(void)
 {
     gl_FragColor = blur(m_Sampler, g_Radius, g_BlurDirection, v_TexCoord, g_TexSize, g_Sigma);
-    if (g_ForDepth && gl_FragColor.a < 1.0)
-        discard;
 }
