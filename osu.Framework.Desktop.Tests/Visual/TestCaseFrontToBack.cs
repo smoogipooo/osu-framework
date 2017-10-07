@@ -1,24 +1,15 @@
 ﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using System;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
-using osu.Framework.MathUtils;
 using osu.Framework.Testing;
 using OpenTK;
 using OpenTK.Graphics;
-using OpenTK.Graphics.ES20;
-using osu.Framework.Graphics.OpenGL.Buffers;
-using osu.Framework.Graphics.Primitives;
-using osu.Framework.Graphics.Shaders;
 
 namespace osu.Framework.Desktop.Tests.Visual
 {
