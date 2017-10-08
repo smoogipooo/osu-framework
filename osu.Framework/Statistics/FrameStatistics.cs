@@ -39,6 +39,7 @@ namespace osu.Framework.Statistics
         Scheduler,
         IPC,
         GLReset,
+        DepthPass
     }
 
     internal enum StatisticsCounterType

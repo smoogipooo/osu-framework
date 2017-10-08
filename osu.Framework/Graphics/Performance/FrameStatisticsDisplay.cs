@@ -369,6 +369,8 @@ namespace osu.Framework.Graphics.Performance
             {
                 default:
                     return Color4.YellowGreen;
+                case PerformanceCollectionType.DepthPass:
+                    return Color4.SkyBlue;
                 case PerformanceCollectionType.SwapBuffer:
                     return Color4.Red;
 #if DEBUG
