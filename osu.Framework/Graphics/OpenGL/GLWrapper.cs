@@ -114,6 +114,8 @@ namespace osu.Framework.Graphics.OpenGL
             });
 
             Shader.SetGlobalProperty("g_ForDepth", false);
+
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
         }
 
         // We initialize to an invalid value such that we are not missing an initial GL.ClearColor call.

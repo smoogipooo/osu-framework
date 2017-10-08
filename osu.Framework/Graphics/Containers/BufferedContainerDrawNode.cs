@@ -43,6 +43,8 @@ namespace osu.Framework.Graphics.Containers
         public List<RenderbufferInternalFormat> Formats;
         public All FilteringMode;
 
+        public static Vector2 ScreenSize;
+
         private InvokeOnDisposal establishFrameBufferViewport(Vector2 roundedSize)
         {
             // Disable masking for generating the frame buffer since masking will be re-applied
@@ -81,7 +83,6 @@ namespace osu.Framework.Graphics.Containers
 
             // This setter will also take care of allocating a texture of appropriate size within the framebuffer.
             frameBuffer.Size = requestedSize;
-
             frameBuffer.Bind();
 
             return new InvokeOnDisposal(frameBuffer.Unbind);
@@ -107,6 +108,12 @@ namespace osu.Framework.Graphics.Containers
                 // We can do this by adding a translation component to our (orthogonal) projection matrix.
                 GLWrapper.PushOrtho(ScreenSpaceDrawRectangle);
                 GLWrapper.Clear(BackgroundColour, 1);
+
+                Vector2 diffBackbuffer = Vector2.ComponentMax(Vector2.Zero, (ScreenSize - frameBufferSize) / 2);
+                Vector2 diffFramebuffer = Vector2.ComponentMax(Vector2.Zero, (frameBufferSize - ScreenSize) / 2);
+
+                GL.BlitFramebuffer((int)diffBackbuffer.X, (int)diffBackbuffer.Y, (int)(ScreenSize.X - diffBackbuffer.X), (int)(ScreenSize.Y - diffBackbuffer.Y),
+                    (int)diffFramebuffer.X, (int)diffFramebuffer.Y, (int)(frameBufferSize.X - diffFramebuffer.X), (int)(frameBufferSize.Y - diffFramebuffer.Y), ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
 
                 GLWrapper.PushDepthInfo(new DepthInfo
                 {

@@ -278,6 +278,8 @@ namespace osu.Framework.Platform
                 {
                     if (buffer?.Object != null && buffer.FrameId != lastDrawFrameId)
                     {
+                        BufferedContainerDrawNode.ScreenSize = Root.DrawSize;
+
                         if (depthPrePass)
                         {
                             int query2 = GL.GenQuery();
