@@ -203,6 +203,9 @@ namespace osu.Framework.Graphics.Containers
 
         public override void DrawDepth(Action<TexturedVertex2D> vertexAction)
         {
+            if (!ShouldDrawDepth)
+                return;
+
             Draw(vertexAction);
         }
 
