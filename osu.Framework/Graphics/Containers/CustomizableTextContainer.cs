@@ -30,6 +30,11 @@ namespace osu.Framework.Graphics.Containers
         private readonly List<Drawable> placeholders = new List<Drawable>();
         private readonly Dictionary<string, Delegate> iconFactories = new Dictionary<string, Delegate>();
 
+        public CustomizableTextContainer(Action<SpriteText> defaultCreationParameters = null)
+            : base(defaultCreationParameters)
+        {
+        }
+
         /// <summary>
         /// Adds the given drawable as a placeholder that can be used when adding text. The drawable must not have a parent. Returns the index that can be used to reference the added placeholder.
         /// </summary>
