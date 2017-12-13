@@ -234,6 +234,7 @@
     <Compile Include="Graphics\UserInterface\Markdown\MarkdownTextContainer.cs" />
     <Compile Include="Graphics\UserInterface\Markdown\Renderers\Blocks\CodeBlockRenderer.cs" />
     <Compile Include="Graphics\UserInterface\Markdown\Renderers\Blocks\HeadingRenderer.cs" />
+    <Compile Include="Graphics\UserInterface\Markdown\Renderers\Blocks\ListRenderer.cs" />
     <Compile Include="Graphics\UserInterface\Markdown\Renderers\Blocks\ParagraphRenderer.cs" />
     <Compile Include="Graphics\UserInterface\Markdown\Renderers\Inlines\CodeRenderer.cs" />
     <Compile Include="Graphics\UserInterface\Markdown\Renderers\Inlines\DelimiterRenderer.cs" />
