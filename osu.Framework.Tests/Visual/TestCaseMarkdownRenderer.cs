@@ -2,6 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface.Markdown;
 using osu.Framework.Testing;
@@ -43,7 +44,16 @@ The voting will conclude in **7 days time from the date of this post** - there's
                 Colour = new Color4(50, 50, 50, 255)
             });
 
-            Add(new MarkdownTextContainer { Text = markdown });
+            Add(new ScrollContainer
+            {
+                RelativeSizeAxes = Axes.Both,
+                Child = new MarkdownTextContainer
+                {
+                    Text = markdown,
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y
+                }
+            });
         }
     }
 }

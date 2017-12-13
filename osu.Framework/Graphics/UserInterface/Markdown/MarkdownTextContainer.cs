@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
+using System.Reflection.Metadata;
 using osu.Framework.Caching;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.UserInterface.Markdown.Renderers;
@@ -23,12 +24,13 @@ namespace osu.Framework.Graphics.UserInterface.Markdown
             }
         }
 
-        private Cached layoutCache = new Cached();
-
-        public MarkdownTextContainer()
+        public new Axes AutoSizeAxes
         {
-            RelativeSizeAxes = Axes.Both;
+            get { return base.AutoSizeAxes; }
+            set { base.AutoSizeAxes = value; }
         }
+
+        private Cached layoutCache = new Cached();
 
         protected override void Update()
         {
@@ -43,8 +45,11 @@ namespace osu.Framework.Graphics.UserInterface.Markdown
 
         private void layoutText()
         {
-            InternalChild = (Drawable)Markdig.Markdown.Convert(text, new MarkdownRenderer());
-            InternalChild.RelativeSizeAxes = Axes.Both;
+            var document = (FillFlowContainer)Markdig.Markdown.Convert(text, new MarkdownRenderer());
+            document.RelativeSizeAxes = Axes.X;
+            document.AutoSizeAxes = Axes.Y;
+
+            InternalChild = document;
         }
     }
 }

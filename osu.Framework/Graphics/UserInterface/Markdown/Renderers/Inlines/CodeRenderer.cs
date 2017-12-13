@@ -33,18 +33,20 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
             {
                 AutoSizeAxes = Axes.Both;
 
-                Masking = true;
-                BorderColour = Color4.Black;
-                BorderThickness = 2;
-                MaskingSmoothness = 1;
-                CornerRadius = 5;
-
                 InternalChildren = new Drawable[]
                 {
-                    new Box
+                    new Container
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Colour = new Color4(25, 25, 25, 255)
+                        Masking = true,
+                        BorderThickness = 2,
+                        MaskingSmoothness = 1,
+                        CornerRadius = 5,
+                        Child = new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = new Color4(25, 25, 25, 255)
+                        }
                     },
                     content = new Container
                     {

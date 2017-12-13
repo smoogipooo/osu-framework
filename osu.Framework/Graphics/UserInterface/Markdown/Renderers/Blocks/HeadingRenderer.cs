@@ -10,12 +10,12 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Blocks
     {
         protected virtual float[] HeadingSizes => new float[]
         {
-            24,
+            34,
+            30,
+            26,
             22,
             18,
-            16,
-            12,
-            10
+            14
         };
 
         protected override void Write(MarkdownRenderer renderer, HeadingBlock obj)

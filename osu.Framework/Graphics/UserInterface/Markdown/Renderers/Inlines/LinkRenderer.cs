@@ -29,7 +29,6 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
 
                 document.AutoSizeAxes = Axes.Both;
 
-                // Todo: This shouldn't be a spritetext
                 renderer.Write(CreateLink(obj.GetDynamicUrl?.Invoke() ?? obj.Url, document));
             }
         }
