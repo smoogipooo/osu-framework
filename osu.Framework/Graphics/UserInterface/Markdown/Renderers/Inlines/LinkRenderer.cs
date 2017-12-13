@@ -41,18 +41,20 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
             public DrawableLink(string url, Drawable text)
             {
                 AutoSizeAxes = Axes.Both;
+                Colour = Color4.LightBlue;
+
                 InternalChild = text;
             }
 
             protected override bool OnHover(InputState state)
             {
-                Colour = Color4.Blue;
+                Colour = Color4.Pink;
                 return true;
             }
 
             protected override void OnHoverLost(InputState state)
             {
-                Colour = Color4.White;
+                Colour = Color4.LightBlue;
                 return;
             }
         }
