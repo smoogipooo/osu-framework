@@ -2,7 +2,6 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using Markdig;
-using Markdig.Extensions.Tables;
 using osu.Framework.Caching;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.UserInterface.Markdown.Renderers;

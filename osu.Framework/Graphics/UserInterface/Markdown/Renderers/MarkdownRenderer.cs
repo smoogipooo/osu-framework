@@ -55,7 +55,7 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers
 
         public void AddParagraph() => document.AddText("\n\n");
 
-        private int currentIndentationLevel = 0;
+        private int currentIndentationLevel;
         public void PushIndentation()
         {
             currentIndentationLevel++;

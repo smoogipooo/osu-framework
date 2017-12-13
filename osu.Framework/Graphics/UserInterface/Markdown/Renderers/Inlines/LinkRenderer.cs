@@ -33,11 +33,11 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
             }
         }
 
-        protected virtual Drawable CreateLink(string url, Drawable text) => new DrawableLink(url, text);
+        protected virtual Drawable CreateLink(string url, Drawable text) => new DrawableLink(text);
 
         private class DrawableLink : CompositeDrawable
         {
-            public DrawableLink(string url, Drawable text)
+            public DrawableLink(Drawable text)
             {
                 AutoSizeAxes = Axes.Both;
                 Colour = Color4.LightBlue;
@@ -54,7 +54,6 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
             protected override void OnHoverLost(InputState state)
             {
                 Colour = Color4.LightBlue;
-                return;
             }
         }
 
