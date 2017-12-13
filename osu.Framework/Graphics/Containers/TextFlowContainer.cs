@@ -118,7 +118,8 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        public override bool HandleInput => false;
+        private bool handleInput;
+        public override bool HandleInput => handleInput;
 
         public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
         {
@@ -258,12 +259,15 @@ namespace osu.Framework.Graphics.Containers
 
         private void computeLayout()
         {
+            handleInput = false;
+
             var childrenByLine = new List<List<Drawable>>();
             var curLine = new List<Drawable>();
             foreach (var c in Children)
             {
                 c.Anchor = TextAnchor;
                 c.Origin = TextAnchor;
+                handleInput |= c.HandleInput;
 
                 NewLineContainer nlc = c as NewLineContainer;
                 if (nlc != null)
