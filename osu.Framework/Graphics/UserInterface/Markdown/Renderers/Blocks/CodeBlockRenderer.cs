@@ -15,12 +15,13 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Blocks
             renderer.EnsureNewLine();
 
             var container = CreateCodeContainer();
-            var textFlow = renderer.CreateTextFlow();
+            container.Add(new TextFlowContainer
+            {
+                AutoSizeAxes = Axes.Both,
+                Text = obj.Lines.ToString()
+            });
 
-            textFlow.Text = obj.Lines.ToString();
-
-            container.Add(textFlow);
-            renderer.GetLine().Add(container);
+            renderer.Write(container);
         }
 
         protected virtual Container CreateCodeContainer() => new CodeContainer();

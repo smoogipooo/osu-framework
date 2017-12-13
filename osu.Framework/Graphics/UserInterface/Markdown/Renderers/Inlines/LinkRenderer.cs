@@ -6,6 +6,8 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.Input;
+using OpenTK.Graphics;
 
 namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
 {
@@ -18,15 +20,42 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
             Renderer = renderer;
 
             if (obj.IsImage)
-                renderer.GetLine().Add(new DelayedLoadWrapper(new AsyncSprite(obj.GetDynamicUrl?.Invoke() ?? obj.Url)));
+                renderer.Write(new DelayedLoadWrapper(new AsyncSprite(obj.GetDynamicUrl?.Invoke() ?? obj.Url)));
             else
             {
+                var subRenderer = new MarkdownRenderer();
+                var document = (FillFlowContainer)subRenderer.Render(null);
+                subRenderer.WriteChildren(obj);
+
+                document.AutoSizeAxes = Axes.Both;
+
                 // Todo: This shouldn't be a spritetext
-                renderer.GetLine().Add(CreateLink(obj.GetDynamicUrl?.Invoke() ?? obj.Url, obj.Title));
+                renderer.Write(CreateLink(obj.GetDynamicUrl?.Invoke() ?? obj.Url, document));
             }
         }
 
-        protected virtual Drawable CreateLink(string url, string title) => new SpriteText { Text = title };
+        protected virtual Drawable CreateLink(string url, Drawable text) => new DrawableLink(url, text);
+
+        private class DrawableLink : CompositeDrawable
+        {
+            public DrawableLink(string url, Drawable text)
+            {
+                AutoSizeAxes = Axes.Both;
+                InternalChild = text;
+            }
+
+            protected override bool OnHover(InputState state)
+            {
+                Colour = Color4.Blue;
+                return true;
+            }
+
+            protected override void OnHoverLost(InputState state)
+            {
+                Colour = Color4.White;
+                return;
+            }
+        }
 
         private class AsyncSprite : Sprite
         {

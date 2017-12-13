@@ -9,7 +9,7 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
     {
         protected override void Write(MarkdownRenderer renderer, HtmlEntityInline obj)
         {
-            renderer.GetTextFlow().AddText(obj.Transcoded.ToString());
+            renderer.Write(obj.Transcoded.ToString());
         }
     }
 }

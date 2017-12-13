@@ -10,8 +10,8 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Blocks
     {
         protected override void Write(MarkdownRenderer renderer, ParagraphBlock obj)
         {
-            renderer.EnsureNewParagraph();
-
+            renderer.AddParagraph();
+            
             var inline = (Inline)obj.Inline;
             while (inline != null)
             {

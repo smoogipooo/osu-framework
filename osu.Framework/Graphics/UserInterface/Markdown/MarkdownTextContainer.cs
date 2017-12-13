@@ -44,6 +44,7 @@ namespace osu.Framework.Graphics.UserInterface.Markdown
         private void layoutText()
         {
             InternalChild = (Drawable)Markdig.Markdown.Convert(text, new MarkdownRenderer());
+            InternalChild.RelativeSizeAxes = Axes.Both;
         }
     }
 }

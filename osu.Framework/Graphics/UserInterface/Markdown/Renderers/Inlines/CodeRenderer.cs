@@ -13,12 +13,13 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
         protected override void Write(MarkdownRenderer renderer, CodeInline obj)
         {
             var container = CreateCodeContainer();
-            var textFlow = renderer.CreateTextFlow();
+            container.Add(new TextFlowContainer
+            {
+                AutoSizeAxes = Axes.Both,
+                Text = obj.Content
+            });
 
-            textFlow.AddText(obj.Content);
-
-            container.Add(textFlow);
-            renderer.GetLine().Add(container);
+            renderer.Write(container);
         }
 
         protected virtual Container CreateCodeContainer() => new CodeContainer();

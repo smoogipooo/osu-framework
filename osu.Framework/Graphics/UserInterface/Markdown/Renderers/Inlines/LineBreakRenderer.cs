@@ -10,7 +10,7 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Inlines
         protected override void Write(MarkdownRenderer renderer, LineBreakInline obj)
         {
             if (obj.IsHard)
-                renderer.EnsureNewParagraph();
+                renderer.AddParagraph();
             else
                 renderer.EnsureNewLine();
         }
