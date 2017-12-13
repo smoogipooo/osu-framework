@@ -43,6 +43,12 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers
                 document.NewLine();
         }
 
+        public void EnsureNewParagraph()
+        {
+            if (document.CurrentLineLength > 0)
+                AddParagraph();
+        }
+
         public void AddParagraph() => document.AddText("\n\n");
         public void Write(string text) => document.AddText(text);
 

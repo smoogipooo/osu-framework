@@ -20,15 +20,13 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Blocks
 
         protected override void Write(MarkdownRenderer renderer, HeadingBlock obj)
         {
-            renderer.AddParagraph();
+            renderer.EnsureNewParagraph();
 
             int index = MathHelper.Clamp(obj.Level - 1, 0, HeadingSizes.Length - 1);
 
             renderer.PushFormatting(s => s.TextSize = HeadingSizes[index]);
             renderer.Write(obj.Inline);
             renderer.PopFormatting();
-
-            renderer.AddParagraph();
         }
     }
 }
