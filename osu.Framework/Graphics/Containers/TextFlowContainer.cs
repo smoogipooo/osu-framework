@@ -204,6 +204,24 @@ namespace osu.Framework.Graphics.Containers
             return AddString(line, newLineIsParagraph);
         }
 
+        public int CurrentLineLength
+        {
+            get
+            {
+                if (Children.Count == 0)
+                    return 0;
+
+                int lastIndex = Children.Count - 1;
+                for (; lastIndex >= 0; lastIndex--)
+                {
+                    if (Children[lastIndex] is NewLineContainer)
+                        break;
+                }
+
+                return Children.Count - 1 - lastIndex;
+            }
+        }
+
         internal IEnumerable<SpriteText> AddString(TextLine line, bool newLineIsParagraph)
         {
             bool first = true;
