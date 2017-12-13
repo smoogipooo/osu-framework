@@ -204,6 +204,19 @@ namespace osu.Framework.Graphics.Containers
             return AddString(line, newLineIsParagraph);
         }
 
+        /// <summary>
+        /// Sets the indentation of the current paragraph.
+        /// </summary>
+        /// <param name="indentation">The indentation.</param>
+        public void SetCurrentIndentation(float indentation)
+        {
+            var last = (NewLineContainer)Children.LastOrDefault(c => (c as NewLineContainer)?.IndicatesNewParagraph ?? false);
+            if (last != null)
+                last.ParagraphIndentation = indentation;
+
+            layout.Invalidate();
+        }
+
         public int CurrentLineLength
         {
             get
@@ -311,6 +324,7 @@ namespace osu.Framework.Graphics.Containers
 
             bool isFirstLine = true;
             float lastLineHeight = 0f;
+            float paragraphIndentation = 0;
             foreach (var line in childrenByLine)
             {
                 bool isFirstChild = true;
@@ -325,15 +339,21 @@ namespace osu.Framework.Graphics.Containers
                     if (nlc != null)
                     {
                         nlc.Height = nlc.IndicatesNewParagraph ? (currentLineHeight == 0 ? lastLineHeight : currentLineHeight) * ParagraphSpacing : 0;
+                        paragraphIndentation = nlc.IndicatesNewParagraph ? nlc.ParagraphIndentation : paragraphIndentation;
+
                         continue;
                     }
 
                     float childLineBaseHeight = (c as IHasLineBaseHeight)?.LineBaseHeight ?? 0f;
                     MarginPadding margin = new MarginPadding { Top = (childLineBaseHeight != 0f ? lineBaseHeight - childLineBaseHeight : 0f) + lineSpacingValue };
+
+                    if (c.X == 0)
+                        margin.Left += paragraphIndentation;
+
                     if (isFirstLine)
-                        margin.Left = FirstLineIndent;
+                        margin.Left += FirstLineIndent;
                     else if (isFirstChild)
-                        margin.Left = ContentIndent;
+                        margin.Left += ContentIndent;
 
                     c.Margin = margin;
 
@@ -355,6 +375,7 @@ namespace osu.Framework.Graphics.Containers
         internal class NewLineContainer : Container
         {
             public readonly bool IndicatesNewParagraph;
+            public float ParagraphIndentation;
 
             public NewLineContainer(bool newParagraph)
             {

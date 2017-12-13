@@ -13,6 +13,8 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers
 {
     public class MarkdownRenderer : RendererBase
     {
+        protected virtual float IndentationAmount { get; } = 25;
+
         public MarkdownRenderer()
         {
             ObjectRenderers.Add(new CodeRenderer());
@@ -25,6 +27,7 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers
             ObjectRenderers.Add(new Blocks.ParagraphRenderer());
             ObjectRenderers.Add(new Blocks.CodeBlockRenderer());
             ObjectRenderers.Add(new Blocks.HeadingRenderer());
+            ObjectRenderers.Add(new Blocks.ListRenderer());
         }
 
         private CustomizableTextContainer document;
@@ -50,6 +53,20 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers
         }
 
         public void AddParagraph() => document.AddText("\n\n");
+
+        private int currentIndentationLevel = 0;
+        public void PushIndentation()
+        {
+            currentIndentationLevel++;
+            document.SetCurrentIndentation(currentIndentationLevel * IndentationAmount);
+        }
+
+        public void PopIndentation()
+        {
+            currentIndentationLevel--;
+            document.SetCurrentIndentation(currentIndentationLevel * IndentationAmount);
+        }
+
         public void Write(string text) => document.AddText(text);
 
         private int currentPlaceholderIndex;
@@ -61,8 +78,11 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers
         }
 
         private readonly List<Action<SpriteText>> textFormatters = new List<Action<SpriteText>>();
+
         public void PushFormatting(Action<SpriteText> formatter) => textFormatters.Add(formatter);
+
         public void PopFormatting() => textFormatters.RemoveAt(textFormatters.Count - 1);
+
         private void applyTextFormats(SpriteText text) => textFormatters.ForEach(f => f.Invoke(text));
 
         public CustomizableTextContainer CreateDocument() => new CustomizableTextContainer(applyTextFormats);
