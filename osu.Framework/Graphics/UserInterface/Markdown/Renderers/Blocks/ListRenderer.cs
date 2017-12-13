@@ -38,6 +38,6 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers.Blocks
         }
 
         protected Drawable CreateBullet(char bulletChar) => new SpriteText { Text = bulletChar.ToString() };
-        protected Drawable CreateNumber(int value) => new SpriteText { Text = value.ToString() };
+        protected Drawable CreateNumber(int value) => new SpriteText { Text = $"{value}." };
     }
 }
