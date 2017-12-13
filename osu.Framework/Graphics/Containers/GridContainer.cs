@@ -66,6 +66,12 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
+        public new Axes AutoSizeAxes
+        {
+            get => base.AutoSizeAxes;
+            set => base.AutoSizeAxes = value;
+        }
+
         protected override void Update()
         {
             base.Update();

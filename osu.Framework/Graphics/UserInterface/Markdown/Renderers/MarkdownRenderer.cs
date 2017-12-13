@@ -28,6 +28,7 @@ namespace osu.Framework.Graphics.UserInterface.Markdown.Renderers
             ObjectRenderers.Add(new Blocks.CodeBlockRenderer());
             ObjectRenderers.Add(new Blocks.HeadingRenderer());
             ObjectRenderers.Add(new Blocks.ListRenderer());
+            ObjectRenderers.Add(new Tables.TableRenderer());
         }
 
         private CustomizableTextContainer document;

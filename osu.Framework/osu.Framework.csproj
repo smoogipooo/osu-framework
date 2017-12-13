@@ -245,6 +245,7 @@
     <Compile Include="Graphics\UserInterface\Markdown\Renderers\Inlines\LiteralRenderer.cs" />
     <Compile Include="Graphics\UserInterface\Markdown\Renderers\MarkdownRenderer.cs" />
     <Compile Include="Graphics\UserInterface\Markdown\Renderers\ObjectRenderer.cs" />
+    <Compile Include="Graphics\UserInterface\Markdown\Renderers\Tables\TableRenderer.cs" />
     <Compile Include="Graphics\UserInterface\MenuItem.cs" />
     <Compile Include="Graphics\UserInterface\Menu.cs" />
     <Compile Include="Graphics\Shapes\EquilateralTriangle.cs" />

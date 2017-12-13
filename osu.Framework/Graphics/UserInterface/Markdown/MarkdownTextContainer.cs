@@ -1,7 +1,8 @@
 ﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using System.Reflection.Metadata;
+using Markdig;
+using Markdig.Extensions.Tables;
 using osu.Framework.Caching;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.UserInterface.Markdown.Renderers;
@@ -45,7 +46,9 @@ namespace osu.Framework.Graphics.UserInterface.Markdown
 
         private void layoutText()
         {
-            var document = (FillFlowContainer)Markdig.Markdown.Convert(text, new MarkdownRenderer());
+            var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+
+            var document = (FillFlowContainer)Markdig.Markdown.Convert(text, new MarkdownRenderer(), pipeline);
             document.RelativeSizeAxes = Axes.X;
             document.AutoSizeAxes = Axes.Y;
 
