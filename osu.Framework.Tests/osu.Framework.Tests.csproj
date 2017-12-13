@@ -68,7 +68,7 @@
     <Compile Include="Visual\TestCaseBlending.cs" />
     <Compile Include="Visual\TestCaseBufferedContainer.cs" />
     <Compile Include="Visual\TestCaseCheckboxes.cs" />
-	<Compile Include="Visual\TestCaseCircularContainer.cs" />
+    <Compile Include="Visual\TestCaseCircularContainer.cs" />
     <Compile Include="Visual\TestCaseCircularProgress.cs" />
     <Compile Include="Visual\TestCaseColourGradient.cs" />
     <Compile Include="Visual\TestCaseContainerState.cs" />
@@ -88,6 +88,7 @@
     <Compile Include="Visual\TestCaseInputResampler.cs" />
     <Compile Include="Visual\TestCaseKeyBindings.cs" />
     <Compile Include="Visual\TestCaseLocalisation.cs" />
+    <Compile Include="Visual\TestCaseMarkdownRenderer.cs" />
     <Compile Include="Visual\TestCaseMasking.cs" />
     <Compile Include="Visual\TestCaseNestedHover.cs" />
     <Compile Include="Visual\TestCaseNestedMenus.cs" />
