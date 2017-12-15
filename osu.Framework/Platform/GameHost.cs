@@ -282,60 +282,57 @@ namespace osu.Framework.Platform
                     {
                         Thread.Sleep(1);
                         continue;
-                        BufferedContainerDrawNode.ScreenSize = Root.DrawSize;
-
-                        if (depthPrePass)
-                        {
-                            int query2 = GL.GenQuery();
-                            OpenTK.Graphics.OpenGL4.GL.BeginQuery((OpenTK.Graphics.OpenGL4.QueryTarget)0x82F4, query2);
-
-                            using (drawMonitor.BeginCollecting(PerformanceCollectionType.DepthPass))
-                            {
-                                Shader.SetGlobalProperty("g_ForDepth", true);
-                                GLWrapper.PushDepthInfo(new DepthInfo
-                                {
-                                    DepthTest = true,
-                                    WriteDepth = true,
-                                    DepthTestFunction = DepthFunction.Less
-                                });
-
-                                buffer.Object.DrawDepth(null);
-
-                                Shader.SetGlobalProperty("g_ForDepth", false);
-                                GLWrapper.PopDepthInfo();
-                            }
-
-                            OpenTK.Graphics.OpenGL4.GL.EndQuery((OpenTK.Graphics.OpenGL4.QueryTarget)0x82F4);
-
-                            int numFragments2;
-                            OpenTK.Graphics.OpenGL4.GL.GetQueryObject(query2, OpenTK.Graphics.OpenGL4.GetQueryObjectParam.QueryResult, out numFragments2);
-
-                            FrameStatistics.Add(StatisticsCounterType.Depth, numFragments2);
-                        }
-
-                        int query = GL.GenQuery();
-                        OpenTK.Graphics.OpenGL4.GL.BeginQuery((OpenTK.Graphics.OpenGL4.QueryTarget)0x82F4, query);
-
-                        buffer.Object.Draw(null);
-
-                        OpenTK.Graphics.OpenGL4.GL.EndQuery((OpenTK.Graphics.OpenGL4.QueryTarget)0x82F4);
-
-                        int numFragments;
-                        OpenTK.Graphics.OpenGL4.GL.GetQueryObject(query, OpenTK.Graphics.OpenGL4.GetQueryObjectParam.QueryResult, out numFragments);
-
-                        FrameStatistics.Add(StatisticsCounterType.Draw, numFragments);
-
-                        lastDrawFrameId = buffer.FrameId;
-                        break;
                     }
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.GLReset))
                     {
                         GLWrapper.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
-                        GLWrapper.ClearColour(Color4.Black);
+                        GLWrapper.Clear(Color4.Black, 1);
                     }
 
+                    BufferedContainerDrawNode.ScreenSize = Root.DrawSize;
+
+                    if (depthPrePass)
+                    {
+                        int query2 = GL.GenQuery();
+                        OpenTK.Graphics.OpenGL4.GL.BeginQuery((OpenTK.Graphics.OpenGL4.QueryTarget)0x82F4, query2);
+
+                        using (drawMonitor.BeginCollecting(PerformanceCollectionType.DepthPass))
+                        {
+                            Shader.SetGlobalProperty("g_ForDepth", true);
+                            GLWrapper.PushDepthInfo(new DepthInfo
+                            {
+                                DepthTest = true,
+                                WriteDepth = true,
+                                DepthTestFunction = DepthFunction.Less
+                            });
+
+                            buffer.Object.DrawDepth(null);
+
+                            Shader.SetGlobalProperty("g_ForDepth", false);
+                            GLWrapper.PopDepthInfo();
+                        }
+
+                        OpenTK.Graphics.OpenGL4.GL.EndQuery((OpenTK.Graphics.OpenGL4.QueryTarget)0x82F4);
+
+                        int numFragments2;
+                        OpenTK.Graphics.OpenGL4.GL.GetQueryObject(query2, OpenTK.Graphics.OpenGL4.GetQueryObjectParam.QueryResult, out numFragments2);
+
+                        FrameStatistics.Add(StatisticsCounterType.Depth, numFragments2);
+                    }
+
+                    int query = GL.GenQuery();
+                    OpenTK.Graphics.OpenGL4.GL.BeginQuery((OpenTK.Graphics.OpenGL4.QueryTarget)0x82F4, query);
+
                     buffer.Object.Draw(null);
+
+                    OpenTK.Graphics.OpenGL4.GL.EndQuery((OpenTK.Graphics.OpenGL4.QueryTarget)0x82F4);
+
+                    int numFragments;
+                    OpenTK.Graphics.OpenGL4.GL.GetQueryObject(query, OpenTK.Graphics.OpenGL4.GetQueryObjectParam.QueryResult, out numFragments);
+
+                    FrameStatistics.Add(StatisticsCounterType.Draw, numFragments);
+
                     lastDrawFrameId = buffer.FrameId;
                     break;
                 }
