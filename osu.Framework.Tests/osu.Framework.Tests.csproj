@@ -131,5 +131,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\Textures\sample-texture.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Articles\*.md" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
