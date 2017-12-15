@@ -21,12 +21,14 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Input;
+using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
+using osu.Framework.IO.File;
 
 namespace osu.Framework.Platform
 {
@@ -79,7 +81,9 @@ namespace osu.Framework.Platform
 
         public virtual Clipboard GetClipboard() => null;
 
-        public virtual Storage Storage { get; protected set; }
+        protected abstract Storage GetStorage(string baseName);
+
+        public Storage Storage { get; protected set; }
 
         /// <summary>
         /// If capslock is enabled on the system, false if not overwritten by a subclass
@@ -150,7 +154,11 @@ namespace osu.Framework.Platform
 
             AppDomain.CurrentDomain.UnhandledException += exceptionHandler;
 
+            FileSafety.DeleteCleanupDirectory();
+
             Dependencies.Cache(this);
+            Dependencies.Cache(Storage = GetStorage(gameName));
+
             Name = gameName;
             Logger.GameIdentifier = gameName;
 
@@ -266,18 +274,14 @@ namespace osu.Framework.Platform
             if (Root == null)
                 return;
 
-            using (drawMonitor.BeginCollecting(PerformanceCollectionType.GLReset))
-            {
-                GLWrapper.Reset(Root.DrawSize);
-                GLWrapper.Clear(Color4.Black, 1);
-            }
-
             while (!exitInitiated)
             {
                 using (var buffer = DrawRoots.Get(UsageType.Read))
                 {
-                    if (buffer?.Object != null && buffer.FrameId != lastDrawFrameId)
+                    if (buffer?.Object == null || buffer.FrameId == lastDrawFrameId)
                     {
+                        Thread.Sleep(1);
+                        continue;
                         BufferedContainerDrawNode.ScreenSize = Root.DrawSize;
 
                         if (depthPrePass)
@@ -324,9 +328,17 @@ namespace osu.Framework.Platform
                         lastDrawFrameId = buffer.FrameId;
                         break;
                     }
-                }
 
-                Thread.Sleep(1);
+                    using (drawMonitor.BeginCollecting(PerformanceCollectionType.GLReset))
+                    {
+                        GLWrapper.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+                        GLWrapper.ClearColour(Color4.Black);
+                    }
+
+                    buffer.Object.Draw(null);
+                    lastDrawFrameId = buffer.FrameId;
+                    break;
+                }
             }
 
             GLWrapper.FlushCurrentBatch();
@@ -443,7 +455,16 @@ namespace osu.Framework.Platform
 
         private void bootstrapSceneGraph(Game game)
         {
-            var root = new UserInputManager { Child = game };
+            var root = new UserInputManager
+            {
+                Child = new PlatformActionContainer
+                {
+                    Child = new FrameworkActionContainer
+                    {
+                        Child = game
+                    }
+                }
+            };
 
             Dependencies.Cache(root);
             Dependencies.Cache(game);
@@ -603,6 +624,11 @@ namespace osu.Framework.Platform
             isDisposed = true;
             stopAllThreads();
             Root?.Dispose();
+
+            config?.Dispose();
+            debugConfig?.Dispose();
+
+            Logger.Flush();
         }
 
         ~GameHost()
@@ -617,5 +643,33 @@ namespace osu.Framework.Platform
         }
 
         #endregion
+
+        /// <summary>
+        /// Defines the platform-specific key bindings that will be used by <see cref="PlatformActionContainer"/>.
+        /// Should be overridden per-platform to provide native key bindings.
+        /// </summary>
+        public virtual IEnumerable<KeyBinding> PlatformKeyBindings => new[]
+        {
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.X }), new PlatformAction(PlatformActionType.Cut)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.C }), new PlatformAction(PlatformActionType.Copy)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.V }), new PlatformAction(PlatformActionType.Paste)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.A }), new PlatformAction(PlatformActionType.SelectAll)),
+            new KeyBinding(InputKey.Left, new PlatformAction(PlatformActionType.CharPrevious, PlatformActionMethod.Move)),
+            new KeyBinding(InputKey.Right, new PlatformAction(PlatformActionType.CharNext, PlatformActionMethod.Move)),
+            new KeyBinding(InputKey.BackSpace, new PlatformAction(PlatformActionType.CharPrevious, PlatformActionMethod.Delete)),
+            new KeyBinding(InputKey.Delete, new PlatformAction(PlatformActionType.CharNext, PlatformActionMethod.Delete)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Shift, InputKey.Left }), new PlatformAction(PlatformActionType.CharPrevious, PlatformActionMethod.Select)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Shift, InputKey.Right }), new PlatformAction(PlatformActionType.CharNext, PlatformActionMethod.Select)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.Left }), new PlatformAction(PlatformActionType.WordPrevious, PlatformActionMethod.Move)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.Right }), new PlatformAction(PlatformActionType.WordNext, PlatformActionMethod.Move)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.BackSpace }), new PlatformAction(PlatformActionType.WordPrevious, PlatformActionMethod.Delete)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.Delete }), new PlatformAction(PlatformActionType.WordNext, PlatformActionMethod.Delete)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.Shift, InputKey.Left }), new PlatformAction(PlatformActionType.WordPrevious, PlatformActionMethod.Select)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Control, InputKey.Shift, InputKey.Right }), new PlatformAction(PlatformActionType.WordNext, PlatformActionMethod.Select)),
+            new KeyBinding(InputKey.Home, new PlatformAction(PlatformActionType.LineStart, PlatformActionMethod.Move)),
+            new KeyBinding(InputKey.End, new PlatformAction(PlatformActionType.LineEnd, PlatformActionMethod.Move)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Shift, InputKey.Home }), new PlatformAction(PlatformActionType.LineStart, PlatformActionMethod.Select)),
+            new KeyBinding(new KeyCombination(new[] { InputKey.Shift, InputKey.End }), new PlatformAction(PlatformActionType.LineEnd, PlatformActionMethod.Select)),
+        };
     }
 }

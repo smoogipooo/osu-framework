@@ -5,8 +5,6 @@ using System;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Input;
-using OpenTK.Input;
 
 namespace osu.Framework.Screens
 {
@@ -114,26 +112,15 @@ namespace osu.Framework.Screens
                 OnEntering(null);
         }
 
-        protected override bool OnKeyDown(InputState state, KeyDownEventArgs args)
-        {
-            if (args.Repeat || !IsCurrentScreen) return false;
-
-            switch (args.Key)
-            {
-                case Key.Escape:
-                    Exit();
-                    return true;
-            }
-
-            return base.OnKeyDown(state, args);
-        }
-
         /// <summary>
         /// Changes to a new Screen.
         /// </summary>
         /// <param name="screen">The new Screen.</param>
         public virtual bool Push(Screen screen)
         {
+            if (!IsCurrentScreen)
+                throw new InvalidOperationException("Cannot push a child screen to a non-current screen");
+
             if (ChildScreen != null)
                 throw new InvalidOperationException("Can not push more than one child screen.");
 

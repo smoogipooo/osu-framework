@@ -83,13 +83,19 @@ namespace osu.Framework.Graphics.UserInterface
         /// Remove a menu item directly.
         /// </summary>
         /// <param name="value">Value of the menu item to be removed.</param>
-        public void RemoveDropdownItem(T value)
+        public bool RemoveDropdownItem(T value)
         {
-            if (!itemMap.ContainsKey(value))
-                throw new ArgumentException($"The item {value} does not exist in this {nameof(Dropdown<T>)}.");
+            if (value == null)
+                return false;
 
-            Menu.Remove(itemMap[value]);
+            DropdownMenuItem<T> item;
+            if (!itemMap.TryGetValue(value, out item))
+                return false;
+
+            Menu.Remove(item);
             itemMap.Remove(value);
+
+            return true;
         }
 
         public Bindable<T> Current { get; } = new Bindable<T>();
@@ -138,13 +144,12 @@ namespace osu.Framework.Graphics.UserInterface
             if ((SelectedItem == null || !EqualityComparer<T>.Default.Equals(SelectedItem.Value, newSelection))
                 && newSelection != null)
             {
-                itemMap.TryGetValue(newSelection, out selectedItem);
+                if (!itemMap.TryGetValue(newSelection, out selectedItem))
+                    throw new InvalidOperationException($"Attempted to update dropdown to a value which wasn't contained as an item ({newSelection}).");
             }
 
-            Menu.SelectItem(SelectedItem);
-
-            if (SelectedItem != null)
-                Header.Label = SelectedItem.Text;
+            Menu.SelectItem(selectedItem);
+            Header.Label = selectedItem.Text;
         }
 
         /// <summary>
@@ -227,10 +232,17 @@ namespace osu.Framework.Graphics.UserInterface
             /// </summary>
             public bool AnyPresent => Children.Any(c => c.IsPresent);
 
+            protected override DrawableMenuItem CreateDrawableMenuItem(MenuItem item) => new DrawableDropdownMenuItem(item);
+
             #region DrawableDropdownMenuItem
             // must be public due to mono bug(?) https://github.com/ppy/osu/issues/1204
             public class DrawableDropdownMenuItem : DrawableMenuItem
             {
+                public DrawableDropdownMenuItem(MenuItem item)
+                    : base(item)
+                {
+                }
+
                 private bool selected;
                 public bool IsSelected
                 {
@@ -268,11 +280,6 @@ namespace osu.Framework.Graphics.UserInterface
                         foregroundColourSelected = value;
                         UpdateForegroundColour();
                     }
-                }
-
-                public DrawableDropdownMenuItem(MenuItem item)
-                    : base(item)
-                {
                 }
 
                 protected virtual void OnSelectChange()

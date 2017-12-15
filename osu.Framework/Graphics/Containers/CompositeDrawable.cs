@@ -19,6 +19,7 @@ using osu.Framework.Caching;
 using osu.Framework.Threading;
 using osu.Framework.Statistics;
 using System.Threading.Tasks;
+using osu.Framework.MathUtils;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -47,6 +48,9 @@ namespace osu.Framework.Graphics.Containers
         /// <summary>
         /// Loads a future child or grand-child of this <see cref="CompositeDrawable"/> asyncronously. <see cref="Drawable.Dependencies"/>
         /// and <see cref="Drawable.Clock"/> are inherited from this <see cref="CompositeDrawable"/>.
+        ///
+        /// Note that this will always use the dependencies and clock from this instance. If you must load to a nested container level,
+        /// consider using <see cref="DelayedLoadWrapper"/>
         /// </summary>
         /// <typeparam name="TLoadable">The type of the future future child or grand-child to be loaded.</typeparam>
         /// <param name="component">The type of the future future child or grand-child to be loaded.</param>
@@ -103,6 +107,16 @@ namespace osu.Framework.Graphics.Containers
         #endregion
 
         #region Children management
+
+        /// <summary>
+        /// Invoked when a child has entered <see cref="AliveInternalChildren"/>.
+        /// </summary>
+        internal event Action<Drawable> ChildBecameAlive;
+
+        /// <summary>
+        /// Invoked when a child has left <see cref="AliveInternalChildren"/>.
+        /// </summary>
+        internal event Action<Drawable> ChildDied;
 
         /// <summary>
         /// Gets or sets the only child in <see cref="InternalChildren"/>.
@@ -222,13 +236,13 @@ namespace osu.Framework.Graphics.Containers
 
             internalChildren.RemoveAt(index);
             if (drawable.IsAlive)
-                aliveInternalChildren.Remove(drawable);
-
-            if (drawable.LoadState >= LoadState.Ready)
             {
-                // The string construction is quite expensive, so we are using Debug.Assert here.
-                Debug.Assert(drawable.Parent == this, $@"Removed a drawable ({drawable}) whose parent was not this ({this}), but {drawable.Parent}.");
+                aliveInternalChildren.Remove(drawable);
+                ChildDied?.Invoke(drawable);
             }
+
+            if (drawable.LoadState >= LoadState.Ready && drawable.Parent != this)
+                throw new InvalidOperationException($@"Removed a drawable ({drawable}) whose parent was not this ({this}), but {drawable.Parent}.");
 
             drawable.Parent = null;
             drawable.IsAlive = false;
@@ -250,6 +264,9 @@ namespace osu.Framework.Graphics.Containers
         {
             foreach (Drawable t in internalChildren)
             {
+                if (t.IsAlive)
+                    ChildDied?.Invoke(t);
+
                 t.IsAlive = false;
 
                 if (disposeChildren)
@@ -293,6 +310,7 @@ namespace osu.Framework.Graphics.Containers
                 throw new InvalidOperationException("May not add a drawable to multiple containers.");
 
             drawable.ChildID = ++currentChildID;
+            drawable.RemoveCompletedTransforms = RemoveCompletedTransforms;
 
             if (drawable.LoadState >= LoadState.Ready)
                 drawable.Parent = this;
@@ -324,12 +342,23 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="newDepth">The new depth value to be set.</param>
         protected internal void ChangeInternalChildDepth(Drawable child, float newDepth)
         {
-            if (!ContainsInternal(child))
+            var index = IndexOfInternal(child);
+            if (index < 0)
                 throw new InvalidOperationException($"Can not change depth of drawable which is not contained within this {nameof(CompositeDrawable)}.");
 
-            RemoveInternal(child);
+            internalChildren.RemoveAt(index);
+            var aliveIndex = aliveInternalChildren.IndexOf(child);
+            if (aliveIndex >= 0) // remove if found
+                aliveInternalChildren.RemoveAt(aliveIndex);
+
+            var chId = child.ChildID;
+            child.ChildID = 0; // ensure Depth-change does not throw an exception
             child.Depth = newDepth;
-            AddInternal(child);
+            child.ChildID = chId;
+
+            internalChildren.Add(child);
+            if (aliveIndex >= 0) // re-add if it used to be in aliveInternalChildren
+                aliveInternalChildren.Add(child);
         }
 
         #endregion
@@ -386,6 +415,7 @@ namespace osu.Framework.Graphics.Containers
                     if (child.LoadState >= LoadState.Ready)
                     {
                         aliveInternalChildren.Add(child);
+                        ChildBecameAlive?.Invoke(child);
                         child.IsAlive = true;
                         changed = true;
                     }
@@ -396,6 +426,7 @@ namespace osu.Framework.Graphics.Containers
                 if (child.IsAlive)
                 {
                     aliveInternalChildren.Remove(child);
+                    ChildDied?.Invoke(child);
                     child.IsAlive = false;
                     changed = true;
                 }
@@ -458,17 +489,27 @@ namespace osu.Framework.Graphics.Containers
                 int amountScheduledTasks = schedulerAfterChildren.Update();
                 FrameStatistics.Add(StatisticsCounterType.ScheduleInvk, amountScheduledTasks);
             }
+
             UpdateAfterChildren();
 
             updateChildrenSizeDependencies();
+            UpdateAfterAutoSize();
             return true;
         }
 
         /// <summary>
         /// An opportunity to update state once-per-frame after <see cref="Drawable.Update"/> has been called
         /// for all <see cref="InternalChildren"/>.
+        /// This is invoked prior to any autosize calculations of this <see cref="CompositeDrawable"/>.
         /// </summary>
         protected virtual void UpdateAfterChildren()
+        {
+        }
+
+        /// <summary>
+        /// Invoked after all autosize calculations have taken place.
+        /// </summary>
+        protected virtual void UpdateAfterAutoSize()
         {
         }
 
@@ -674,13 +715,46 @@ namespace osu.Framework.Graphics.Containers
 
         #region Transforms
 
-        public override void ClearTransforms(bool propagateChildren = false, string targetMember = null)
+        /// <summary>
+        /// Whether to remove completed transforms from the list of applicable transforms. Setting this to false allows for rewinding transforms.
+        /// <para>
+        /// This value is passed down to children.
+        /// </para>
+        /// </summary>
+        public override bool RemoveCompletedTransforms
         {
-            base.ClearTransforms(propagateChildren, targetMember);
+            get { return base.RemoveCompletedTransforms; }
+            internal set
+            {
+                if (base.RemoveCompletedTransforms == value)
+                    return;
+                base.RemoveCompletedTransforms = value;
 
-            if (propagateChildren)
                 foreach (var c in internalChildren)
-                    c.ClearTransforms(true, targetMember);
+                    c.RemoveCompletedTransforms = RemoveCompletedTransforms;
+            }
+        }
+
+        public override void ApplyTransformsAt(double time, bool propagateChildren = false)
+        {
+            base.ApplyTransformsAt(time, propagateChildren);
+
+            if (!propagateChildren)
+                return;
+
+            foreach (var c in internalChildren)
+                c.ApplyTransformsAt(time, true);
+        }
+
+        public override void ClearTransformsAfter(double time, bool propagateChildren = false, string targetMember = null)
+        {
+            base.ClearTransformsAfter(time, propagateChildren, targetMember);
+
+            if (!propagateChildren)
+                return;
+
+            foreach (var c in internalChildren)
+                c.ClearTransformsAfter(time, true, targetMember);
         }
 
         internal override void AddDelay(double duration, bool propagateChildren = false)
@@ -966,6 +1040,8 @@ namespace osu.Framework.Graphics.Containers
             {
                 if (padding.Equals(value)) return;
 
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Padding)} must be finite, but is {value}.");
+
                 padding = value;
 
                 foreach (Drawable c in internalChildren)
@@ -998,6 +1074,10 @@ namespace osu.Framework.Graphics.Containers
             {
                 if (relativeChildSize == value)
                     return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(RelativeChildSize)} must be finite, but is {value}.");
+                if (value.X == 0 || value.Y == 0) throw new ArgumentException($@"{nameof(RelativeChildSize)} must be non-zero, but is {value}.");
+
                 relativeChildSize = value;
 
                 foreach (Drawable c in internalChildren)
@@ -1018,6 +1098,9 @@ namespace osu.Framework.Graphics.Containers
             {
                 if (relativeChildOffset == value)
                     return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(RelativeChildOffset)} must be finite, but is {value}.");
+
                 relativeChildOffset = value;
 
                 foreach (Drawable c in internalChildren)
@@ -1070,7 +1153,7 @@ namespace osu.Framework.Graphics.Containers
         /// It is not allowed to manually set <see cref="Size"/> (or <see cref="Width"/> / <see cref="Height"/>)
         /// on any <see cref="Axes"/> which are automatically sized.
         /// </summary>
-        public Axes AutoSizeAxes
+        public virtual Axes AutoSizeAxes
         {
             get { return autoSizeAxes; }
             protected set

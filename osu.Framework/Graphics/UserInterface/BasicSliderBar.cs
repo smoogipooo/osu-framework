@@ -26,10 +26,21 @@ namespace osu.Framework.Graphics.UserInterface
 
         public BasicSliderBar()
         {
+            CornerRadius = 4;
+            Masking = true;
+
             Children = new Drawable[]
             {
-                Box = new Box { RelativeSizeAxes = Axes.Both },
-                SelectionBox = new Box { RelativeSizeAxes = Axes.Both }
+                Box = new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = Color4.DarkMagenta,
+                },
+                SelectionBox = new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = Color4.White,
+                }
             };
         }
 

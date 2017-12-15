@@ -6,7 +6,6 @@ using OpenTK.Graphics;
 using OpenTK.Input;
 using osu.Framework.Allocation;
 using osu.Framework.Caching;
-using osu.Framework.DebugUtils;
 using osu.Framework.Extensions;
 using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics.Colour;
@@ -20,10 +19,13 @@ using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using osu.Framework.Development;
 using osu.Framework.MathUtils;
 
 namespace osu.Framework.Graphics
@@ -43,6 +45,11 @@ namespace osu.Framework.Graphics
     public abstract class Drawable : Transformable, IDisposable, IDrawable
     {
         #region Construction and disposal
+
+        protected Drawable()
+        {
+            handleInput = HandleInputCache.Get(this);
+        }
 
         ~Drawable()
         {
@@ -135,12 +142,13 @@ namespace osu.Framework.Graphics
 
             loadState = LoadState.Loading;
 
-            return loadTask = Task.Run(() => Load(target.Clock, target.Dependencies)).ContinueWith(task => game.Schedule(() =>
-            {
-                task.ThrowIfFaulted();
-                onLoaded?.Invoke();
-                loadTask = null;
-            }));
+            return loadTask = Task.Factory.StartNew(() => Load(target.Clock, target.Dependencies), TaskCreationOptions.LongRunning)
+                                  .ContinueWith(task => game.Schedule(() =>
+                                  {
+                                      task.ThrowIfFaulted(typeof(RecursiveLoadException));
+                                      onLoaded?.Invoke();
+                                      loadTask = null;
+                                  }));
         }
 
         private static readonly StopwatchClock perf = new StopwatchClock(true);
@@ -167,8 +175,13 @@ namespace osu.Framework.Graphics
         internal void Load(IFrameBasedClock clock, IReadOnlyDependencyContainer dependencies)
         {
             // Blocks when loading from another thread already.
+            double t0 = perf.CurrentTime;
             lock (loadLock)
             {
+                double lockDuration = perf.CurrentTime - t0;
+                if (perf.CurrentTime > 1000 && lockDuration > 50 && ThreadSafety.IsUpdateThread)
+                    Logger.Log($@"Drawable [{ToString()}] load was blocked for {lockDuration:0.00}ms!", LoggingTarget.Performance);
+
                 switch (loadState)
                 {
                     case LoadState.Ready:
@@ -193,9 +206,9 @@ namespace osu.Framework.Graphics
 
                 Dependencies.Inject(this);
 
-                double elapsed = perf.CurrentTime - t1;
-                if (perf.CurrentTime > 1000 && elapsed > 50 && ThreadSafety.IsUpdateThread)
-                    Logger.Log($@"Drawable [{ToString()}] took {elapsed:0.00}ms to load and was not async!", LoggingTarget.Performance);
+                double loadDuration = perf.CurrentTime - t1;
+                if (perf.CurrentTime > 1000 && loadDuration > 50 && ThreadSafety.IsUpdateThread)
+                    Logger.Log($@"Drawable [{ToString()}] took {loadDuration:0.00}ms to load and was not async!", LoggingTarget.Performance);
                 loadState = LoadState.Ready;
             }
         }
@@ -314,7 +327,7 @@ namespace osu.Framework.Graphics
             if (isDisposed)
                 throw new ObjectDisposedException(ToString(), "Disposed Drawables may never be in the scene graph.");
 
-            if (Parent != null) //we don't want to update our clock if we are at the top of the stack. it's handled elsewhere for us.
+            if (ShouldProcessClock)
                 customClock?.ProcessFrame();
 
             if (loadState < LoadState.Ready)
@@ -376,6 +389,9 @@ namespace osu.Framework.Graphics
             set
             {
                 if (position == value) return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Position)} must be finite, but is {value}.");
+
                 position = value;
 
                 Invalidate(Invalidation.MiscGeometry);
@@ -394,6 +410,9 @@ namespace osu.Framework.Graphics
             set
             {
                 if (x == value) return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(X)} must be finite, but is {value}.");
+
                 x = value;
 
                 Invalidate(Invalidation.MiscGeometry);
@@ -409,6 +428,9 @@ namespace osu.Framework.Graphics
             set
             {
                 if (y == value) return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Y)} must be finite, but is {value}.");
+
                 y = value;
 
                 Invalidate(Invalidation.MiscGeometry);
@@ -444,7 +466,7 @@ namespace osu.Framework.Graphics
 
                 if ((value & Axes.Y) > (relativePositionAxes & Axes.Y))
                     Y = conversion.Y == 0 ? 0 : Y / conversion.Y;
-                else if ((relativePositionAxes & Axes.X) > (value & Axes.X))
+                else if ((relativePositionAxes & Axes.Y) > (value & Axes.Y))
                     Y *= conversion.Y;
 
                 relativePositionAxes = value;
@@ -498,6 +520,9 @@ namespace osu.Framework.Graphics
             set
             {
                 if (size == value) return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Size)} must be finite, but is {value}.");
+
                 size = value;
 
                 Invalidate(Invalidation.DrawSize);
@@ -516,6 +541,9 @@ namespace osu.Framework.Graphics
             set
             {
                 if (width == value) return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Width)} must be finite, but is {value}.");
+
                 width = value;
 
                 Invalidate(Invalidation.DrawSize);
@@ -531,6 +559,9 @@ namespace osu.Framework.Graphics
             set
             {
                 if (height == value) return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Height)} must be finite, but is {value}.");
+
                 height = value;
 
                 Invalidate(Invalidation.DrawSize);
@@ -618,6 +649,8 @@ namespace osu.Framework.Graphics
             set
             {
                 if (margin.Equals(value)) return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Margin)} must be finite, but is {value}.");
 
                 margin = value;
 
@@ -751,6 +784,9 @@ namespace osu.Framework.Graphics
 
                 if (scale == value)
                     return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Scale)} must be finite, but is {value}.");
+
                 scale = value;
 
                 Invalidate(Invalidation.MiscGeometry);
@@ -770,6 +806,10 @@ namespace osu.Framework.Graphics
             set
             {
                 if (fillAspectRatio == value) return;
+
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(FillAspectRatio)} must be finite, but is {value}.");
+                if (value == 0) throw new ArgumentException($@"{nameof(FillAspectRatio)} must be non-zero.");
+
                 fillAspectRatio = value;
 
                 if (fillMode != FillMode.Stretch && RelativeSizeAxes == Axes.Both)
@@ -816,6 +856,8 @@ namespace osu.Framework.Graphics
             set
             {
                 if (shear == value) return;
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Shear)} must be finite, but is {value}.");
+
                 shear = value;
 
                 Invalidate(Invalidation.MiscGeometry);
@@ -834,6 +876,8 @@ namespace osu.Framework.Graphics
             set
             {
                 if (value == rotation) return;
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(Rotation)} must be finite, but is {value}.");
+
                 rotation = value;
 
                 Invalidate(Invalidation.MiscGeometry);
@@ -919,6 +963,8 @@ namespace osu.Framework.Graphics
 
             set
             {
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(OriginPosition)} must be finite, but is {value}.");
+
                 customOrigin = value;
                 Origin = Anchor.Custom;
             }
@@ -983,6 +1029,8 @@ namespace osu.Framework.Graphics
 
             set
             {
+                if (!Validation.IsFinite(value)) throw new ArgumentException($@"{nameof(RelativeAnchorPosition)} must be finite, but is {value}.");
+
                 customRelativeAnchorPosition = value;
                 Anchor = Anchor.Custom;
             }
@@ -1147,6 +1195,12 @@ namespace osu.Framework.Graphics
         }
 
         /// <summary>
+        /// Whether <see cref="IFrameBasedClock.ProcessFrame"/> should be automatically invoked on this <see cref="Drawable"/>'s <see cref="Clock"/>
+        /// in <see cref="UpdateSubTree"/>. This should only be used in scenarios where <see cref="UpdateSubTree"/> is overridden to perform the functionality itself.
+        /// </summary>
+        protected virtual bool ShouldProcessClock => Parent != null; //we don't want to update our clock if we are at the top of the stack. it's handled elsewhere for us.
+
+        /// <summary>
         /// The time at which this drawable becomes valid (and is considered for drawing).
         /// </summary>
         public virtual double LifetimeStart { get; set; } = double.MinValue;
@@ -1277,7 +1331,6 @@ namespace osu.Framework.Graphics
         /// The screen-space quad this drawable occupies.
         /// </summary>
         public virtual Quad ScreenSpaceDrawQuad => screenSpaceDrawQuadBacking.IsValid ? screenSpaceDrawQuadBacking : (screenSpaceDrawQuadBacking.Value = ComputeScreenSpaceDrawQuad());
-
 
         private Cached<DrawInfo> drawInfoBacking;
 
@@ -1798,10 +1851,63 @@ namespace osu.Framework.Graphics
         /// is propagated up the scene graph to the next eligible Drawable.</returns>
         protected virtual bool OnMouseMove(InputState state) => false;
 
+        private readonly bool handleInput;
         /// <summary>
-        /// This drawable only receives input events if HandleInput is true.
+        /// Whether this <see cref="Drawable"/> handles input.
+        /// This value is true by default if any "On-" input methods are overridden.
         /// </summary>
-        public virtual bool HandleInput => false;
+        public virtual bool HandleInput => handleInput;
+
+        /// <summary>
+        /// Nested class which is used for caching <see cref="HandleInput"/> values obtained via reflection.
+        /// </summary>
+        private static class HandleInputCache
+        {
+            private static readonly ConcurrentDictionary<Type, bool> cached_values = new ConcurrentDictionary<Type, bool>();
+
+            private static string[] inputMethods => new[]
+            {
+                nameof(OnHover),
+                nameof(OnHoverLost),
+                nameof(OnMouseDown),
+                nameof(OnMouseUp),
+                nameof(OnClick),
+                nameof(OnDoubleClick),
+                nameof(OnDragStart),
+                nameof(OnDrag),
+                nameof(OnDragEnd),
+                nameof(OnWheel),
+                nameof(OnFocus),
+                nameof(OnFocusLost),
+                nameof(OnKeyDown),
+                nameof(OnKeyUp),
+                nameof(OnMouseMove),
+            };
+
+            public static bool Get(Drawable drawable)
+            {
+                var type = drawable.GetType();
+                if (cached_values.TryGetValue(type, out var value))
+                    return value;
+
+                foreach (var inputMethod in inputMethods)
+                {
+                    // check for any input method overrides which are at a higher level than drawable.
+                    var method = type.GetMethod(inputMethod, BindingFlags.Instance | BindingFlags.NonPublic);
+
+                    Debug.Assert(method != null);
+
+                    if (method.DeclaringType != typeof(Drawable))
+                    {
+                        cached_values.TryAdd(type, true);
+                        return true;
+                    }
+                }
+
+                cached_values.TryAdd(type, false);
+                return false;
+            }
+        }
 
         /// <summary>
         /// Check whether we have active focus.
@@ -1960,11 +2066,7 @@ namespace osu.Framework.Graphics
                 return;
             }
 
-            //expiry should happen either at the end of the last transform or using the current sequence delay (whichever is highest).
-            double max = TransformStartTime;
-            foreach (Transform t in Transforms)
-                if (t.EndTime > max) max = t.EndTime + 1; //adding 1ms here ensures we can expire on the current frame without issue.
-            LifetimeEnd = max;
+            LifetimeEnd = LatestTransformEndTime;
 
             if (calculateLifetimeStart)
             {

@@ -252,11 +252,11 @@ namespace osu.Framework.Graphics.UserInterface
         public virtual void Add(MenuItem item)
         {
             var drawableItem = CreateDrawableMenuItem(item);
-            drawableItem.AutoSizeAxes = ItemsContainer.AutoSizeAxes;
-            drawableItem.RelativeSizeAxes = ItemsContainer.RelativeSizeAxes;
             drawableItem.Clicked = menuItemClicked;
             drawableItem.Hovered = menuItemHovered;
             drawableItem.StateChanged += s => itemStateChanged(drawableItem, s);
+
+            drawableItem.SetFlowDirection(Direction);
 
             ItemsContainer.Add(drawableItem);
         }
@@ -417,9 +417,9 @@ namespace osu.Framework.Graphics.UserInterface
             submenu.triggeringItem = item.Item;
 
             submenu.Items = item.Item.Items;
-            submenu.Position = new Vector2(
-                Direction == Direction.Vertical ? Width : item.X,
-                Direction == Direction.Horizontal ? Height : item.Y);
+            submenu.Position = item.ToSpaceOfOtherDrawable(new Vector2(
+                Direction == Direction.Vertical ? item.DrawWidth : 0,
+                Direction == Direction.Horizontal ? item.DrawHeight : 0), this);
 
             if (item.Item.Items.Count > 0)
             {
@@ -468,11 +468,10 @@ namespace osu.Framework.Graphics.UserInterface
 
         protected override bool OnKeyDown(InputState state, KeyDownEventArgs args)
         {
-            switch (args.Key)
+            if (args.Key == Key.Escape && !TopLevelMenu)
             {
-                case Key.Escape:
-                    Close();
-                    return true;
+                Close();
+                return true;
             }
 
             return base.OnKeyDown(state, args);
@@ -581,7 +580,11 @@ namespace osu.Framework.Graphics.UserInterface
                 InternalChildren = new[]
                 {
                     Background = CreateBackground(),
-                    Foreground = new Container { Child = Content = CreateContent() },
+                    Foreground = new Container
+                    {
+                        AutoSizeAxes = Axes.Both,
+                        Child = Content = CreateContent()
+                    },
                 };
 
                 var textContent = Content as IHasText;
@@ -590,6 +593,17 @@ namespace osu.Framework.Graphics.UserInterface
                     textContent.Text = item.Text;
                     Item.Text.ValueChanged += newText => textContent.Text = newText;
                 }
+            }
+
+            /// <summary>
+            /// Sets various properties of this <see cref="DrawableMenuItem"/> that depend on the direction in which
+            /// <see cref="DrawableMenuItem"/>s flow inside the containing <see cref="Menu"/> (e.g. sizing axes).
+            /// </summary>
+            /// <param name="direction">The direction in which <see cref="DrawableMenuItem"/>s will be flowed.</param>
+            public virtual void SetFlowDirection(Direction direction)
+            {
+                RelativeSizeAxes = direction == Direction.Horizontal ? Axes.Y : Axes.X;
+                AutoSizeAxes = direction == Direction.Horizontal ? Axes.X : Axes.Y;
             }
 
             private Color4 backgroundColour = Color4.DarkSlateGray;
@@ -645,26 +659,6 @@ namespace osu.Framework.Graphics.UserInterface
                 {
                     foregroundColourHover = value;
                     UpdateForegroundColour();
-                }
-            }
-
-            public override Axes RelativeSizeAxes
-            {
-                get { return base.RelativeSizeAxes; }
-                set
-                {
-                    base.RelativeSizeAxes = value;
-                    Foreground.RelativeSizeAxes = value;
-                }
-            }
-
-            public new Axes AutoSizeAxes
-            {
-                get { return base.AutoSizeAxes; }
-                set
-                {
-                    base.AutoSizeAxes = value;
-                    Foreground.AutoSizeAxes = value;
                 }
             }
 

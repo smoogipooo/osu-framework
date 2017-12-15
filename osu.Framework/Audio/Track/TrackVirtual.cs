@@ -21,7 +21,14 @@ namespace osu.Framework.Audio.Track
             double current = CurrentTime;
 
             seekOffset = seek;
-            lock (clock) clock.Restart();
+
+            lock (clock)
+            {
+                if (IsRunning)
+                    clock.Restart();
+                else
+                    clock.Reset();
+            }
 
             if (Length > 0 && seekOffset > Length)
                 seekOffset = Length;
@@ -55,14 +62,6 @@ namespace osu.Framework.Audio.Track
             }
         }
 
-        public override bool HasCompleted
-        {
-            get
-            {
-                lock (clock) return base.HasCompleted || IsLoaded && !IsRunning && CurrentTime >= Length;
-            }
-        }
-
         public override double CurrentTime
         {
             get
@@ -71,9 +70,9 @@ namespace osu.Framework.Audio.Track
             }
         }
 
-        public override void Update()
+        protected override void UpdateState()
         {
-            base.Update();
+            base.UpdateState();
 
             lock (clock)
             {

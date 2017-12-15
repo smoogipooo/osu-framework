@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <Import Project="..\osu.Framework.props" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -25,7 +25,6 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -38,52 +37,117 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cyotek.Drawing.BitmapFont, Version=1.0.0.0, Culture=neutral, PublicKeyToken=58daa28b0b2de221, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\Cyotek.Drawing.BitmapFont.1.3.3\lib\net20\Cyotek.Drawing.BitmapFont.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Cyotek.Drawing.BitmapFont, Version=1.0.0.0, Culture=neutral, PublicKeyToken=58daa28b0b2de221">
+      <HintPath>$(SolutionDir)\packages\Cyotek.Drawing.BitmapFont.1.3.4-beta1\lib\net46\Cyotek.Drawing.BitmapFont.dll</HintPath>
     </Reference>
     <Reference Include="ManagedBass, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\ManagedBass.2.0.1\lib\net45\ManagedBass.dll</HintPath>
+      <HintPath>$(SolutionDir)\packages\ManagedBass.2.0.3\lib\net45\ManagedBass.dll</HintPath>
     </Reference>
     <Reference Include="ManagedBass.Fx, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>$(SolutionDir)\packages\ManagedBass.Fx.2.0.0\lib\netstandard1.4\ManagedBass.Fx.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CodeAnalysis, Version=2.4.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+      <HintPath>$(SolutionDir)\packages\Microsoft.CodeAnalysis.Common.2.4.0\lib\netstandard1.3\Microsoft.CodeAnalysis.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp, Version=2.4.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+      <HintPath>$(SolutionDir)\packages\Microsoft.CodeAnalysis.CSharp.2.4.0\lib\netstandard1.3\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Diagnostics.Runtime, Version=0.8.31.1, Culture=neutral, PublicKeyToken=null">
+      <HintPath>$(SolutionDir)\packages\Microsoft.Diagnostics.Runtime.0.9.170809.03\lib\net40\Microsoft.Diagnostics.Runtime.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>$(SolutionDir)\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="nunit.framework, Version=3.8.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>$(SolutionDir)\packages\NUnit.3.8.1\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="OpenTK, Version=3.0.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <HintPath>$(SolutionDir)\packages\OpenTK.3.0.0-git00009\lib\net20\OpenTK.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SQLite.Net, Version=3.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\SQLite.Net.Core-PCL.3.1.1\lib\portable-win8+net45+wp8+wpa81+MonoAndroid1+MonoTouch1\SQLite.Net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="SQLite.Net.Platform.Generic, Version=3.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\SQLite.Net-PCL.3.1.1\lib\net40\SQLite.Net.Platform.Generic.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="SQLite.Net.Platform.Win32, Version=3.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\SQLite.Net-PCL.3.1.1\lib\net4\SQLite.Net.Platform.Win32.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="SQLiteNetExtensions">
-      <HintPath>$(SolutionDir)\packages\SQLiteNetExtensions.1.3.0\lib\portable-net45+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1\SQLiteNetExtensions.dll</HintPath>
+    <Reference Include="System.AppContext, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.AppContext.4.3.0\lib\net46\System.AppContext.dll</HintPath>
     </Reference>
+    <Reference Include="System.Collections.Immutable, Version=1.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Collections.Immutable.1.3.1\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Console, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Console.4.3.0\lib\net46\System.Console.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Diagnostics.FileVersionInfo, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Diagnostics.FileVersionInfo.4.3.0\lib\net46\System.Diagnostics.FileVersionInfo.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Diagnostics.StackTrace, Version=4.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Diagnostics.StackTrace.4.3.0\lib\net46\System.Diagnostics.StackTrace.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security" />
+    <Reference Include="System.IO.Compression, Version=4.1.2.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+      <HintPath>$(SolutionDir)\packages\System.IO.Compression.4.3.0\lib\net46\System.IO.Compression.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.FileSystem, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.IO.FileSystem.4.3.0\lib\net46\System.IO.FileSystem.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.FileSystem.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.IO.FileSystem.Primitives.4.3.0\lib\net46\System.IO.FileSystem.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.Metadata, Version=1.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Algorithms, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net461\System.Security.Cryptography.Algorithms.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Encoding, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Security.Cryptography.Encoding.4.3.0\lib\net46\System.Security.Cryptography.Encoding.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.X509Certificates, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Security.Cryptography.X509Certificates.4.3.0\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encoding.CodePages, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Text.Encoding.CodePages.4.3.0\lib\net46\System.Text.Encoding.CodePages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Thread, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Threading.Thread.4.3.0\lib\net46\System.Threading.Thread.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51">
+      <HintPath>$(SolutionDir)\packages\System.ValueTuple.4.4.0\lib\net461\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.ReaderWriter, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Xml.ReaderWriter.4.3.0\lib\net46\System.Xml.ReaderWriter.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.XmlDocument, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Xml.XmlDocument.4.3.0\lib\net46\System.Xml.XmlDocument.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.XPath, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Xml.XPath.4.3.0\lib\net46\System.Xml.XPath.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.XPath.XDocument, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(SolutionDir)\packages\System.Xml.XPath.XDocument.4.3.0\lib\net46\System.Xml.XPath.XDocument.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Allocation\IReadOnlyDependencyContainer.cs" />
+    <Compile Include="Allocation\RecursiveLoadException.cs" />
     <Compile Include="Audio\AudioComponent.cs" />
     <Compile Include="Audio\IBassAudio.cs" />
     <Compile Include="Audio\IHasPitchAdjust.cs" />
     <Compile Include="Audio\Sample\Sample.cs" />
     <Compile Include="Audio\Sample\SampleBass.cs" />
+    <Compile Include="Audio\Track\DataStreamFileProcedures.cs" />
     <Compile Include="Caching\Cached.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\MatrixExtensions\MatrixExtensions.cs" />
     <Compile Include="Configuration\BindableLong.cs" />
@@ -94,7 +158,9 @@
     <Compile Include="Configuration\FrameworkDebugConfig.cs" />
     <Compile Include="Configuration\NonNullableBindable.cs" />
     <Compile Include="Configuration\WindowMode.cs" />
+    <Compile Include="Development\DebugUtils.cs" />
     <Compile Include="Extensions\Color4Extensions\Color4Extensions.cs" />
+    <Compile Include="Extensions\ExceptionExtensions\ExceptionExtensions.cs" />
     <Compile Include="Extensions\PolygonExtensions\ConvexPolygonExtensions.cs" />
     <Compile Include="Extensions\PolygonExtensions\PolygonExtensions.cs" />
     <Compile Include="Allocation\ObjectStack.cs" />
@@ -105,7 +171,7 @@
     <Compile Include="Audio\Sample\SampleChannelBass.cs" />
     <Compile Include="Audio\Sample\SampleManager.cs" />
     <Compile Include="Audio\Track\TrackManager.cs" />
-    <Compile Include="DebugUtils\ThreadSafety.cs" />
+    <Compile Include="Development\ThreadSafety.cs" />
     <Compile Include="Extensions\ExtensionMethods.cs" />
     <Compile Include="Extensions\IEnumerableExtensions\EnumerableExtensions.cs" />
     <Compile Include="Extensions\TypeExtensions\TypeExtensions.cs" />
@@ -115,12 +181,12 @@
     <Compile Include="Graphics\Animations\FrameData.cs" />
     <Compile Include="Graphics\Animations\IAnimation.cs" />
     <Compile Include="Graphics\Animations\TextureAnimation.cs" />
+    <Compile Include="Graphics\Audio\WaveformGraph.cs" />
     <Compile Include="Graphics\BlendingParameters.cs" />
-    <Compile Include="Graphics\Containers\AsyncLoadWrapper.cs" />
     <Compile Include="Graphics\Containers\CompositeDrawable.cs" />
     <Compile Include="Graphics\Containers\CustomizableTextContainer.cs" />
-    <Compile Include="Graphics\Containers\DelayedLoadWrapper.cs" />
     <Compile Include="Graphics\Containers\IFillFlowContainer.cs" />
+    <Compile Include="Graphics\Containers\DelayedLoadWrapper.cs" />
     <Compile Include="Graphics\Effects\GlowEffect.cs" />
     <Compile Include="Graphics\Effects\OutlineEffect.cs" />
     <Compile Include="Graphics\Containers\IBufferedContainer.cs" />
@@ -169,14 +235,23 @@
     <Compile Include="Graphics\UserInterface\TabControl.cs" />
     <Compile Include="Graphics\UserInterface\TabItem.cs" />
     <Compile Include="Graphics\Vector2Extensions.cs" />
+    <Compile Include="Host.cs" />
     <Compile Include="Input\Bindings\InputKey.cs" />
     <Compile Include="Input\CustomInputManager.cs" />
     <Compile Include="Input\Bindings\IKeyBindingHandler.cs" />
     <Compile Include="Input\Bindings\KeyBinding.cs" />
-    <Compile Include="Input\Bindings\KeyBindingInputManager.cs" />
+    <Compile Include="Input\Bindings\KeyBindingContainer.cs" />
     <Compile Include="Input\Bindings\KeyCombination.cs" />
     <Compile Include="Graphics\Visualisation\PropertyDisplay.cs" />
+    <Compile Include="Input\FrameworkActionContainer.cs" />
+    <Compile Include="Input\GameWindowTextInput.cs" />
     <Compile Include="Input\Handlers\IHasCursorSensitivity.cs" />
+    <Compile Include="Input\Handlers\Keyboard\OpenTKKeyboardHandler.cs" />
+    <Compile Include="Input\Handlers\Mouse\OpenTKEventMouseState.cs" />
+    <Compile Include="Input\Handlers\Mouse\OpenTKMouseHandler.cs" />
+    <Compile Include="Input\Handlers\Mouse\OpenTKMouseState.cs" />
+    <Compile Include="Input\Handlers\Mouse\OpenTKPollMouseState.cs" />
+    <Compile Include="Input\Handlers\Mouse\OpenTKRawMouseHandler.cs" />
     <Compile Include="Input\KeyUpEventArgs.cs" />
     <Compile Include="Allocation\TimedExpiryCache.cs" />
     <Compile Include="Input\IRequireHighFrequencyMousePosition.cs" />
@@ -192,10 +267,12 @@
     <Compile Include="Graphics\Containers\CircularContainer.cs" />
     <Compile Include="Graphics\Containers\ClickableContainer.cs" />
     <Compile Include="Graphics\Containers\FocusedOverlayContainer.cs" />
+    <Compile Include="Graphics\Containers\GridContainer.cs" />
     <Compile Include="Graphics\Containers\IContainer.cs" />
     <Compile Include="Graphics\Containers\OverlayContainer.cs" />
     <Compile Include="Graphics\Containers\ScrollContainer.cs" />
     <Compile Include="Graphics\Containers\CompositeDrawNode.cs" />
+    <Compile Include="Graphics\Containers\DrawSizePreservingFillContainer.cs" />
     <Compile Include="Graphics\Cursor\CursorContainer.cs" />
     <Compile Include="Graphics\IDrawable.cs" />
     <Compile Include="Graphics\Lines\Path.cs" />
@@ -230,6 +307,7 @@
     <Compile Include="Input\IKeyboardState.cs" />
     <Compile Include="Input\IMouseState.cs" />
     <Compile Include="Input\ITextInputSource.cs" />
+    <Compile Include="Input\PlatformActionContainer.cs" />
     <Compile Include="IO\File\FileSafety.cs" />
     <Compile Include="IO\Network\FileWebRequest.cs" />
     <Compile Include="IO\Network\HttpMethod.cs" />
@@ -242,16 +320,17 @@
     <Compile Include="Lists\LazyList.cs" />
     <Compile Include="Lists\SortedList.cs" />
     <Compile Include="Lists\WeakList.cs" />
-    <Compile Include="Localisation\FormattableString.cs" />
+    <Compile Include="Localisation\FormatString.cs" />
     <Compile Include="Localisation\LocalisationEngine.cs" />
     <Compile Include="Localisation\LocalisedString.cs" />
     <Compile Include="Localisation\UnicodeBindableString.cs" />
-    <Compile Include="Localisation\VaraintFormattableString.cs" />
+    <Compile Include="Localisation\LocalisedFormatString.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="MathUtils\Blur.cs" />
     <Compile Include="MathUtils\NumberFormatter.cs" />
     <Compile Include="MathUtils\Precision.cs" />
     <Compile Include="MathUtils\RNG.cs" />
+    <Compile Include="MathUtils\Validation.cs" />
     <Compile Include="Configuration\Bindable.cs" />
     <Compile Include="Configuration\BindableBool.cs" />
     <Compile Include="Configuration\BindableDouble.cs" />
@@ -262,6 +341,23 @@
     <Compile Include="Physics\IRigidBody.cs" />
     <Compile Include="Physics\RigidBodyContainer.cs" />
     <Compile Include="Physics\RigidBodySimulation.cs" />
+    <Compile Include="Platform\Architecture.cs" />
+    <Compile Include="Platform\DesktopGameHost.cs" />
+    <Compile Include="Platform\DesktopGameWindow.cs" />
+    <Compile Include="Platform\DesktopStorage.cs" />
+    <Compile Include="Platform\HeadlessGameHost.cs" />
+    <Compile Include="Platform\Linux\LinuxClipboard.cs" />
+    <Compile Include="Platform\Linux\LinuxGameHost.cs" />
+    <Compile Include="Platform\Linux\LinuxStorage.cs" />
+    <Compile Include="Platform\TcpIpcProvider.cs" />
+    <Compile Include="Platform\Windows\Native\Execution.cs" />
+    <Compile Include="Platform\Windows\Native\Input.cs" />
+    <Compile Include="Platform\Windows\Native\Registry.cs" />
+    <Compile Include="Platform\Windows\TimePeriod.cs" />
+    <Compile Include="Platform\Windows\WindowsClipboard.cs" />
+    <Compile Include="Platform\Windows\WindowsGameHost.cs" />
+    <Compile Include="Platform\Windows\WindowsGameWindow.cs" />
+    <Compile Include="Platform\Windows\WindowsStorage.cs" />
     <Compile Include="Screens\Screen.cs" />
     <Compile Include="Graphics\Sprites\Sprite.cs" />
     <Compile Include="Graphics\Sprites\SpriteText.cs" />
@@ -272,6 +368,7 @@
     <Compile Include="Audio\Track\Track.cs" />
     <Compile Include="Audio\Track\TrackBass.cs" />
     <Compile Include="Audio\Track\TrackVirtual.cs" />
+    <Compile Include="Audio\Track\Waveform.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Platform\GameHost.cs" />
     <Compile Include="Platform\GameWindow.cs" />
@@ -345,6 +442,24 @@
     <Compile Include="IUpdateable.cs" />
     <Compile Include="Platform\Clipboard.cs" />
     <Compile Include="Platform\IIpcHost.cs" />
+    <Compile Include="Statistics\BackgroundStackTraceCollector.cs" />
+    <Compile Include="Testing\Drawables\Steps\AssertButton.cs" />
+    <Compile Include="Testing\Drawables\Steps\UntilStepButton.cs" />
+    <Compile Include="Testing\Drawables\Steps\RepeatStepButton.cs" />
+    <Compile Include="Testing\Drawables\Steps\SingleStepButton.cs" />
+    <Compile Include="Testing\Drawables\Steps\StepButton.cs" />
+    <Compile Include="Testing\Drawables\Steps\StepSlider.cs" />
+    <Compile Include="Testing\Drawables\Steps\ToggleStepButton.cs" />
+    <Compile Include="Testing\Drawables\TestCaseButton.cs" />
+    <Compile Include="Testing\DynamicClassCompiler.cs" />
+    <Compile Include="Testing\GridTestCase.cs" />
+    <Compile Include="Testing\IDynamicallyCompile.cs" />
+    <Compile Include="Testing\TestBrowser.cs" />
+    <Compile Include="Testing\TestBrowserConfig.cs" />
+    <Compile Include="Testing\TestBrowserTestRunner.cs" />
+    <Compile Include="Testing\TestCase.cs" />
+    <Compile Include="Testing\TestCaseTestRunner.cs" />
+    <Compile Include="Testing\Tests\TestTestCase.cs" />
     <Compile Include="Threading\GameThread.cs" />
     <Compile Include="Threading\DrawThread.cs" />
     <Compile Include="Threading\UpdateThread.cs" />
@@ -367,15 +482,47 @@
     <Compile Include="Allocation\BackgroundDependencyLoader.cs" />
     <Compile Include="Configuration\BindableNumber.cs" />
     <Compile Include="Graphics\UserInterface\CircularProgressDrawNode.cs" />
+    <Compile Include="Graphics\UserInterface\Counter.cs" />
     <Compile Include="Graphics\Containers\TextFlowContainer.cs" />
     <Compile Include="Graphics\UserInterface\CircularProgress.cs" />
     <Compile Include="Threading\AudioThread.cs" />
+    <Compile Include="Platform\MacOS\MacOSClipboard.cs" />
+    <Compile Include="Platform\MacOS\MacOSGameHost.cs" />
+    <Compile Include="Platform\MacOS\MacOSStorage.cs" />
+    <Compile Include="Platform\MacOS\MacOSGameWindow.cs" />
+    <Compile Include="Platform\MacOS\Native\Class.cs" />
+    <Compile Include="Platform\MacOS\Native\Cocoa.cs" />
+    <Compile Include="Platform\MacOS\Native\Selector.cs" />
+    <Compile Include="Platform\MacOS\Native\NSPasteboard.cs" />
+    <Compile Include="Platform\MacOS\Native\NSArray.cs" />
+    <Compile Include="Platform\MacOS\Native\NSDictionary.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\osu-framework.licenseheader">
-      <Link>osu-framework.licenseheader</Link>
-    </None>
     <None Include="app.config" />
+    <None Include="libbass.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="libbass.x64.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="libbass.x86.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="libbass_fx.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="libbass_fx.x64.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="libbass_fx.x86.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ManagedBass.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="ManagedBass.Fx.dll.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
     <EmbeddedResource Include="Resources\Shaders\sh_Bloom.fs" />
@@ -390,7 +537,66 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\Fonts\LICENSE.txt" />
-    <EmbeddedResource Include="Resources\Textures\sample-texture.png" />
+    <Content Include="x64\avcodec-51.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\avformat-52.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\avutil-49.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\bass.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\bass_fx.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\d3dcompiler_47.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\libEGL.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\libGLESv2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\pthreadGC2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\SQLite.Interop.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\avcodec-51.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\avformat-52.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\avutil-49.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\bass.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\bass_fx.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\d3dcompiler_47.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\libEGL.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\libGLESv2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\pthreadGC2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\SQLite.Interop.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <EmbeddedResource Include="Resources\Shaders\sh_Utils.h" />
     <EmbeddedResource Include="Resources\Shaders\sh_Texture.fs" />
     <EmbeddedResource Include="Resources\Shaders\sh_ColourRounded.fs" />
@@ -400,14 +606,4 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
-  <Import Project="$(SolutionDir)\packages\SQLitePCLRaw.lib.e_sqlite3.v110_xp.1.0.1\build\SQLitePCLRaw.lib.e_sqlite3.v110_xp.targets" Condition="Exists('$(SolutionDir)\packages\SQLitePCLRaw.lib.e_sqlite3.v110_xp.1.0.1\build\SQLitePCLRaw.lib.e_sqlite3.v110_xp.targets')" />
-  <Import Project="$(SolutionDir)\packages\SQLitePCLRaw.lib.e_sqlite3.osx.1.0.1\build\SQLitePCLRaw.lib.e_sqlite3.osx.targets" Condition="Exists('$(SolutionDir)\packages\SQLitePCLRaw.lib.e_sqlite3.osx.1.0.1\build\SQLitePCLRaw.lib.e_sqlite3.osx.targets')" />
-  <Import Project="$(SolutionDir)\packages\SQLitePCLRaw.lib.e_sqlite3.linux.1.0.1\build\SQLitePCLRaw.lib.e_sqlite3.linux.targets" Condition="Exists('$(SolutionDir)\packages\SQLitePCLRaw.lib.e_sqlite3.linux.1.0.1\build\SQLitePCLRaw.lib.e_sqlite3.linux.targets')" />
 </Project>

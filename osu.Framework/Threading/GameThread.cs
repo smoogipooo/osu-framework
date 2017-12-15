@@ -71,7 +71,7 @@ namespace osu.Framework.Threading
 
         public Action OnThreadStart;
 
-        internal virtual IEnumerable<StatisticsCounterType> StatisticsCounters => new StatisticsCounterType[0];
+        internal virtual IEnumerable<StatisticsCounterType> StatisticsCounters => Array.Empty<StatisticsCounterType>();
 
         public GameThread(Action onNewFrame, string threadName)
         {
@@ -83,7 +83,7 @@ namespace osu.Framework.Threading
             };
 
             Clock = new ThrottledFrameClock();
-            Monitor = new PerformanceMonitor(Clock, StatisticsCounters);
+            Monitor = new PerformanceMonitor(Clock, Thread, StatisticsCounters);
             Scheduler = new Scheduler(null, Clock);
         }
 

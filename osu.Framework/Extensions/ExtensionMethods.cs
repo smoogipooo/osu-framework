@@ -97,6 +97,62 @@ namespace osu.Framework.Extensions
             return !list.Where((t, i) => !EqualityComparer<T>.Default.Equals(t, list2[i])).Any();
         }
 
+        /// <summary>
+        /// Converts a rectangular array to a jagged array.
+        /// <para>
+        /// The jagged array will contain empty arrays if there are no columns in the rectangular array.
+        /// </para>
+        /// </summary>
+        /// <param name="rectangular">The rectangular array.</param>
+        /// <returns>The jagged array.</returns>
+        public static T[][] ToJagged<T>(this T[,] rectangular)
+        {
+            if (rectangular == null)
+                return null;
+
+            var jagged = new T[rectangular.GetLength(0)][];
+            for (int r = 0; r < rectangular.GetLength(0); r++)
+            {
+                jagged[r] = new T[rectangular.GetLength(1)];
+                for (int c = 0; c < rectangular.GetLength(1); c++)
+                    jagged[r][c] = rectangular[r, c];
+            }
+
+            return jagged;
+        }
+
+        /// <summary>
+        /// Converts a jagged array to a rectangular array.
+        /// <para>
+        /// All elements that did not exist in the original jagged array are initialized to their default values.
+        /// </para>
+        /// </summary>
+        /// <param name="jagged">The jagged array.</param>
+        /// <returns>The rectangular array.</returns>
+        public static T[,] ToRectangular<T>(this T[][] jagged)
+        {
+            if (jagged == null)
+                return null;
+
+            var rows = jagged.Length;
+            var cols = rows == 0 ? 0 : jagged.Max(c => c?.Length ?? 0);
+
+            var rectangular = new T[rows, cols];
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c < cols; c++)
+                {
+                    if (jagged[r] == null)
+                        continue;
+
+                    if (c >= jagged[r].Length)
+                        continue;
+
+                    rectangular[r, c] = jagged[r][c];
+                }
+
+            return rectangular;
+        }
+
         public static string ToResolutionString(this Size size)
         {
             return size.Width.ToString() + 'x' + size.Height;
@@ -122,18 +178,6 @@ namespace osu.Framework.Extensions
             }
         }
 
-        public static long ToUnixTimestamp(this DateTime date)
-        {
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            return (date - epoch).Ticks / TimeSpan.TicksPerSecond;
-        }
-
-        public static long TotalMilliseconds(this DateTime date)
-        {
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            return (date - epoch).Ticks / TimeSpan.TicksPerMillisecond;
-        }
-
         public static IEnumerable<Type> GetLoadableTypes(this Assembly assembly)
         {
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
@@ -151,19 +195,18 @@ namespace osu.Framework.Extensions
             => value.GetType().GetField(value.ToString())
                     .GetCustomAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
 
-        public static void ThrowIfFaulted(this Task task)
+        public static void ThrowIfFaulted(this Task task, Type expectedBaseType = null)
         {
-            if (task.IsFaulted)
-            {
-                Exception e = task.Exception;
+            if (!task.IsFaulted) return;
 
-                Debug.Assert(e != null);
+            Exception e = task.Exception;
 
-                while (e.InnerException != null)
-                    e = e.InnerException;
+            Debug.Assert(e != null);
 
-                ExceptionDispatchInfo.Capture(e).Throw();
-            }
+            while (e.InnerException != null && e.GetType() != expectedBaseType)
+                e = e.InnerException;
+
+            ExceptionDispatchInfo.Capture(e).Throw();
         }
 
         /// <summary>

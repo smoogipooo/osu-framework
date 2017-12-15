@@ -152,6 +152,19 @@ namespace osu.Framework.Threading
             return countRun;
         }
 
+        /// <summary>
+        /// Cancel any pending work tasks.
+        /// </summary>
+        public void CancelDelayedTasks()
+        {
+            lock (timedTasks)
+            {
+                foreach (var t in timedTasks)
+                    t.Cancel();
+                timedTasks.Clear();
+            }
+        }
+
         internal void SetCurrentThread(Thread thread)
         {
             mainThreadId = thread?.ManagedThreadId ?? -1;
@@ -312,14 +325,20 @@ namespace osu.Framework.Threading
     public class ThreadedScheduler : Scheduler
     {
         private bool isDisposed;
+        private readonly Thread workerThread;
+
+        /// <summary>
+        /// Whether scheduled tasks should be run. Disabling temporarily pauses all execution.
+        /// </summary>
+        public bool Enabled = true;
 
         public ThreadedScheduler(string threadName = null, int runInterval = 50)
         {
-            var workerThread = new Thread(() =>
+            workerThread = new Thread(() =>
             {
                 while (!isDisposed)
                 {
-                    Update();
+                    if (Enabled) Update();
                     Thread.Sleep(runInterval);
                 }
             })
@@ -334,6 +353,9 @@ namespace osu.Framework.Threading
         protected override void Dispose(bool disposing)
         {
             isDisposed = true;
+
+            workerThread.Join();
+
             base.Dispose(disposing);
         }
 
