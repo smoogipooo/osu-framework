@@ -118,7 +118,7 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        public override bool HandleInput => false;
+        public override bool HandleInput => true;
 
         public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
         {
@@ -395,5 +395,26 @@ namespace osu.Framework.Graphics.Containers
                 CreationParameters?.Invoke(spriteText);
             }
         }
+    }
+
+    public class StyleStackTextFlowContainer : TextFlowContainer
+    {
+        protected override SpriteText CreateSpriteText()
+        {
+            var text = create();
+            applyStyles(text);
+            return text;
+        }
+
+        private readonly List<Action<SpriteText>> styles = new List<Action<SpriteText>>();
+        private void applyStyles(SpriteText text) => styles.ForEach(s => s?.Invoke(text));
+        public void PushStyle(Action<SpriteText> style) => styles.Add(style);
+        public void PopStyle() => styles.RemoveAt(styles.Count - 1);
+
+        private readonly List<Func<SpriteText>> creators = new List<Func<SpriteText>>();
+        private SpriteText create() => creators.LastOrDefault()?.Invoke() ?? base.CreateSpriteText();
+        public void PushCreator(Func<SpriteText> creator) => creators.Add(creator);
+        public void PopCreator() => creators.RemoveAt(creators.Count - 1);
+
     }
 }

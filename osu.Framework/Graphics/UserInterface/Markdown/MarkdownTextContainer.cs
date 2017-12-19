@@ -4,7 +4,6 @@
 using Markdig;
 using osu.Framework.Caching;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.UserInterface.Markdown.Renderers;
 
 namespace osu.Framework.Graphics.UserInterface.Markdown
 {
@@ -45,13 +44,18 @@ namespace osu.Framework.Graphics.UserInterface.Markdown
 
         private void layoutText()
         {
-            var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+            var pipeline = new MarkdownPipelineBuilder()
+                .UseGridTables()
+                .UsePipeTables()
+                .Build();
 
-            var document = (FillFlowContainer)Markdig.Markdown.Convert(text, new MarkdownRenderer(), pipeline);
-            document.RelativeSizeAxes = Axes.X;
-            document.AutoSizeAxes = Axes.Y;
+            var parsed = Markdig.Markdown.Parse(text, pipeline);
 
-            InternalChild = document;
+            // var document = (FillFlowContainer)Markdig.Markdown.Convert(text, new MarkdownRenderer(), pipeline);
+            // document.RelativeSizeAxes = Axes.X;
+            // document.AutoSizeAxes = Axes.Y;
+
+            InternalChild = new MarkdownBlock(parsed);
         }
     }
 }

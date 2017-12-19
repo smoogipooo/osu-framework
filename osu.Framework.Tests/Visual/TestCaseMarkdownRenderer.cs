@@ -11,11 +11,21 @@ using osu.Framework.Allocation;
 using osu.Framework.IO.Stores;
 using System.Text;
 using osu.Framework.Graphics.Sprites;
+using System.Collections.Generic;
+using System;
 
 namespace osu.Framework.Tests.Visual
 {
     public class TestCaseMarkdownRenderer : TestCase
     {
+        public override IReadOnlyList<Type> RequiredTypes => new[]
+        {
+            typeof(MarkdownTextContainer),
+            typeof(MarkdownBlock),
+            typeof(MarkdownSpan),
+            typeof(TextFlowContainer)
+        };
+
         private readonly DisplayBox markdownBox;
         private readonly DisplayBox userInputBox;
 
