@@ -14,7 +14,6 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 
         protected readonly SpriteText Text;
         private readonly Box background;
-        private readonly Box highlightBackground;
 
         protected LeafNode()
         {
@@ -37,40 +36,9 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
                         Origin = Anchor.CentreLeft,
                         Colour = Color4.Transparent
                     },
-                    highlightBackground = new Box
-                    {
-                        RelativeSizeAxes = Axes.Both,
-                        Height = 0.8f,
-                        Anchor = Anchor.CentreLeft,
-                        Origin = Anchor.CentreLeft,
-                        Colour = Color4.Khaki.Opacity(0.4f),
-                        Alpha = 0
-                    },
                     Text = new SpriteText { TextSize = line_height }
                 }
             };
-        }
-
-        private bool isHighlighted;
-        public bool IsHighlighted
-        {
-            get { return isHighlighted; }
-            set
-            {
-                if (isHighlighted)
-                    return;
-                isHighlighted = value;
-
-                if (!IsLoaded)
-                    return;
-            }
-        }
-
-        protected override void LoadComplete()
-        {
-            base.LoadComplete();
-
-            UpdateHighlight();
         }
 
         protected override bool OnHover(InputState state)
@@ -98,14 +66,6 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
             }
 
             UpdateDetails();
-        }
-
-        protected virtual void UpdateHighlight()
-        {
-            if (IsHighlighted)
-                highlightBackground.FadeIn();
-            else
-                highlightBackground.FadeOut();
         }
 
         protected virtual void UpdateDetails()

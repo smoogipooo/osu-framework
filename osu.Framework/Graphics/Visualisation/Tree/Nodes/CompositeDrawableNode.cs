@@ -107,12 +107,6 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
             isExpanded = false;
         }
 
-        protected override void UpdateHighlight()
-        {
-            if (IsHighlighted)
-                Expand();
-        }
-
         protected override void UpdateDetails()
         {
             base.UpdateDetails();
