@@ -8,19 +8,19 @@ using OpenTK.Graphics;
 
 namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
-    public class TreeCompositeDrawableNode : TreeDrawableNode
+    public class CompositeDrawableNode : DrawableNode
     {
-        private readonly FillFlowContainer<TreeLeafNode> flow;
+        private readonly FillFlowContainer<LeafNode> flow;
         private readonly Drawable autoSizeMarker;
 
         private readonly CompositeDrawable target;
 
-        public TreeCompositeDrawableNode(CompositeDrawable target)
+        public CompositeDrawableNode(CompositeDrawable target)
             : base(target)
         {
             this.target = target;
 
-            AddRangeInternal(new Drawable[]
+            AddRangeInternal(new[]
             {
                 autoSizeMarker = new Box
                 {
@@ -30,7 +30,7 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
                     Position = new Vector2(0, 0),
                     Alpha = 0
                 },
-                flow = new FillFlowContainer<TreeLeafNode>
+                flow = new FillFlowContainer<LeafNode>
                 {
                     Direction = FillDirection.Vertical,
                     RelativeSizeAxes = Axes.X,
@@ -60,13 +60,13 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
             target.ChildDied -= removeChild;
         }
 
-        private readonly Dictionary<Drawable, TreeLeafNode> visCache = new Dictionary<Drawable, TreeLeafNode>();
+        private readonly Dictionary<Drawable, LeafNode> visCache = new Dictionary<Drawable, LeafNode>();
         private void addChild(Drawable drawable)
         {
             // Make sure to never add the DrawVisualiser (recursive scenario)
             if (drawable is DrawVisualiser) return;
 
-            TreeLeafNode vis;
+            LeafNode vis;
             if (!visCache.TryGetValue(drawable, out vis))
                 visCache[drawable] = vis = CreateNodeFor(drawable);
             flow.Add(vis);
@@ -119,7 +119,7 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 
             int childCount = target.InternalChildren.Count;
 
-            Text.Text += (!isExpanded && childCount > 0 ? $@" ({childCount} children)" : string.Empty);
+            Text.Text += !isExpanded && childCount > 0 ? $@" ({childCount} children)" : string.Empty;
             Text.Colour = !isExpanded && childCount > 0 ? Color4.LightBlue : Color4.White;
         }
     }

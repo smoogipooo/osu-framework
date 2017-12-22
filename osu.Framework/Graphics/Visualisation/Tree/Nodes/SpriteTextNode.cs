@@ -2,9 +2,9 @@ using osu.Framework.Graphics.Sprites;
 
 namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
-    public class TreeSpriteTextNode : TreeDrawableNode
+    public class SpriteTextNode : DrawableNode
     {
-        public TreeSpriteTextNode(SpriteText target)
+        public SpriteTextNode(SpriteText target)
             : base(target)
         {
         }

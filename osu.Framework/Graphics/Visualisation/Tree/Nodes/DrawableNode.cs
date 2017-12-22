@@ -4,13 +4,13 @@ using OpenTK.Graphics;
 
 namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
-    public class TreeDrawableNode : TreeLeafNode
+    public class DrawableNode : LeafNode
     {
         private readonly Drawable invalidationMarker;
 
         public readonly Drawable Target;
 
-        public TreeDrawableNode(Drawable target)
+        public DrawableNode(Drawable target)
         {
             Target = target;
 

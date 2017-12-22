@@ -119,7 +119,7 @@ namespace osu.Framework.Graphics.Visualisation
             return containedTarget ?? (containsCursor ? d : null);
         }
 
-        private TreeLeafNode targetDrawable;
+        private LeafNode targetDrawable;
 
         private void removeRootVisualisedDrawable(bool hideProperties = true)
         {
@@ -145,7 +145,7 @@ namespace osu.Framework.Graphics.Visualisation
             if (target == null)
                 return;
 
-            targetDrawable = TreeLeafNode.CreateNodeFor(target);
+            targetDrawable = LeafNode.CreateNodeFor(target);
             treeContainer.Add(targetDrawable);
         }
 
@@ -189,7 +189,7 @@ namespace osu.Framework.Graphics.Visualisation
 
         protected override bool OnMouseMove(InputState state)
         {
-            overlay.Target = targetSearching ? findTarget(state) : inputManager.HoveredDrawables.OfType<TreeDrawableNode>().FirstOrDefault()?.Target;
+            overlay.Target = targetSearching ? findTarget(state) : inputManager.HoveredDrawables.OfType<DrawableNode>().FirstOrDefault()?.Target;
             return base.OnMouseMove(state);
         }
     }

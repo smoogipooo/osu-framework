@@ -5,13 +5,13 @@ using OpenTK.Graphics;
 
 namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
-    public class TreeFlowContainerNode : TreeCompositeDrawableNode
+    public class FlowContainerNode : CompositeDrawableNode
     {
         private readonly Drawable layoutMarker;
 
         private readonly IFlowContainer target;
 
-        public TreeFlowContainerNode(IFlowContainer target)
+        public FlowContainerNode(IFlowContainer target)
             : base((CompositeDrawable)target)
         {
             this.target = target;

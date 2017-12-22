@@ -5,13 +5,13 @@ using OpenTK;
 
 namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
-    public class TreeSpriteNode : TreeDrawableNode
+    public class SpriteNode : DrawableNode
     {
         private readonly Sprite previewBox;
 
         private readonly Sprite target;
 
-        public TreeSpriteNode(Sprite target)
+        public SpriteNode(Sprite target)
             : base(target)
         {
             this.target = target;

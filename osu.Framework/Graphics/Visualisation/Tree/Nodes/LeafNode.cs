@@ -8,7 +8,7 @@ using OpenTK.Graphics;
 
 namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
-    public abstract class TreeLeafNode : CompositeDrawable
+    public abstract class LeafNode : CompositeDrawable
     {
         private const float line_height = 12;
 
@@ -16,7 +16,7 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
         private readonly Box background;
         private readonly Box highlightBackground;
 
-        public TreeLeafNode()
+        protected LeafNode()
         {
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
@@ -112,20 +112,20 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
         {
         }
 
-        public static TreeLeafNode CreateNodeFor(Drawable drawable)
+        public static LeafNode CreateNodeFor(Drawable drawable)
         {
             switch (drawable)
             {
                 case SpriteText text:
-                    return new TreeSpriteTextNode(text);
+                    return new SpriteTextNode(text);
                 case Sprite sprite:
-                    return new TreeSpriteNode(sprite);
+                    return new SpriteNode(sprite);
                 case IFlowContainer flow:
-                    return new TreeFlowContainerNode(flow);
+                    return new FlowContainerNode(flow);
                 case CompositeDrawable composite:
-                    return new TreeCompositeDrawableNode(composite);
+                    return new CompositeDrawableNode(composite);
                 default:
-                    return new TreeDrawableNode(drawable);
+                    return new DrawableNode(drawable);
             }
         }
     }
