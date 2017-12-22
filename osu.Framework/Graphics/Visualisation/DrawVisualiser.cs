@@ -11,7 +11,6 @@ namespace osu.Framework.Graphics.Visualisation
     public class DrawVisualiser : OverlayContainer
     {
         private readonly TreeContainer treeContainer;
-        private VisualisedDrawable highlightedTarget;
 
         private readonly PropertyDisplay propertyDisplay;
 
@@ -30,49 +29,17 @@ namespace osu.Framework.Graphics.Visualisation
                     ChooseTarget = chooseTarget,
                     GoUpOneParent = delegate
                     {
-                        Drawable lastHighlight = highlightedTarget?.Target;
-
-                        var parent = Target?.Parent;
-                        if (parent?.Parent != null)
-                            Target = Target?.Parent;
-
-                        // Rehighlight the last highlight
-                        if (lastHighlight != null)
-                        {
-                            VisualisedDrawable visualised = targetDrawable.FindVisualisedDrawable(lastHighlight);
-                            if (visualised != null)
-                            {
-                                propertyDisplay.State = Visibility.Visible;
-                                setHighlight(visualised);
-                            }
-                        }
                     },
                     ToggleProperties = delegate
                     {
                         if (targetDrawable == null)
                             return;
-
-                        propertyDisplay.ToggleVisibility();
-
-                        if (propertyDisplay.State == Visibility.Visible)
-                            setHighlight(targetDrawable);
                     },
                 },
                 new CursorContainer()
             };
 
             propertyDisplay = treeContainer.PropertyDisplay;
-
-            propertyDisplay.StateChanged += visibility =>
-            {
-                switch (visibility)
-                {
-                    case Visibility.Hidden:
-                        // Dehighlight everything automatically if property display is closed
-                        setHighlight(null);
-                        break;
-                }
-            };
         }
 
         protected override void LoadComplete()
@@ -150,7 +117,7 @@ namespace osu.Framework.Graphics.Visualisation
             return containedTarget ?? (containsCursor ? d : null);
         }
 
-        private VisualisedDrawable targetDrawable;
+        private TreeLeafNode targetDrawable;
 
         private void removeRootVisualisedDrawable(bool hideProperties = true)
         {
@@ -176,25 +143,11 @@ namespace osu.Framework.Graphics.Visualisation
             if (target == null)
                 return;
 
-            targetDrawable = new VisualisedDrawable(target, treeContainer)
-            {
-                RequestTarget = d => Target = d,
-                HighlightTarget = d =>
-                {
-                    propertyDisplay.State = Visibility.Visible;
-
-                    // Either highlight or dehighlight the target, depending on whether
-                    // it is currently highlighted
-                    setHighlight(d);
-
-                }
-            };
-
+            targetDrawable = TreeLeafNode.CreateNodeFor(target);
             treeContainer.Add(targetDrawable);
         }
 
         private Drawable target;
-
         public Drawable Target
         {
             get { return target; }
@@ -202,31 +155,6 @@ namespace osu.Framework.Graphics.Visualisation
             {
                 target = value;
                 createRootVisualisedDrawable();
-            }
-        }
-
-        private void setHighlight(VisualisedDrawable newHighlight)
-        {
-            if (highlightedTarget != null)
-            {
-                // Dehighlight the lastly highlighted target
-                highlightedTarget.IsHighlighted = false;
-                highlightedTarget = null;
-            }
-
-            if (newHighlight == null)
-            {
-                propertyDisplay.UpdateFrom(null);
-                return;
-            }
-
-            // Only update when property display is visible
-            if (propertyDisplay.State == Visibility.Visible)
-            {
-                highlightedTarget = newHighlight;
-                newHighlight.IsHighlighted = true;
-
-                propertyDisplay.UpdateFrom(newHighlight.Target);
             }
         }
 
@@ -259,7 +187,7 @@ namespace osu.Framework.Graphics.Visualisation
 
         protected override bool OnMouseMove(InputState state)
         {
-            overlay.Target = targetSearching ? findTarget(state) : inputManager.HoveredDrawables.OfType<VisualisedDrawable>().FirstOrDefault()?.Target;
+            overlay.Target = targetSearching ? findTarget(state) : inputManager.HoveredDrawables.OfType<TreeDrawableNode>().FirstOrDefault()?.Target;
             return base.OnMouseMove(state);
         }
     }

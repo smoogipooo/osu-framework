@@ -12,10 +12,10 @@ namespace osu.Framework.Graphics.Containers
     /// <summary>
     /// A container that can be used to fluently arrange its children.
     /// </summary>
-    public abstract class FlowContainer<T> : Container<T>
+    public abstract class FlowContainer<T> : Container<T>, IFlowContainer
         where T : Drawable
     {
-        internal event Action OnLayout;
+        public event Action OnLayout;
 
         /// <summary>
         /// The easing that should be used when children are moved to their position in the layout.
@@ -148,5 +148,10 @@ namespace osu.Framework.Graphics.Containers
                 layout.Validate();
             }
         }
+    }
+
+    public interface IFlowContainer
+    {
+        event Action OnLayout;
     }
 }

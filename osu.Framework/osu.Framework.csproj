@@ -303,8 +303,13 @@
     <Compile Include="Graphics\Visualisation\FlashyBox.cs" />
     <Compile Include="Graphics\Visualisation\InfoOverlay.cs" />
     <Compile Include="Graphics\Visualisation\LogOverlay.cs" />
+    <Compile Include="Graphics\Visualisation\TreeCompositeDrawableNode.cs" />
     <Compile Include="Graphics\Visualisation\TreeContainer.cs" />
-    <Compile Include="Graphics\Visualisation\VisualisedDrawable.cs" />
+    <Compile Include="Graphics\Visualisation\TreeDrawableNode.cs" />
+    <Compile Include="Graphics\Visualisation\TreeFlowContainerNode.cs" />
+    <Compile Include="Graphics\Visualisation\TreeLeafNode.cs" />
+    <Compile Include="Graphics\Visualisation\TreeSpriteNode.cs" />
+    <Compile Include="Graphics\Visualisation\TreeSpriteTextNode.cs" />
     <Compile Include="Input\IKeyboardState.cs" />
     <Compile Include="Input\IMouseState.cs" />
     <Compile Include="Input\ITextInputSource.cs" />
