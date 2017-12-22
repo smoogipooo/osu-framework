@@ -1,11 +1,8 @@
-using System;
+using osu.Framework.Graphics.Shapes;
 using OpenTK;
 using OpenTK.Graphics;
-using OpenTK.Input;
-using osu.Framework.Graphics.Shapes;
-using osu.Framework.Input;
 
-namespace osu.Framework.Graphics.Visualisation
+namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
     public class TreeDrawableNode : TreeLeafNode
     {

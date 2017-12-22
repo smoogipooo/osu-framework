@@ -4,6 +4,8 @@
 using System.Linq;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
+using osu.Framework.Graphics.Visualisation.Tree;
+using osu.Framework.Graphics.Visualisation.Tree.Nodes;
 using osu.Framework.Input;
 
 namespace osu.Framework.Graphics.Visualisation

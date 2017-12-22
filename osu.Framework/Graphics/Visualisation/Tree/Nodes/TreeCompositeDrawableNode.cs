@@ -1,13 +1,12 @@
 using System.Collections.Generic;
-using OpenTK;
-using OpenTK.Graphics;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input;
+using OpenTK;
+using OpenTK.Graphics;
 
-namespace osu.Framework.Graphics.Visualisation
+namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
     public class TreeCompositeDrawableNode : TreeDrawableNode
     {

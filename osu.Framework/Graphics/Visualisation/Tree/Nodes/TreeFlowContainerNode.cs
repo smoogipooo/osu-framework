@@ -1,9 +1,9 @@
-using OpenTK;
-using OpenTK.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using OpenTK;
+using OpenTK.Graphics;
 
-namespace osu.Framework.Graphics.Visualisation
+namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
     public class TreeFlowContainerNode : TreeCompositeDrawableNode
     {

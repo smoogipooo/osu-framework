@@ -1,12 +1,12 @@
-using OpenTK;
-using OpenTK.Graphics;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input;
+using OpenTK;
+using OpenTK.Graphics;
 
-namespace osu.Framework.Graphics.Visualisation
+namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
     public abstract class TreeLeafNode : CompositeDrawable
     {

@@ -1,9 +1,9 @@
 using System;
-using OpenTK;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
+using OpenTK;
 
-namespace osu.Framework.Graphics.Visualisation
+namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
     public class TreeSpriteNode : TreeDrawableNode
     {
