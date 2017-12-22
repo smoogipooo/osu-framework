@@ -10,7 +10,9 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
     public abstract class LeafNode : CompositeDrawable
     {
-        private const float line_height = 12;
+        protected const float LINE_HEIGHT = 22;
+        protected const float CONTENT_HEIGHT = 20;
+        protected const float CONTENT_PADDING = 10;
 
         protected readonly SpriteText Text;
         private readonly Box background;
@@ -23,8 +25,8 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
             InternalChild = new Container
             {
                 RelativeSizeAxes = Axes.X,
-                Height = line_height,
-                Padding = new MarginPadding { Left = 24 },
+                Height = LINE_HEIGHT,
+                Padding = new MarginPadding { Left = CONTENT_PADDING },
                 Children = new Drawable[]
                 {
                     background = new Box
@@ -36,7 +38,12 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
                         Origin = Anchor.CentreLeft,
                         Colour = Color4.Transparent
                     },
-                    Text = new SpriteText { TextSize = line_height }
+                    Text = new SpriteText
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                        TextSize = CONTENT_HEIGHT
+                    }
                 }
             };
         }

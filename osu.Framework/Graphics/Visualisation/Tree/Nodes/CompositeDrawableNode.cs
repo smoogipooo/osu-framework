@@ -10,6 +10,8 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
     public class CompositeDrawableNode : DrawableNode
     {
+        private const float children_padding = 10;
+
         private readonly FillFlowContainer<LeafNode> flow;
         private readonly Drawable autoSizeMarker;
 
@@ -35,7 +37,7 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
                     Direction = FillDirection.Vertical,
                     RelativeSizeAxes = Axes.X,
                     AutoSizeAxes = Axes.Y,
-                    Position = new Vector2(10, 14)
+                    Position = new Vector2(children_padding, LINE_HEIGHT)
                 },
             });
 

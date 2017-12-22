@@ -7,6 +7,8 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 {
     public class SpriteNode : DrawableNode
     {
+        private const float text_padding = 4;
+
         private readonly Sprite previewBox;
 
         private readonly Sprite target;
@@ -18,10 +20,13 @@ namespace osu.Framework.Graphics.Visualisation.Tree.Nodes
 
             AddInternal(previewBox = new Sprite
             {
-                RelativeSizeAxes = Axes.Both,
-                FillMode = FillMode.Fit,
-                Position = new Vector2(9, 0)
+                Anchor = Anchor.CentreLeft,
+                Origin = Anchor.CentreLeft,
+                Size = new Vector2(CONTENT_HEIGHT),
+                X = CONTENT_PADDING,
             });
+
+            Text.X = LINE_HEIGHT + text_padding;
         }
 
         protected override void UpdateDetails()
