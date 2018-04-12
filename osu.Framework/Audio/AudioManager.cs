@@ -11,6 +11,7 @@ using osu.Framework.IO.Stores;
 using osu.Framework.Threading;
 using System.Linq;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using osu.Framework.Extensions.TypeExtensions;
 
 namespace osu.Framework.Audio
@@ -85,6 +86,9 @@ namespace osu.Framework.Audio
         /// </summary>
         public Scheduler EventScheduler;
 
+        [DllImport("libdl.so")]
+        static extern IntPtr dlopen(string filename, int flags);
+
         private readonly Lazy<TrackManager> globalTrackManager;
         private readonly Lazy<SampleManager> globalSampleManager;
 
@@ -95,6 +99,12 @@ namespace osu.Framework.Audio
         /// <param name="sampleStore">The sample store containing all audio samples to be used in the future.</param>
         public AudioManager(ResourceStore<byte[]> trackStore, ResourceStore<byte[]> sampleStore)
         {
+            if (RuntimeInfo.OS == RuntimeInfo.Platform.Linux)
+            {
+                dlopen("libbass.so", 0x101);
+                dlopen("libbass_fx.so", 0x101);
+            }
+
             AudioDevice.ValueChanged += onDeviceChanged;
 
             trackStore.AddExtension(@"mp3");
