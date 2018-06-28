@@ -1255,6 +1255,21 @@ namespace osu.Framework.Graphics
         /// </summary>
         public virtual bool RemoveWhenNotAlive => Parent == null || Time.Current > LifetimeStart;
 
+        /// <summary>
+        /// Invoked when this <see cref="Drawable"/> has become alive and has been added to a parent <see cref="CompositeDrawable"/>.
+        /// </summary>
+        protected internal virtual void OnBecameAlive()
+        {
+        }
+
+        /// <summary>
+        /// Invoked when this <see cref="Drawable"/> has died and will be removed from a parent <see cref="CompositeDrawable"/>.
+        /// This occurs prior to <see cref="Dispose"/> if <see cref="DisposeOnDeathRemoval"/> is true.
+        /// </summary>
+        protected internal virtual void OnDied()
+        {
+        }
+
         #endregion
 
         #region Parenting (scene graph operations, including ProxyDrawable)

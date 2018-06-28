@@ -444,6 +444,7 @@ namespace osu.Framework.Graphics.Containers
                         aliveInternalChildren.Add(child);
                         ChildBecameAlive?.Invoke(child);
                         child.IsAlive = true;
+                        child.OnBecameAlive();
                         changed = true;
                     }
                 }
@@ -455,6 +456,7 @@ namespace osu.Framework.Graphics.Containers
                     aliveInternalChildren.Remove(child);
                     ChildDied?.Invoke(child);
                     child.IsAlive = false;
+                    child.OnDied();
                     changed = true;
                 }
 
