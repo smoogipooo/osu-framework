@@ -545,7 +545,6 @@ namespace osu.Framework.Graphics.Containers
             {
                 var childMaskingBounds = ComputeChildMaskingBounds(maskingBounds);
 
-
                 // We iterate by index to gain performance
                 // ReSharper disable once ForCanBeConvertedToForeach
                 for (int i = 0; i < aliveInternalChildren.Count; i++)

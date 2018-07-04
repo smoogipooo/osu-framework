@@ -27,6 +27,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Development;
 using osu.Framework.MathUtils;
+using osu.Framework.SceneGraph.Builders;
 using JoystickEventArgs = osu.Framework.Input.JoystickEventArgs;
 
 namespace osu.Framework.Graphics
