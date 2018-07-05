@@ -9,10 +9,10 @@ namespace osu.Framework.SceneGraph.Attributes
     /// Attribute for members of an object which may change the value of members of child objects.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-    public class UpdatesChildAttribute : ChildTargetAttribute, IUpdatesAttribute
+    public class UpdatesChildAttribute : ChildTargetAttribute
     {
         public UpdatesChildAttribute(Type childType, string memberName)
-             : base(childType, memberName)
+            : base(childType, memberName)
         {
         }
     }

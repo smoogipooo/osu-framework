@@ -6,7 +6,7 @@ using System;
 namespace osu.Framework.SceneGraph.Attributes
 {
     /// <summary>
-    /// Attribute for members of an object that depend on a member of a child of the object.
+    /// Attribute for methods of an object that depend on a member of a child of the object.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method, AllowMultiple = true)]
     public class DependsOnChildAttribute : ChildTargetAttribute

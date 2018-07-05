@@ -6,7 +6,7 @@ using System;
 namespace osu.Framework.SceneGraph.Attributes
 {
     /// <summary>
-    /// Attribute for members of an object which depend on other members of the same object.
+    /// Attribute for methods of an object which depend on other members of the same object.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method, AllowMultiple = true)]
     public class DependsOnAttribute : LocalTargetAttribute

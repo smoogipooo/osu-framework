@@ -2,11 +2,11 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
-using System.Linq;
-using System.Reflection;
+using JetBrains.Annotations;
 
 namespace osu.Framework.SceneGraph.Attributes
 {
+    [MeansImplicitUse]
     public abstract class LocalTargetAttribute : Attribute
     {
         public readonly string MemberName;
@@ -15,7 +15,5 @@ namespace osu.Framework.SceneGraph.Attributes
         {
             MemberName = memberName;
         }
-
-        public MemberInfo GetMember(Type type) => type.GetMember(MemberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).First();
     }
 }
