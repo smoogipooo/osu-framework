@@ -61,7 +61,7 @@ namespace osu.Framework.SceneGraph.Contracts
                 // Add a dependency on every method of the composite which depends on this value
                 foreach (var method in dependent.Owner.GetType().GetMethods(BINDING_FLAGS))
                 {
-                    if (method.GetCustomAttributes(true).OfType<UpdatesChildAttribute>().Any(a => a.MemberName == member.Name))
+                    if (method.GetCustomAttributes(true).OfType<UpdatesChildAttribute>().Any(a => a.MemberName == member.Name && a.ChildType.IsInstanceOfType(owner)))
                         AddDependency(dependent.Owner, method.Name);
                 }
             }
