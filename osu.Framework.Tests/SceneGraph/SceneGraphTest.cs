@@ -1,11 +1,12 @@
 ﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
+using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.SceneGraph.Attributes;
-using osu.Framework.SceneGraph.Builders;
+using osu.Framework.SceneGraph.Contracts;
 
 namespace osu.Framework.Tests.SceneGraph
 {
@@ -15,7 +16,10 @@ namespace osu.Framework.Tests.SceneGraph
         [Test]
         public void Test2()
         {
-            var result = new DrawableDependencyBuilder(new TestComposite()).Build();
+            var contract = new CompositeDrawableContract(new TestComposite());
+            contract.Build();
+
+            var result = contract.Flatten().ToList();
         }
 
         private class TestDrawable : Drawable
@@ -26,6 +30,7 @@ namespace osu.Framework.Tests.SceneGraph
             public float Df4;
             public float Df5;
             public float Df6;
+            public float Df7;
 
             [Updates(nameof(Df1))]
             public void Dm1()
@@ -64,10 +69,15 @@ namespace osu.Framework.Tests.SceneGraph
         {
             public float Cf1;
             public float Cf2;
+            public float Cf3;
 
             public TestComposite()
             {
-                InternalChild = new TestDrawable();
+                InternalChildren = new[]
+                {
+                    new TestDrawable(),
+                    new TestDrawable(),
+                };
             }
 
             [DependsOnChild(typeof(TestDrawable), nameof(TestDrawable.Df1))]
@@ -80,6 +90,18 @@ namespace osu.Framework.Tests.SceneGraph
             [DependsOn(nameof(Cf1))]
             [Updates(nameof(Cf2))]
             public void Cm2()
+            {
+            }
+
+            [UpdatesChild(typeof(TestDrawable), nameof(TestDrawable.Df7))]
+            public void Cm3()
+            {
+            }
+
+            [DependsOnChild(typeof(TestDrawable), nameof(TestDrawable.Df7))]
+            [DependsOnChild(typeof(TestDrawable), nameof(TestDrawable.Df6))]
+            [Updates(nameof(Cf3))]
+            public void Cm4()
             {
             }
         }
