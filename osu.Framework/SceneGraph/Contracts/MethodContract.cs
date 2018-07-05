@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.SceneGraph.Attributes;
@@ -40,7 +41,7 @@ namespace osu.Framework.SceneGraph.Contracts
             // Add a dependency on every child member which the method depends on
             foreach (var attribute in method.GetCustomAttributes(true).OfType<DependsOnChildAttribute>())
             {
-                foreach (var child in composite.InternalChildren.Where(c => attribute.ChildType.IsInstanceOfType(c)))
+                foreach (var child in composite.InternalChildren.Where(c => c.GetType().IsSubclassOrTypeOf(attribute.ChildType)))
                     AddDependency(child, attribute.MemberName);
             }
         }

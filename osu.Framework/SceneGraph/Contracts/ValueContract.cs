@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.SceneGraph.Attributes;
 
@@ -61,7 +62,7 @@ namespace osu.Framework.SceneGraph.Contracts
                 // Add a dependency on every method of the composite which depends on this value
                 foreach (var method in dependent.Owner.GetType().GetMethods(BINDING_FLAGS))
                 {
-                    if (method.GetCustomAttributes(true).OfType<UpdatesChildAttribute>().Any(a => a.MemberName == member.Name && a.ChildType.IsInstanceOfType(owner)))
+                    if (method.GetCustomAttributes(true).OfType<UpdatesChildAttribute>().Any(a => a.MemberName == member.Name && owner.GetType().IsSubclassOrTypeOf(a.ChildType)))
                         AddDependency(dependent.Owner, method.Name);
                 }
             }

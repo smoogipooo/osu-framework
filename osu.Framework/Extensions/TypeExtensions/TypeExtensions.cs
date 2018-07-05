@@ -35,5 +35,16 @@ namespace osu.Framework.Extensions.TypeExtensions
         }
 
         public static string ReadableName(this Type t) => readableName(t, new HashSet<Type>());
+
+        /// <summary>
+        /// Determines whether a type derives from or equivalent to another type.
+        /// </summary>
+        /// <remarks>
+        /// This performs the same function as <see cref="Type.IsSubclassOf"/> but allows the two types to match.
+        /// </remarks>
+        /// <param name="t">The type to check.</param>
+        /// <param name="c">The type to compare with.</param>
+        /// <returns>True if <paramref name="t"/> derives from <paramref name="c"/> or is the same type as <paramref name="c"/>.</returns>
+        public static bool IsSubclassOrTypeOf(this Type t, Type c) => t.IsSubclassOf(c) || t == c;
     }
 }
