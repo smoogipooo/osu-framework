@@ -52,7 +52,7 @@ namespace osu.Framework.SceneGraph.Builders
         {
             foreach (var t in types)
             foreach (var m in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(m => m.GetCustomAttributes(true).OfType<IUpdatesAttribute>().Any()))
-                yield return new UpdateInfo(t, m);
+                yield return new UpdateInfo(m);
         }
 
         private List<UpdateInfo> generateUpdateChain(List<Node> nodes)
