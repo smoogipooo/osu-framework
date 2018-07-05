@@ -24,8 +24,18 @@ namespace osu.Framework.SceneGraph.Contracts
             base.Build();
 
             // Add a dependency on every child in the composite
-            foreach (var drawable in composite.InternalChildren)
-                AddDependency(new DrawableContract(drawable));
+            foreach (var child in composite.InternalChildren)
+            {
+                switch (child)
+                {
+                    case CompositeDrawable childComposite:
+                        AddDependency(new CompositeDrawableContract(childComposite));
+                        break;
+                    default:
+                        AddDependency(new DrawableContract(child));
+                        break;
+                }
+            }
         }
     }
 }
