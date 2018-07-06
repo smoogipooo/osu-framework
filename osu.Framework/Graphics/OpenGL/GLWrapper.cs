@@ -510,7 +510,7 @@ namespace osu.Framework.Graphics.OpenGL
         {
             FlushCurrentBatch();
 
-            if (host.DepthTesting)
+            if (host != null && host.TryGetTarget(out GameHost h) && h.DepthTesting)
             {
                 if (CurrentDepthInfo.DepthTest)
                     GL.Enable(EnableCap.DepthTest);

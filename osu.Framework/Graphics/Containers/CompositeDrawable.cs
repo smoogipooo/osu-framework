@@ -723,7 +723,7 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="j">The running index into the target List.</param>
         /// <param name="parentComposite">The <see cref="CompositeDrawable"/> whose children's <see cref="DrawNode"/>s to add.</param>
         /// <param name="target">The target list to fill with DrawNodes.</param>
-        private static void addFromComposite(ulong frame, int treeIndex, ref int j, CompositeDrawable parentComposite, List<DrawNode> target)
+        private static void addFromComposite(ulong frame, int treeIndex, ref int j, CompositeDrawable parentComposite, List<DrawNode> target, bool shouldDrawDepth)
         {
             SortedList<Drawable> current = parentComposite.aliveInternalChildren;
             // ReSharper disable once ForCanBeConvertedToForeach
@@ -740,7 +740,7 @@ namespace osu.Framework.Graphics.Containers
                     if (composite?.CanBeFlattened == true)
                     {
                         if (!composite.IsMaskedAway)
-                            addFromComposite(frame, treeIndex, ref j, composite, target);
+                            addFromComposite(frame, treeIndex, ref j, composite, target, shouldDrawDepth);
 
                         continue;
                     }
@@ -749,7 +749,7 @@ namespace osu.Framework.Graphics.Containers
                         continue;
                 }
 
-                DrawNode next = drawable.GenerateDrawNodeSubtree(frame, treeIndex);
+                DrawNode next = drawable.GenerateDrawNodeSubtree(frame, treeIndex, shouldDrawDepth);
                 if (next == null)
                     continue;
 
@@ -768,14 +768,15 @@ namespace osu.Framework.Graphics.Containers
 
         internal virtual bool AddChildDrawNodes => true;
 
-        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex)
+        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex, bool shouldDrawDepth)
         {
             // No need for a draw node at all if there are no children and we are not glowing.
             if (aliveInternalChildren.Count == 0 && CanBeFlattened)
                 return null;
 
             shouldDrawDepth &= ShouldDrawDepth;
-            if (!(base.GenerateDrawNodeSubtree(frame, treeIndex) is CompositeDrawNode cNode))
+
+            if (!(base.GenerateDrawNodeSubtree(frame, treeIndex, shouldDrawDepth) is CompositeDrawNode cNode))
                 return null;
 
             if (cNode.Children == null)
@@ -786,7 +787,7 @@ namespace osu.Framework.Graphics.Containers
                 List<DrawNode> target = cNode.Children;
 
                 int j = 0;
-                addFromComposite(frame, treeIndex, ref j, this, target);
+                addFromComposite(frame, treeIndex, ref j, this, target, shouldDrawDepth);
 
                 if (j < target.Count)
                     target.RemoveRange(j, target.Count - j);

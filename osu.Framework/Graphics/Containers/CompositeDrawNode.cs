@@ -196,16 +196,11 @@ namespace osu.Framework.Graphics.Containers
             if (!ShouldDrawDepth || DrawInfo.Blending.Destination == BlendingFactorDest.One || DrawInfo.Colour.MinAlpha < 1)
                 return;
 
-            if (CustomVertexAction == null)
-            {
-                updateVertexBatch();
+            updateVertexBatch();
 
-                // Prefer to use own vertex batch instead of the parent-owned one.
-                if (Shared.VertexBatch != null)
-                    vertexAction = Shared.VertexBatch.Add;
-            }
-            else
-                vertexAction = CustomVertexAction;
+            // Prefer to use own vertex batch instead of the parent-owned one.
+            if (Shared.VertexBatch != null)
+                vertexAction = Shared.VertexBatch.Add;
 
             base.Draw(vertexAction);
 

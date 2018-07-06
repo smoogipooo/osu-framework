@@ -221,9 +221,6 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public BufferedContainer()
         {
-            {
-                frameBuffers[i].Attach(RenderbufferInternalFormat.DepthComponent24);
-            }
             // The initial draw cannot be cached, and thus we need to initialize
             // with a forced draw.
             ForceRedraw();
@@ -286,9 +283,9 @@ namespace osu.Framework.Graphics.Containers
             addChildDrawNodes = n.RequiresRedraw;
         }
 
-        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex)
+        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex, bool shouldDrawDepth)
         {
-            var result = base.GenerateDrawNodeSubtree(frame, treeIndex);
+            var result = base.GenerateDrawNodeSubtree(frame, treeIndex, shouldDrawDepth);
 
             // The framebuffers may be redrawn this time around, but will be cached the next time around
             addChildDrawNodes = false;

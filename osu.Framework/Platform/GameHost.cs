@@ -282,7 +282,7 @@ namespace osu.Framework.Platform
             using (var buffer = DrawRoots.Get(UsageType.Write))
             {
                 Drawable.DepthIndex = 0;
-                buffer.Object = Root.GenerateDrawNodeSubtree(buffer.Index, Root.ScreenSpaceDrawQuad.AABBFloat, true);
+                buffer.Object = Root.GenerateDrawNodeSubtree(frameCount, buffer.Index, true);
             }
         }
 
