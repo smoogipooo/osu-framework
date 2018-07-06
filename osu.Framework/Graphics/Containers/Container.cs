@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using osu.Framework.Lists;
@@ -67,10 +67,7 @@ namespace osu.Framework.Graphics.Containers
 
                 return internalChildrenAsT;
             }
-            set
-            {
-                ChildrenEnumerable = value;
-            }
+            set => ChildrenEnumerable = value;
         }
 
         /// <summary>
@@ -202,13 +199,7 @@ namespace osu.Framework.Graphics.Containers
         /// <summary>
         /// Removes a given child from this container.
         /// </summary>
-        public virtual bool Remove(T drawable)
-        {
-            if (Content != this)
-                return Content.Remove(drawable);
-            else
-                return RemoveInternal(drawable);
-        }
+        public virtual bool Remove(T drawable) => Content != this ? Content.Remove(drawable) : RemoveInternal(drawable);
 
         /// <summary>
         /// Removes all children which match the given predicate.
@@ -290,8 +281,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new bool Masking
         {
-            get { return base.Masking; }
-            set { base.Masking = value; }
+            get => base.Masking;
+            set => base.Masking = value;
         }
 
         /// <summary>
@@ -300,8 +291,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new float MaskingSmoothness
         {
-            get { return base.MaskingSmoothness; }
-            set { base.MaskingSmoothness = value; }
+            get => base.MaskingSmoothness;
+            set => base.MaskingSmoothness = value;
         }
 
         /// <summary>
@@ -310,8 +301,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new float CornerRadius
         {
-            get { return base.CornerRadius; }
-            set { base.CornerRadius = value; }
+            get => base.CornerRadius;
+            set => base.CornerRadius = value;
         }
 
         /// <summary>
@@ -326,8 +317,8 @@ namespace osu.Framework.Graphics.Containers
         /// </remarks>
         public new float BorderThickness
         {
-            get { return base.BorderThickness; }
-            set { base.BorderThickness = value; }
+            get => base.BorderThickness;
+            set => base.BorderThickness = value;
         }
 
         /// <summary>
@@ -336,8 +327,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new SRGBColour BorderColour
         {
-            get { return base.BorderColour; }
-            set { base.BorderColour = value; }
+            get => base.BorderColour;
+            set => base.BorderColour = value;
         }
 
         /// <summary>
@@ -347,8 +338,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new EdgeEffectParameters EdgeEffect
         {
-            get { return base.EdgeEffect; }
-            set { base.EdgeEffect = value; }
+            get => base.EdgeEffect;
+            set => base.EdgeEffect = value;
         }
 
         /// <summary>
@@ -357,8 +348,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new MarginPadding Padding
         {
-            get { return base.Padding; }
-            set { base.Padding = value; }
+            get => base.Padding;
+            set => base.Padding = value;
         }
 
         /// <summary>
@@ -367,8 +358,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new Vector2 RelativeChildSize
         {
-            get { return base.RelativeChildSize; }
-            set { base.RelativeChildSize = value; }
+            get => base.RelativeChildSize;
+            set => base.RelativeChildSize = value;
         }
 
         /// <summary>
@@ -377,8 +368,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new Vector2 RelativeChildOffset
         {
-            get { return base.RelativeChildOffset; }
-            set { base.RelativeChildOffset = value; }
+            get => base.RelativeChildOffset;
+            set => base.RelativeChildOffset = value;
         }
 
         /// <summary>
@@ -391,8 +382,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new Axes AutoSizeAxes
         {
-            get { return base.AutoSizeAxes; }
-            set { base.AutoSizeAxes = value; }
+            get => base.AutoSizeAxes;
+            set => base.AutoSizeAxes = value;
         }
 
         /// <summary>
@@ -401,8 +392,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new float AutoSizeDuration
         {
-            get { return base.AutoSizeDuration; }
-            set { base.AutoSizeDuration = value; }
+            get => base.AutoSizeDuration;
+            set => base.AutoSizeDuration = value;
         }
 
         /// <summary>
@@ -411,8 +402,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public new Easing AutoSizeEasing
         {
-            get { return base.AutoSizeEasing; }
-            set { base.AutoSizeEasing = value; }
+            get => base.AutoSizeEasing;
+            set => base.AutoSizeEasing = value;
         }
     }
 }

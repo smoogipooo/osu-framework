@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace osu.Framework.Audio
 
         public void AddItemToList(T item)
         {
-            PendingActions.Enqueue(delegate
+            EnqueueAction(delegate
             {
                 if (Items.Contains(item)) return;
                 Items.Add(item);
@@ -31,12 +31,12 @@ namespace osu.Framework.Audio
 
         public void RegisterItem(T item)
         {
-            PendingActions.Enqueue(() => item.AddAdjustmentDependency(this));
+            EnqueueAction(() => item.AddAdjustmentDependency(this));
         }
 
         public void UnregisterItem(T item)
         {
-            PendingActions.Enqueue(() => item.RemoveAdjustmentDependency(this));
+            EnqueueAction(() => item.RemoveAdjustmentDependency(this));
         }
 
         internal override void OnStateChanged()
@@ -52,9 +52,9 @@ namespace osu.Framework.Audio
                 item.UpdateDevice(deviceIndex);
         }
 
-        protected override void UpdateState()
+        protected override void UpdateChildren()
         {
-            base.UpdateState();
+            base.UpdateChildren();
 
             for (int i = 0; i < Items.Count; i++)
             {
@@ -68,6 +68,15 @@ namespace osu.Framework.Audio
 
                 item.Update();
             }
+        }
+
+        public override void Dispose()
+        {
+            // we need to queue disposal of our Items before enqueueing the main dispose.
+            foreach (var i in Items)
+                i.Dispose();
+
+            base.Dispose();
         }
     }
 }

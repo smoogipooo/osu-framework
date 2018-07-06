@@ -1,19 +1,22 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using NUnit.Framework;
+using System;
+using System.Collections.Generic;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Input;
 using osu.Framework.Testing;
 using OpenTK;
 using OpenTK.Graphics;
 
 namespace osu.Framework.Tests.Visual
 {
-    [TestFixture]
     public class TestCaseSliderbar : TestCase
     {
+        public override IReadOnlyList<Type> RequiredTypes => new[] { typeof(BasicSliderBar<>), typeof(SliderBar<>) };
+
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly BindableDouble sliderBarValue; //keep a reference to avoid GC of the bindable
         private readonly SpriteText sliderbarText;
@@ -59,7 +62,47 @@ namespace osu.Framework.Tests.Visual
 
             sliderBar.Current.BindTo(sliderBarValue);
 
-            AddSliderStep("Value", -10.0, 10.0, 0.0, v => sliderBarValue.Value = v);
+            AddSliderStep("Value", -10.0, 10.0, -10.0, v => sliderBarValue.Value = v);
+
+            AddStep("Click at x = 50", () => sliderBar.TriggerOnClick(new InputState
+            {
+                Mouse = new MouseState
+                {
+                    Position = sliderBar.ToScreenSpace(sliderBar.DrawSize / 4)
+                },
+                Keyboard = new KeyboardState()
+            }));
+
+            AddAssert("Value == -6,25", () => sliderBarValue == -6.25);
+
+            AddStep("Press left arrow key", () =>
+            {
+                var before = sliderBar.IsHovered;
+                sliderBar.IsHovered = true;
+                sliderBar.TriggerOnKeyDown(null, new KeyDownEventArgs
+                {
+                    Key = OpenTK.Input.Key.Left,
+                });
+                sliderBar.IsHovered = before;
+            });
+
+            AddAssert("Value == -7,25", () => sliderBarValue == -7.25);
+
+            AddStep("Click at x = 150 with shift", () =>
+            {
+                var drawSize = sliderBar.DrawSize;
+                drawSize.X *= 0.75f;
+                sliderBar.TriggerOnClick(new InputState
+                {
+                    Mouse = new MouseState
+                    {
+                        Position = sliderBar.ToScreenSpace(drawSize)
+                    },
+                    Keyboard = new KeyboardState { Keys = { OpenTK.Input.Key.LShift } }
+                });
+            });
+
+            AddAssert("Value == 6", () => sliderBarValue == 6);
         }
 
         private void sliderBarValueChanged(double newValue)

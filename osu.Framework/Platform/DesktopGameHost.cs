@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Input;
 using osu.Framework.Input.Handlers;
+using osu.Framework.Input.Handlers.Joystick;
 using osu.Framework.Input.Handlers.Keyboard;
 using osu.Framework.Input.Handlers.Mouse;
 using osu.Framework.Logging;
@@ -60,6 +61,7 @@ namespace osu.Framework.Platform
 
             Debug.Assert(exe != null);
 
+            // ReSharper disable once PossibleNullReferenceException
             if (exe.Contains(@"_shadow"))
             {
                 //we are already running a shadow copy. monitor the original executable path for changes.
@@ -99,6 +101,16 @@ namespace osu.Framework.Platform
             Environment.Exit(0);
         }
 
+        public override void OpenFileExternally(string filename) => openUsingShellExecute(filename);
+
+        public override void OpenUrlExternally(string url) => openUsingShellExecute(url);
+
+        private void openUsingShellExecute(string path) => Process.Start(new ProcessStartInfo
+        {
+            FileName = path,
+            UseShellExecute = true //see https://github.com/dotnet/corefx/issues/10361
+        });
+
         public override ITextInputSource GetTextInput() => Window == null ? null : new GameWindowTextInput(Window);
 
         protected override IEnumerable<InputHandler> CreateAvailableInputHandlers()
@@ -107,6 +119,7 @@ namespace osu.Framework.Platform
             {
                 new OpenTKMouseHandler(),
                 new OpenTKKeyboardHandler(),
+                new OpenTKJoystickHandler(),
             };
 
             var defaultDisabled = new InputHandler[]

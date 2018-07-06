@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -49,6 +49,8 @@ namespace osu.Framework.Statistics
         DrawNodeCtor,
         DrawNodeAppl,
         ScheduleInvk,
+        KeyboardQueue,
+        MouseQueue,
 
         VBufBinds,
         VBufOverflow,
@@ -68,5 +70,6 @@ namespace osu.Framework.Statistics
 
         MouseEvents,
         KeyEvents,
+        JoystickEvents,
     }
 }

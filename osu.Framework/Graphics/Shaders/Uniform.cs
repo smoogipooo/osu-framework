@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 namespace osu.Framework.Graphics.Shaders
@@ -17,8 +17,8 @@ namespace osu.Framework.Graphics.Shaders
         /// </summary>
         public T Value
         {
-            get { return (T)uniformBase.Value; }
-            set { uniformBase.Value = value; }
+            get => (T)uniformBase.Value;
+            set => uniformBase.Value = value;
         }
 
         /// <summary>

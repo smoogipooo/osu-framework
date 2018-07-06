@@ -1,9 +1,8 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
 using osu.Framework.Graphics.Primitives;
-using RectangleF = osu.Framework.Graphics.Primitives.RectangleF;
 using OpenTK;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.OpenGL.Vertices;
@@ -33,14 +32,14 @@ namespace osu.Framework.Graphics.OpenGL.Textures
 
         public override int Height
         {
-            get { return bounds.Height; }
-            set { bounds.Height = value; }
+            get => bounds.Height;
+            set => bounds.Height = value;
         }
 
         public override int Width
         {
-            get { return bounds.Width; }
-            set { bounds.Width = value; }
+            get => bounds.Width;
+            set => bounds.Width = value;
         }
 
         private RectangleF boundsInParent(RectangleF? textureRect)

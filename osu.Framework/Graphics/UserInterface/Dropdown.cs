@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -40,7 +40,7 @@ namespace osu.Framework.Graphics.UserInterface
         /// </summary>
         public IEnumerable<KeyValuePair<string, T>> Items
         {
-            get { return MenuItems.Select(i => new KeyValuePair<string, T>(i.Text, i.Value)); }
+            get => MenuItems.Select(i => new KeyValuePair<string, T>(i.Text, i.Value));
             set
             {
                 ClearItems();
@@ -88,8 +88,7 @@ namespace osu.Framework.Graphics.UserInterface
             if (value == null)
                 return false;
 
-            DropdownMenuItem<T> item;
-            if (!itemMap.TryGetValue(value, out item))
+            if (!itemMap.TryGetValue(value, out DropdownMenuItem<T> item))
                 return false;
 
             Menu.Remove(item);
@@ -104,7 +103,7 @@ namespace osu.Framework.Graphics.UserInterface
 
         protected DropdownMenuItem<T> SelectedItem
         {
-            get { return selectedItem; }
+            get => selectedItem;
             set
             {
                 selectedItem = value;
@@ -167,8 +166,7 @@ namespace osu.Framework.Graphics.UserInterface
         /// <param name="val">The value to hide.</param>
         internal void HideItem(T val)
         {
-            DropdownMenuItem<T> item;
-            if (itemMap.TryGetValue(val, out item))
+            if (itemMap.TryGetValue(val, out DropdownMenuItem<T> item))
             {
                 Menu.HideItem(item);
                 updateHeaderVisibility();
@@ -181,8 +179,7 @@ namespace osu.Framework.Graphics.UserInterface
         /// <param name="val">The value to show.</param>
         internal void ShowItem(T val)
         {
-            DropdownMenuItem<T> item;
-            if (itemMap.TryGetValue(val, out item))
+            if (itemMap.TryGetValue(val, out DropdownMenuItem<T> item))
             {
                 Menu.ShowItem(item);
                 updateHeaderVisibility();
@@ -246,10 +243,7 @@ namespace osu.Framework.Graphics.UserInterface
                 private bool selected;
                 public bool IsSelected
                 {
-                    get
-                    {
-                        return !Item.Action.Disabled && selected;
-                    }
+                    get => !Item.Action.Disabled && selected;
                     set
                     {
                         if (selected == value)
@@ -263,7 +257,7 @@ namespace osu.Framework.Graphics.UserInterface
                 private Color4 backgroundColourSelected = Color4.SlateGray;
                 public Color4 BackgroundColourSelected
                 {
-                    get { return backgroundColourSelected; }
+                    get => backgroundColourSelected;
                     set
                     {
                         backgroundColourSelected = value;
@@ -274,7 +268,7 @@ namespace osu.Framework.Graphics.UserInterface
                 private Color4 foregroundColourSelected = Color4.White;
                 public Color4 ForegroundColourSelected
                 {
-                    get { return foregroundColourSelected; }
+                    get => foregroundColourSelected;
                     set
                     {
                         foregroundColourSelected = value;

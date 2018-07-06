@@ -1,20 +1,17 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES30;
 using osu.Framework.Allocation;
-using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Colour;
-using osu.Framework.Graphics.OpenGL.Buffers;
-using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.MathUtils;
-using osu.Framework.Threading;
 using System;
 using System.Collections.Generic;
+using osu.Framework.Caching;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -48,8 +45,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public bool DrawOriginal
         {
-            get { return drawOriginal; }
-
+            get => drawOriginal;
             set
             {
                 if (drawOriginal == value)
@@ -71,7 +67,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public Vector2 BlurSigma
         {
-            get { return blurSigma; }
+            get => blurSigma;
             set
             {
                 if (blurSigma == value)
@@ -90,7 +86,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public float BlurRotation
         {
-            get { return blurRotation; }
+            get => blurRotation;
             set
             {
                 if (blurRotation == value)
@@ -110,10 +106,10 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public bool PixelSnapping
         {
-            get { return pixelSnapping; }
+            get => pixelSnapping;
             set
             {
-                if (frameBuffers[0].IsInitialized || frameBuffers[1].IsInitialized)
+                if (sharedData.FrameBuffers[0].IsInitialized || sharedData.FrameBuffers[1].IsInitialized)
                     throw new InvalidOperationException("May only set PixelSnapping before FrameBuffers are initialized (i.e. before the first draw).");
                 pixelSnapping = value;
             }
@@ -127,8 +123,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public ColourInfo EffectColour
         {
-            get { return effectColour; }
-
+            get => effectColour;
             set
             {
                 if (effectColour.Equals(value))
@@ -148,8 +143,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public BlendingParameters EffectBlending
         {
-            get { return effectBlending; }
-
+            get => effectBlending;
             set
             {
                 if (effectBlending.Equals(value))
@@ -168,8 +162,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public EffectPlacement EffectPlacement
         {
-            get { return effectPlacement; }
-
+            get => effectPlacement;
             set
             {
                 if (effectPlacement == value)
@@ -187,8 +180,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public Color4 BackgroundColour
         {
-            get { return backgroundColour; }
-
+            get => backgroundColour;
             set
             {
                 if (backgroundColour == value)
@@ -198,8 +190,6 @@ namespace osu.Framework.Graphics.Containers
                 ForceRedraw();
             }
         }
-
-        private Shader blurShader;
 
         /// <summary>
         /// Whether the rendered framebuffer shall be cached until <see cref="ForceRedraw"/> is called
@@ -213,17 +203,7 @@ namespace osu.Framework.Graphics.Containers
         /// Forces a redraw of the framebuffer before it is blitted the next time.
         /// Only relevant if <see cref="CacheDrawnFrameBuffer"/> is true.
         /// </summary>
-        public void ForceRedraw()
-        {
-            ++updateVersion;
-            Invalidate(Invalidation.DrawNode);
-        }
-
-        /// <summary>
-        /// We need 2 frame buffers such that we can accumulate post-processing effects in a
-        /// ping-pong fashion going back and forth (reading from one buffer, writing into the other).
-        /// </summary>
-        private readonly FrameBuffer[] frameBuffers = new FrameBuffer[3];
+        public void ForceRedraw() => Invalidate(Invalidation.DrawNode);
 
         /// <summary>
         /// In order to signal the draw thread to re-draw the buffered container we version it.
@@ -234,18 +214,6 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         private long updateVersion;
 
-        /// <summary>
-        /// We also want to keep track of updates to our children, as we can bypass these updates
-        /// when our output is in a cached state.
-        /// </summary>
-        private long childrenUpdateVersion;
-
-        private readonly AtomicCounter drawVersion = new AtomicCounter();
-
-        private readonly QuadBatch<TexturedVertex2D> quadBatch = new QuadBatch<TexturedVertex2D>(1, 3);
-
-        private readonly List<RenderbufferInternalFormat> attachedFormats = new List<RenderbufferInternalFormat>();
-
         protected override bool CanBeFlattened => false;
 
         /// <summary>
@@ -253,12 +221,9 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public BufferedContainer()
         {
-            for (int i = 0; i < frameBuffers.Length; ++i)
             {
-                frameBuffers[i] = new FrameBuffer();
                 frameBuffers[i].Attach(RenderbufferInternalFormat.DepthComponent24);
             }
-
             // The initial draw cannot be cached, and thus we need to initialize
             // with a forced draw.
             ForceRedraw();
@@ -267,9 +232,13 @@ namespace osu.Framework.Graphics.Containers
         [BackgroundDependencyLoader]
         private void load(ShaderManager shaders)
         {
-            if (blurShader == null)
-                blurShader = shaders?.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.BLUR);
+            sharedData.BlurShader = shaders?.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.BLUR);
         }
+
+        private readonly BufferedContainerDrawNodeSharedData sharedData = new BufferedContainerDrawNodeSharedData();
+
+        private bool addChildDrawNodes;
+        internal override bool AddChildDrawNodes => addChildDrawNodes;
 
         protected override DrawNode CreateDrawNode() => new BufferedContainerDrawNode();
 
@@ -277,13 +246,11 @@ namespace osu.Framework.Graphics.Containers
         {
             BufferedContainerDrawNode n = (BufferedContainerDrawNode)node;
 
+            n.Shared = sharedData;
+
             n.ScreenSpaceDrawRectangle = ScreenSpaceDrawQuad.AABBFloat;
-            n.Batch = quadBatch;
-            n.FrameBuffers = frameBuffers;
-            n.Formats = new List<RenderbufferInternalFormat>(attachedFormats);
             n.FilteringMode = pixelSnapping ? All.Nearest : All.Linear;
 
-            n.DrawVersion = drawVersion;
             n.UpdateVersion = updateVersion;
             n.BackgroundColour = backgroundColour;
 
@@ -305,19 +272,37 @@ namespace osu.Framework.Graphics.Containers
             n.BlurSigma = blurSigma;
             n.BlurRadius = new Vector2I(Blur.KernelSize(BlurSigma.X), Blur.KernelSize(BlurSigma.Y));
             n.BlurRotation = blurRotation;
-            n.BlurShader = blurShader;
+
+            n.Formats.Clear();
+            n.Formats.AddRange(attachedFormats);
 
             base.ApplyDrawNode(node);
 
             // Our own draw node should contain our correct color, hence we have
             // to undo our overridden DrawInfo getter here.
             n.DrawInfo.Colour = base.DrawInfo.Colour;
+
+            // Only need to generate child draw nodes if the framebuffers will get redrawn this time around
+            addChildDrawNodes = n.RequiresRedraw;
         }
 
+        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex)
+        {
+            var result = base.GenerateDrawNodeSubtree(frame, treeIndex);
+
+            // The framebuffers may be redrawn this time around, but will be cached the next time around
+            addChildDrawNodes = false;
+
+            return result;
+        }
+
+        private readonly List<RenderbufferInternalFormat> attachedFormats = new List<RenderbufferInternalFormat>();
+
         /// <summary>
-        /// Attach an additional component to the framebuffer. Such a component can e.g.
+        /// Attach an additional component to this <see cref="BufferedContainer{T}"/>. Such a component can e.g.
         /// be a depth component, such that the framebuffer can hold fragment depth information.
         /// </summary>
+        /// <param name="format">The component format to attach.</param>
         public void Attach(RenderbufferInternalFormat format)
         {
             if (attachedFormats.Exists(f => f == format))
@@ -326,22 +311,59 @@ namespace osu.Framework.Graphics.Containers
             attachedFormats.Add(format);
         }
 
+        /// <summary>
+        /// Detaches an additional component of this <see cref="BufferedContainer{T}"/>.
+        /// </summary>
+        /// <param name="format">The component format to detach.</param>
+        public void Detach(RenderbufferInternalFormat format) => attachedFormats.Remove(format);
+
+        protected override RectangleF ComputeChildMaskingBounds(RectangleF maskingBounds) => ScreenSpaceDrawQuad.AABBFloat; // Make sure children never get masked away
+
+        private Vector2 lastScreenSpaceSize;
+        private Cached screenSpaceSizeBacking = new Cached();
+
+        public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
+        {
+            if ((invalidation & Invalidation.DrawNode) > 0)
+                ++updateVersion;
+
+            // We actually only care about Invalidation.MiscGeometry | Invalidation.DrawInfo, but must match the blanket invalidation logic in Drawable.Invalidate
+            if ((invalidation & (Invalidation.Colour | Invalidation.RequiredParentSizeToFit | Invalidation.DrawInfo)) > 0)
+                screenSpaceSizeBacking.Invalidate();
+
+            return base.Invalidate(invalidation, source, shallPropagate);
+        }
+
+        private long childrenUpdateVersion = -1;
+        protected override bool RequiresChildrenUpdate => base.RequiresChildrenUpdate && childrenUpdateVersion != updateVersion;
+
         protected override void Update()
         {
+            base.Update();
+
             // Invalidate drawn frame buffer every frame.
             if (!CacheDrawnFrameBuffer)
                 ForceRedraw();
+            else if (!screenSpaceSizeBacking.IsValid)
+            {
+                var screenSpaceSize = ScreenSpaceDrawQuad.AABBFloat.Size;
 
-            base.Update();
+                if (!Precision.AlmostEquals(lastScreenSpaceSize, screenSpaceSize))
+                {
+                    ++updateVersion;
+                    lastScreenSpaceSize = screenSpaceSize;
+                }
+
+                screenSpaceSizeBacking.Validate();
+            }
         }
 
         protected override void UpdateAfterChildren()
         {
             base.UpdateAfterChildren();
+
             childrenUpdateVersion = updateVersion;
         }
-
-        protected override bool RequiresChildrenUpdate => base.RequiresChildrenUpdate && childrenUpdateVersion != updateVersion;
 
         public override DrawInfo DrawInfo
         {

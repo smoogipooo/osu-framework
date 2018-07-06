@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Collections.Generic;
@@ -14,9 +14,14 @@ namespace osu.Framework.Input
     /// can be created to handle events that should trigger specifically on a focused drawable.
     /// Will send repeat events by default.
     /// </summary>
-    public class PlatformActionContainer : KeyBindingContainer<PlatformAction>
+    public class PlatformActionContainer : KeyBindingContainer<PlatformAction>, IHandleGlobalInput
     {
         private GameHost host;
+
+        public PlatformActionContainer()
+            : base(SimultaneousBindingMode.NoneExact)
+        {
+        }
 
         [BackgroundDependencyLoader]
         private void load(GameHost host)
@@ -25,6 +30,8 @@ namespace osu.Framework.Input
         }
 
         public override IEnumerable<KeyBinding> DefaultKeyBindings => host.PlatformKeyBindings;
+
+        protected override bool Prioritised => true;
 
         protected override bool SendRepeats => true;
     }
@@ -52,7 +59,9 @@ namespace osu.Framework.Input
         WordPrevious,
         WordNext,
         LineStart,
-        LineEnd
+        LineEnd,
+        DocumentPrevious,
+        DocumentNext
     }
 
     public enum PlatformActionMethod

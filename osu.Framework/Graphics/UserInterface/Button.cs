@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using osu.Framework.Graphics.Containers;
@@ -13,7 +13,7 @@ namespace osu.Framework.Graphics.UserInterface
     {
         public string Text
         {
-            get { return SpriteText?.Text; }
+            get => SpriteText?.Text;
             set
             {
                 if (SpriteText != null)
@@ -23,8 +23,8 @@ namespace osu.Framework.Graphics.UserInterface
 
         public Color4 BackgroundColour
         {
-            get { return Background.Colour; }
-            set { Background.FadeColour(value); }
+            get => Background.Colour;
+            set => Background.FadeColour(value);
         }
 
         protected override Container<Drawable> Content => content;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -13,10 +13,10 @@ namespace osu.Framework.Screens
         protected Screen ParentScreen;
         public Screen ChildScreen;
 
-        public bool IsCurrentScreen => !hasExited && ChildScreen == null;
+        public bool IsCurrentScreen => !hasExited && hasEntered && ChildScreen == null;
 
         private readonly Container content;
-        private readonly Container childModeContainer;
+        private Container childModeContainer;
 
         protected Game Game;
 
@@ -27,6 +27,7 @@ namespace osu.Framework.Screens
         public event Action<Screen> Exited;
 
         private bool hasExited;
+        private bool hasEntered;
 
         /// <summary>
         /// Make this Screen directly exited when resuming from a child.
@@ -46,12 +47,6 @@ namespace osu.Framework.Screens
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre
                 },
-                childModeContainer = new Container
-                {
-                    Anchor = Anchor.Centre,
-                    Origin = Anchor.Centre,
-                    RelativeSizeAxes = Axes.Both,
-                },
             });
         }
 
@@ -64,7 +59,11 @@ namespace osu.Framework.Screens
 
         public override bool DisposeOnDeathRemoval => true;
 
-        public override bool HandleInput => !hasExited;
+        // in the case we don't have a parent screen, we still want to handle input as we are also responsible for
+        // children inside childScreenContainer.
+        // this means the root screen always received input.
+        public override bool HandleKeyboardInput => IsCurrentScreen || !hasExited && ParentScreen == null;
+        public override bool HandleMouseInput => IsCurrentScreen || !hasExited && ParentScreen == null;
 
         /// <summary>
         /// Called when this Screen is being entered. Only happens once, ever.
@@ -109,39 +108,64 @@ namespace osu.Framework.Screens
 
             //for the case where we are at the top of the mode stack, we still want to run our OnEntering method.
             if (ParentScreen == null)
-                OnEntering(null);
+            {
+                enter(null);
+
+                AddInternal(childModeContainer = new Container
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    RelativeSizeAxes = Axes.Both,
+                });
+            }
+            else
+            {
+                childModeContainer = ParentScreen.childModeContainer;
+            }
         }
 
         /// <summary>
         /// Changes to a new Screen.
+        /// This will trigger an async load if the screen is not already loaded, during which the current screen will no longer be current (or accept user input).
         /// </summary>
         /// <param name="screen">The new Screen.</param>
-        public virtual bool Push(Screen screen)
+        public virtual void Push(Screen screen)
         {
+            if (hasExited)
+                throw new TargetAlreadyExitedException();
+
             if (!IsCurrentScreen)
-                throw new InvalidOperationException("Cannot push a child screen to a non-current screen");
+                throw new ScreenNotCurrentException(nameof(Push));
 
             if (ChildScreen != null)
-                throw new InvalidOperationException("Can not push more than one child screen.");
-
-            screen.ParentScreen = this;
-            childModeContainer.Add(screen);
+                throw new ScreenHasChildException(nameof(Push), "Exit the existing child screen first.");
 
             if (screen.hasExited)
-            {
-                screen.Expire();
-                return false;
-            }
+                throw new ScreenAlreadyExitedException();
 
+            if (screen.hasEntered)
+                throw new ScreenAlreadyEnteredException();
+
+            screen.ParentScreen = this;
             startSuspend(screen);
-
-            screen.OnEntering(this);
-
             ModePushed?.Invoke(screen);
 
-            Content.Expire();
+            void finishLoad()
+            {
+                if (hasExited || screen.hasExited)
+                    return;
 
-            return true;
+                childModeContainer.Add(screen);
+
+                screen.enter(this);
+
+                Content.Expire();
+            }
+
+            if (screen.LoadState >= LoadState.Ready)
+                finishLoad();
+            else
+                LoadComponentAsync(screen, _ => finishLoad());
         }
 
         private void startSuspend(Screen next)
@@ -155,7 +179,19 @@ namespace osu.Framework.Screens
         /// <summary>
         /// Exits this Screen.
         /// </summary>
-        public void Exit() => ExitFrom(this);
+        public void Exit()
+        {
+            if (ChildScreen != null)
+                throw new ScreenHasChildException(nameof(Exit), $"Use {nameof(MakeCurrent)} instead.");
+
+            ExitFrom(this);
+        }
+
+        private void enter(Screen source)
+        {
+            hasEntered = true;
+            OnEntering(source);
+        }
 
         /// <summary>
         /// Exits this Screen.
@@ -215,12 +251,53 @@ namespace osu.Framework.Screens
 
         protected class ContentContainer : Container
         {
-            public override bool HandleInput => LifetimeEnd == double.MaxValue;
+            public override bool HandleKeyboardInput => LifetimeEnd == double.MaxValue;
+            public override bool HandleMouseInput => LifetimeEnd == double.MaxValue;
             public override bool RemoveWhenNotAlive => false;
 
             public ContentContainer()
             {
                 RelativeSizeAxes = Axes.Both;
+            }
+        }
+
+        public class TargetAlreadyExitedException : InvalidOperationException
+        {
+            public TargetAlreadyExitedException()
+                : base("Cannot push to an already exited screen.")
+            {
+            }
+        }
+
+        public class ScreenNotCurrentException : InvalidOperationException
+        {
+            public ScreenNotCurrentException(string action)
+                : base($"Cannot perform {action} on a non-current screen.")
+            {
+            }
+        }
+
+        public class ScreenHasChildException : InvalidOperationException
+        {
+            public ScreenHasChildException(string action, string description)
+                : base($"Cannot perform {action} when a child is already present. {description}")
+            {
+            }
+        }
+
+        public class ScreenAlreadyExitedException : InvalidOperationException
+        {
+            public ScreenAlreadyExitedException()
+                : base("Cannot push a screen in an exited state.")
+            {
+            }
+        }
+
+        public class ScreenAlreadyEnteredException : InvalidOperationException
+        {
+            public ScreenAlreadyEnteredException()
+                : base("Cannot push a screen in an entered state.")
+            {
             }
         }
     }

@@ -1,7 +1,8 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
+using osu.Framework.Graphics;
 using OpenTK.Graphics;
 
 namespace osu.Framework.Testing.Drawables.Steps
@@ -19,15 +20,14 @@ namespace osu.Framework.Testing.Drawables.Steps
         public ToggleStepButton(Action<bool> reloadCallback)
         {
             this.reloadCallback = reloadCallback;
-
-            BackgroundColour = off_colour;
             Action = clickAction;
+            LightColour = off_colour;
         }
 
         private void clickAction()
         {
             State = !State;
-            BackgroundColour = State ? on_colour : off_colour;
+            Light.FadeColour(State ? on_colour : off_colour);
             reloadCallback?.Invoke(State);
 
             if (!State)

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using OpenTK;
@@ -15,9 +15,9 @@ using System.Linq;
 namespace osu.Framework.Graphics.Cursor
 {
     /// <summary>
-    /// Displays Tooltips for all its children that inherit from the <see cref="IHasTooltip"/> or <see cref="IHasCustomTooltip"/> interfaces. Keep in mind that only children with <see cref="Drawable.HandleInput"/> set to true will be checked for their tooltips.
+    /// Displays Tooltips for all its children that inherit from the <see cref="IHasTooltip"/> or <see cref="IHasCustomTooltip"/> interfaces. Keep in mind that only children with <see cref="Drawable.HandleMouseInput"/> set to true will be checked for their tooltips.
     /// </summary>
-    public class TooltipContainer : CursorEffectContainer<TooltipContainer, IHasTooltip>
+    public class TooltipContainer : CursorEffectContainer<TooltipContainer, IHasTooltip>, IHandleGlobalInput
     {
         private readonly CursorContainer cursorContainer;
         private readonly ITooltip defaultTooltip;
@@ -149,12 +149,14 @@ namespace osu.Framework.Graphics.Cursor
                 AddInternal((Drawable)currentTooltip);
 
                 currentTooltip.Show();
+                RefreshTooltip(currentTooltip, target);
             }
         }
 
         private readonly List<TimedPosition> recentMousePositions = new List<TimedPosition>();
         private double lastRecordedPositionTime;
 
+        private IHasTooltip lastCandidate;
         /// <summary>
         /// Determines which drawable should currently receive a tooltip, taking into account
         /// <see cref="AppearDelay"/> and <see cref="AppearRadius"/>. Returns null if no valid
@@ -164,12 +166,22 @@ namespace osu.Framework.Graphics.Cursor
         private IHasTooltip findTooltipTarget()
         {
             // While we are dragging a tooltipped drawable we should show a tooltip for it.
-            IHasTooltip draggedTarget = inputManager.DraggedDrawable as IHasTooltip;
-            if (draggedTarget != null)
+            if (inputManager.DraggedDrawable is IHasTooltip draggedTarget)
                 return hasValidTooltip(draggedTarget) ? draggedTarget : null;
 
+            IHasTooltip targetCandidate = FindTargets().FirstOrDefault(t => t.TooltipText != null);
+            // check this first - if we find no target candidate we still want to clear the recorded positions and update the lastCandidate.
+            if (targetCandidate != lastCandidate)
+            {
+                recentMousePositions.Clear();
+                lastCandidate = targetCandidate;
+            }
+            if (targetCandidate == null)
+                return null;
+
+            double appearDelay = (targetCandidate as IHasAppearDelay)?.AppearDelay ?? AppearDelay;
             // Always keep 10 positions at equally-sized time intervals that add up to AppearDelay.
-            double positionRecordInterval = AppearDelay / 10;
+            double positionRecordInterval = appearDelay / 10;
             if (Time.Current - lastRecordedPositionTime >= positionRecordInterval)
             {
                 lastRecordedPositionTime = Time.Current;
@@ -180,11 +192,15 @@ namespace osu.Framework.Graphics.Cursor
                 });
             }
 
-            recentMousePositions.RemoveAll(t => Time.Current - t.Time > AppearDelay);
+            // check that we have recorded enough positions to make a judgement about whether or not the cursor has been standing still for the required amount of time.
+            // we can skip this if the appear-delay is set to 0, since then tooltips can appear instantly and we don't need to wait to record enough positions.
+            if (appearDelay > 0 && (recentMousePositions.Count == 0 || lastRecordedPositionTime - recentMousePositions[0].Time < appearDelay - positionRecordInterval))
+                return null;
+            recentMousePositions.RemoveAll(t => Time.Current - t.Time > appearDelay);
 
             // For determining whether to show a tooltip we first select only those positions
             // which happened within a shorter, alpha-adjusted appear delay.
-            double alphaModifiedAppearDelay = (1 - currentTooltip.Alpha) * AppearDelay;
+            double alphaModifiedAppearDelay = (1 - currentTooltip.Alpha) * appearDelay;
             var relevantPositions = recentMousePositions.Where(t => Time.Current - t.Time <= alphaModifiedAppearDelay);
 
             // We then check whether all relevant positions fall within a radius of AppearRadius within the
@@ -195,12 +211,7 @@ namespace osu.Framework.Graphics.Cursor
             float appearRadiusSq = AppearRadius * AppearRadius;
 
             if (relevantPositions.All(t => Vector2Extensions.DistanceSquared(t.Position, first) < appearRadiusSq))
-            {
-                // Only return the target if it has a valid tooltip
-                IHasTooltip target = FindTarget();
-                if (hasValidTooltip(target))
-                    return target;
-            }
+                return targetCandidate;
 
             return null;
         }
@@ -249,7 +260,7 @@ namespace osu.Framework.Graphics.Cursor
         /// <summary>
         /// The default tooltip. Simply displays its text on a gray background and performs no easing.
         /// </summary>
-        public class Tooltip : OverlayContainer, ITooltip
+        public class Tooltip : VisibilityContainer, ITooltip
         {
             private readonly SpriteText text;
 
@@ -258,13 +269,11 @@ namespace osu.Framework.Graphics.Cursor
             /// </summary>
             public virtual string TooltipText
             {
-                set
-                {
-                    text.Text = value;
-                }
+                set => text.Text = value;
             }
 
-            public override bool HandleInput => false;
+            public override bool HandleKeyboardInput => false;
+            public override bool HandleMouseInput => false;
 
             private const float text_size = 16;
 

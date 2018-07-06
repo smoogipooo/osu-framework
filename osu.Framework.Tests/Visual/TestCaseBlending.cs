@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -16,7 +16,7 @@ using OpenTK.Graphics;
 
 namespace osu.Framework.Tests.Visual
 {
-    internal class TestCaseBlending : TestCase
+    public class TestCaseBlending : TestCase
     {
         private readonly Dropdown<BlendingMode> colourModeDropdown;
         private readonly Dropdown<BlendingEquation> colourEquation;

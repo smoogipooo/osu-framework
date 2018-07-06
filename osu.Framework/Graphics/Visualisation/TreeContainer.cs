@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -44,8 +44,7 @@ namespace osu.Framework.Graphics.Visualisation
 
         public TreeContainerStatus State
         {
-            get { return state; }
-
+            get => state;
             set
             {
                 if (state == value)

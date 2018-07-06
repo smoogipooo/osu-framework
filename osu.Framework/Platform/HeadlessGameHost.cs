@@ -1,8 +1,9 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Collections.Generic;
 using osu.Framework.Input.Handlers;
+using osu.Framework.Logging;
 using osu.Framework.Timing;
 
 namespace osu.Framework.Platform
@@ -16,7 +17,11 @@ namespace osu.Framework.Platform
 
         protected override IFrameBasedClock SceneGraphClock => customClock ?? base.SceneGraphClock;
 
-        protected override Storage GetStorage(string baseName) => new DesktopStorage($"headless-{baseName}");
+        public override void OpenFileExternally(string filename) => Logger.Log($"Application has requested file \"{filename}\" to be opened.");
+
+        public override void OpenUrlExternally(string url) => Logger.Log($"Application has requested URL \"{url}\" to be opened.");
+
+        protected override Storage GetStorage(string baseName) => new DesktopStorage($"headless-{baseName}", this);
 
         public HeadlessGameHost(string gameName = @"", bool bindIPC = false, bool realtime = true)
             : base(gameName, bindIPC)

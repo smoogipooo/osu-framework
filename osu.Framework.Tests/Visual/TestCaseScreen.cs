@@ -1,7 +1,8 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
+using System.Threading;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
@@ -16,17 +17,116 @@ using OpenTK.Graphics;
 
 namespace osu.Framework.Tests.Visual
 {
-    [TestFixture]
-    internal class TestCaseScreen : TestCase
+    public class TestCaseScreen : TestCase
     {
-        public TestCaseScreen()
+        private Screen baseScreen;
+
+        [SetUp]
+        public new void SetupTest()
         {
-            Add(new TestScreen());
+            Clear();
+            Add(baseScreen = new TestScreen());
+        }
+
+        [Test]
+        public void TestPushPop()
+        {
+            TestScreen screen1 = null, screen2 = null;
+
+            pushAndEnsureCurrent(() => screen1 = new TestScreen());
+
+            // we don't support pushing a screen that has been entered
+            AddStep("bad push", () => Assert.Throws(typeof(Screen.ScreenAlreadyEnteredException), () => screen1.Push(screen1)));
+
+            pushAndEnsureCurrent(() => screen2 = new TestScreen(), () => screen1);
+
+            AddAssert("ensure child", () => screen1.ChildScreen != null);
+
+            AddStep("pop", () => screen2.Exit());
+
+            AddAssert("ensure child gone", () => screen1.ChildScreen == null);
+            AddAssert("ensure not current", () => !screen2.IsCurrentScreen);
+
+            // can't push an exited screen
+            AddStep("bad push", () => Assert.Throws(typeof(Screen.ScreenAlreadyExitedException), () => screen1.Push(screen2)));
+
+            AddStep("pop", () => screen1.Exit());
+        }
+
+        [Test]
+        public void TestMultiLevelExit()
+        {
+            TestScreen screen1 = null, screen2 = null, screen3 = null;
+
+            pushAndEnsureCurrent(() => screen1 = new TestScreen());
+            pushAndEnsureCurrent(() => screen2 = new TestScreen(), () => screen1);
+            pushAndEnsureCurrent(() => screen3 = new TestScreen(), () => screen2);
+
+            AddStep("bad exit", () => Assert.Throws(typeof(Screen.ScreenHasChildException), () => screen1.Exit()));
+
+            AddStep("make current", () => screen1.MakeCurrent());
+
+            AddAssert("ensure child gone", () => screen1.ChildScreen == null);
+            AddAssert("ensure current", () => screen1.IsCurrentScreen);
+
+            AddAssert("ensure not current", () => !screen2.IsCurrentScreen);
+            AddAssert("ensure not current", () => !screen3.IsCurrentScreen);
+        }
+
+        [Test]
+        public void TestAsyncPush()
+        {
+            TestScreen screen1 = null;
+
+            AddStep("push slow", () => baseScreen.Push(screen1 = new TestScreenSlow()));
+            AddAssert("ensure not current", () => !screen1.IsCurrentScreen);
+            AddWaitStep(1);
+            AddUntilStep(() => screen1.IsCurrentScreen, "ensure current");
+        }
+
+        [Test]
+        public void TestAsyncPreloadPush()
+        {
+            TestScreen screen1 = null;
+            AddStep("preload slow", () => LoadComponentAsync(screen1 = new TestScreenSlow()));
+            pushAndEnsureCurrent(() => screen1);
+        }
+
+        [Test]
+        public void TestCaseExitBeforePush()
+        {
+            TestScreen screen1 = null;
+            TestScreen screen2 = null;
+
+            AddStep("push slow", () => baseScreen.Push(screen1 = new TestScreenSlow()));
+            AddStep("exit slow", () => screen1.Exit());
+            AddAssert("ensure not current", () => !screen1.IsCurrentScreen);
+            AddWaitStep(5);
+            AddAssert("ensure not current", () => !screen1.IsCurrentScreen);
+            AddAssert("ensure base still current", () => baseScreen.IsCurrentScreen);
+            AddStep("push fast", () => baseScreen.Push(screen2 = new TestScreen()));
+            AddAssert("ensure new current", () => screen2.IsCurrentScreen);
+        }
+
+        private void pushAndEnsureCurrent(Func<Screen> screenCtor, Func<Screen> target = null)
+        {
+            Screen screen = null;
+            AddStep("push", () => (target?.Invoke() ?? baseScreen).Push(screen = screenCtor()));
+            AddUntilStep(() => screen.IsCurrentScreen, "ensure current");
+        }
+
+        private class TestScreenSlow : TestScreen
+        {
+            [BackgroundDependencyLoader]
+            private void load()
+            {
+                Thread.Sleep((int)(500 / Clock.Rate));
+            }
         }
 
         private class TestScreen : Screen
         {
-            public int Sequence;
+            public static int Sequence;
             private Button popButton;
 
             private const int transition_time = 500;
@@ -78,7 +178,7 @@ namespace osu.Framework.Tests.Visual
                     },
                     new SpriteText
                     {
-                        Text = $@"Mode {Sequence}",
+                        Text = $@"Screen {Sequence++}",
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
                         TextSize = 50,
@@ -106,7 +206,6 @@ namespace osu.Framework.Tests.Visual
                         {
                             Push(new TestScreen
                             {
-                                Sequence = Sequence + 1,
                                 Anchor = Anchor.Centre,
                                 Origin = Anchor.Centre,
                             });

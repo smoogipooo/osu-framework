@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Collections.Concurrent;
@@ -7,7 +7,7 @@ using osu.Framework.Graphics.OpenGL.Textures;
 using osu.Framework.IO.Stores;
 using System;
 using System.Threading;
-using osu.Framework.Graphics.Primitives;
+using OpenTK.Graphics.ES30;
 
 namespace osu.Framework.Graphics.Textures
 {
@@ -15,6 +15,7 @@ namespace osu.Framework.Graphics.Textures
     {
         private readonly ConcurrentDictionary<string, Lazy<TextureGL>> textureCache = new ConcurrentDictionary<string, Lazy<TextureGL>>();
 
+        private readonly All filteringMode;
         private readonly TextureAtlas atlas;
 
         /// <summary>
@@ -23,14 +24,15 @@ namespace osu.Framework.Graphics.Textures
         /// </summary>
         public float ScaleAdjust = 2;
 
-        public TextureStore(IResourceStore<RawTexture> store = null, bool useAtlas = true)
+        public TextureStore(IResourceStore<RawTexture> store = null, bool useAtlas = true, All filteringMode = All.Linear)
             : base(store)
         {
+            this.filteringMode = filteringMode;
             AddExtension(@"png");
             AddExtension(@"jpg");
 
             if (useAtlas)
-                atlas = new TextureAtlas(GLWrapper.MaxTextureSize, GLWrapper.MaxTextureSize);
+                atlas = new TextureAtlas(GLWrapper.MaxTextureSize, GLWrapper.MaxTextureSize, filteringMode: filteringMode);
         }
 
         private Texture getTexture(string name)
@@ -38,12 +40,8 @@ namespace osu.Framework.Graphics.Textures
             RawTexture raw = base.Get($@"{name}");
             if (raw == null) return null;
 
-            Texture tex = atlas != null ? atlas.Add(raw.Width, raw.Height) : new Texture(raw.Width, raw.Height);
-            tex.SetData(new TextureUpload(raw.Pixels)
-            {
-                Bounds = new RectangleI(0, 0, raw.Width, raw.Height),
-                Format = raw.PixelFormat,
-            });
+            Texture tex = atlas != null ? atlas.Add(raw.Width, raw.Height) : new Texture(raw.Width, raw.Height, filteringMode: filteringMode);
+            tex.SetData(new TextureUpload(raw));
 
             return tex;
         }
@@ -55,6 +53,8 @@ namespace osu.Framework.Graphics.Textures
         /// <returns>The texture.</returns>
         public new virtual Texture Get(string name)
         {
+            if (string.IsNullOrEmpty(name)) return null;
+
             var cachedTex = textureCache.GetOrAdd(name, n =>
                 //Laziness ensure we are only ever creating the texture once (and blocking on other access until it is done).
                     new Lazy<TextureGL>(() => getTexture(name)?.TextureGL, LazyThreadSafetyMode.ExecutionAndPublication)).Value;

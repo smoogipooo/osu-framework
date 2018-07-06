@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using OpenTK;
@@ -66,8 +66,7 @@ namespace osu.Framework.Graphics.Performance
 
         public FrameStatisticsMode State
         {
-            get { return state; }
-
+            get => state;
             set
             {
                 if (state == value) return;
@@ -103,12 +102,14 @@ namespace osu.Framework.Graphics.Performance
 
         public FrameStatisticsDisplay(GameThread thread, TextureAtlas atlas)
         {
-            Name = thread.Thread.Name;
+            Name = thread.Name;
             monitor = thread.Monitor;
 
             Origin = Anchor.TopRight;
             AutoSizeAxes = Axes.Both;
             Alpha = alpha_when_active;
+
+            int colour = 0;
 
             bool hasCounters = monitor.ActiveCounters.Any(b => b);
             Child = new Container
@@ -157,7 +158,7 @@ namespace osu.Framework.Graphics.Performance
                                                 where monitor.ActiveCounters[(int)t]
                                                 select counterBars[t] = new CounterBar
                                                 {
-                                                    Colour = getColour(t),
+                                                    Colour = getColour(colour++),
                                                     Label = t.ToString(),
                                                 },
                                         },
@@ -240,8 +241,8 @@ namespace osu.Framework.Graphics.Performance
             addArea(null, null, HEIGHT, column, amount_ms_steps);
 
             for (int i = 0; i < HEIGHT; i++)
-                for (int k = 0; k < WIDTH; k++)
-                    Buffer.BlockCopy(column, i * 4, fullBackground, i * WIDTH * 4 + k * 4, 4);
+            for (int k = 0; k < WIDTH; k++)
+                Buffer.BlockCopy(column, i * 4, fullBackground, i * WIDTH * 4 + k * 4, 4);
 
             addArea(null, null, HEIGHT, column, amount_count_steps);
 
@@ -270,8 +271,7 @@ namespace osu.Framework.Graphics.Performance
 
         public bool Active
         {
-            get { return active; }
-
+            get => active;
             set
             {
                 if (active == value) return;
@@ -310,7 +310,7 @@ namespace osu.Framework.Graphics.Performance
         private void applyFrameTime(FrameStatistics frame)
         {
             TimeBar timeBar = timeBars[timeBarIndex];
-            TextureUpload upload = new TextureUpload(HEIGHT * 4, textureBufferStack)
+            TextureUpload upload = new TextureUpload(new RawTexture(1, HEIGHT, textureBufferStack))
             {
                 Bounds = new RectangleI(timeBarX, 0, 1, HEIGHT)
             };
@@ -353,8 +353,7 @@ namespace osu.Framework.Graphics.Performance
         {
             base.Update();
 
-            FrameStatistics frame;
-            while (monitor.PendingFrames.TryDequeue(out frame))
+            while (monitor.PendingFrames.TryDequeue(out FrameStatistics frame))
             {
                 if (processFrames)
                     applyFrame(frame);
@@ -388,42 +387,26 @@ namespace osu.Framework.Graphics.Performance
             }
         }
 
-        private Color4 getColour(StatisticsCounterType type)
+        private Color4 getColour(int index)
         {
-            switch (type)
+            const int colour_count = 7;
+
+            switch (index % colour_count)
             {
                 default:
-                    return Color4.Yellow;
-
-                case StatisticsCounterType.VBufBinds:
-                    return Color4.SkyBlue;
-
-                case StatisticsCounterType.Invalidations:
-                case StatisticsCounterType.TextureBinds:
-                case StatisticsCounterType.TasksRun:
-                case StatisticsCounterType.MouseEvents:
                     return Color4.BlueViolet;
-
-                case StatisticsCounterType.DrawCalls:
-                case StatisticsCounterType.Refreshes:
-                case StatisticsCounterType.Tracks:
-                case StatisticsCounterType.KeyEvents:
+                case 1:
                     return Color4.YellowGreen;
-
-                case StatisticsCounterType.DrawNodeCtor:
-                case StatisticsCounterType.VerticesDraw:
-                case StatisticsCounterType.Samples:
+                case 2:
                     return Color4.HotPink;
-
-                case StatisticsCounterType.DrawNodeAppl:
-                case StatisticsCounterType.VerticesUpl:
-                case StatisticsCounterType.SChannels:
+                case 3:
                     return Color4.Red;
-
-                case StatisticsCounterType.ScheduleInvk:
-                case StatisticsCounterType.Pixels:
-                case StatisticsCounterType.Components:
+                case 4:
                     return Color4.Cyan;
+                case 5:
+                    return Color4.Yellow;
+                case 6:
+                    return Color4.SkyBlue;
             }
         }
 
@@ -431,12 +414,11 @@ namespace osu.Framework.Graphics.Performance
         {
             Trace.Assert(textureData.Length >= HEIGHT * 4, $"textureData is too small ({textureData.Length}) to hold area data.");
 
-            double elapsedMilliseconds;
             int drawHeight;
 
             if (!frameTimeType.HasValue)
                 drawHeight = currentHeight;
-            else if (frame.CollectedTimes.TryGetValue(frameTimeType.Value, out elapsedMilliseconds))
+            else if (frame.CollectedTimes.TryGetValue(frameTimeType.Value, out double elapsedMilliseconds))
             {
                 legendMapping[(int)frameTimeType].Alpha = 1;
                 drawHeight = (int)(elapsedMilliseconds * scale);
@@ -485,7 +467,8 @@ namespace osu.Framework.Graphics.Performance
                 Sprite.Texture = atlas.Add(WIDTH, HEIGHT);
             }
 
-            public override bool HandleInput => false;
+            public override bool HandleKeyboardInput => false;
+            public override bool HandleMouseInput => false;
         }
 
         private class CounterBar : Container
@@ -499,7 +482,7 @@ namespace osu.Framework.Graphics.Performance
 
             public bool Active
             {
-                get { return active; }
+                get => active;
                 set
                 {
                     if (active == value)
@@ -527,6 +510,7 @@ namespace osu.Framework.Graphics.Performance
             private const float bar_width = 6;
 
             private long value;
+
             public long Value
             {
                 set

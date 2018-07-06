@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using osu.Framework.Lists;
@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System;
 using System.Diagnostics;
 using OpenTK;
-using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.OpenGL;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Shaders;
@@ -19,6 +18,7 @@ using osu.Framework.Caching;
 using osu.Framework.Threading;
 using osu.Framework.Statistics;
 using System.Threading.Tasks;
+using osu.Framework.Graphics.Primitives;
 using osu.Framework.MathUtils;
 
 namespace osu.Framework.Graphics.Containers
@@ -76,9 +76,16 @@ namespace osu.Framework.Graphics.Containers
             // regardless of their alive state. this also gives children a clock so they can be checked
             // for their correct alive state in the case LifetimeStart is set to a definite value.
             internalChildren.ForEach(loadChild);
+        }
 
-            // Let's also perform an update on our children's life to add any alive children.
-            UpdateChildrenLife();
+        protected override void LoadAsyncComplete()
+        {
+            base.LoadAsyncComplete();
+
+            // At this point we can assume that we are loaded although we're not in the "ready" state, because we'll be given
+            // a "ready" state soon after this method terminates. Therefore we can perform an early check to add any alive children
+            // while we're still in an asynchronous context and avoid putting pressure on the main thread during UpdateSubTree.
+            checkChildrenLife();
         }
 
         private void loadChild(Drawable child)
@@ -98,7 +105,6 @@ namespace osu.Framework.Graphics.Containers
             InternalChildren?.ForEach(c => c.Dispose());
 
             OnAutoSize = null;
-            schedulerAfterChildren?.Dispose();
             schedulerAfterChildren = null;
 
             base.Dispose(isDisposing);
@@ -137,7 +143,7 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        private class ChildComparer : IComparer<Drawable>
+        protected class ChildComparer : IComparer<Drawable>
         {
             private readonly CompositeDrawable owner;
 
@@ -187,8 +193,8 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         protected internal IReadOnlyList<Drawable> InternalChildren
         {
-            get { return internalChildren; }
-            set { InternalChildrenEnumerable = value; }
+            get => internalChildren;
+            set => InternalChildrenEnumerable = value;
         }
 
         /// <summary>
@@ -225,7 +231,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         /// <param name="drawable">The <see cref="Drawable"/> to be removed.</param>
         /// <returns>False if <paramref name="drawable"/> was not a child of this <see cref="CompositeDrawable"/> and true otherwise.</returns>
-        protected internal bool RemoveInternal(Drawable drawable)
+        protected internal virtual bool RemoveInternal(Drawable drawable)
         {
             if (drawable == null)
                 throw new ArgumentNullException(nameof(drawable));
@@ -248,7 +254,7 @@ namespace osu.Framework.Graphics.Containers
             drawable.IsAlive = false;
 
             if (AutoSizeAxes != Axes.None)
-                InvalidateFromChild(Invalidation.RequiredParentSizeToFit);
+                InvalidateFromChild(Invalidation.RequiredParentSizeToFit, drawable);
 
             return true;
         }
@@ -260,8 +266,10 @@ namespace osu.Framework.Graphics.Containers
         /// Whether removed children should also get disposed.
         /// Disposal will be recursive.
         /// </param>
-        protected internal void ClearInternal(bool disposeChildren = true)
+        protected internal virtual void ClearInternal(bool disposeChildren = true)
         {
+            if (internalChildren.Count == 0) return;
+
             foreach (Drawable t in internalChildren)
             {
                 if (t.IsAlive)
@@ -319,10 +327,9 @@ namespace osu.Framework.Graphics.Containers
                 loadChild(drawable);
 
             internalChildren.Add(drawable);
-            checkChildLife(drawable);
 
             if (AutoSizeAxes != Axes.None)
-                InvalidateFromChild(Invalidation.RequiredParentSizeToFit);
+                InvalidateFromChild(Invalidation.RequiredParentSizeToFit, drawable);
         }
 
         /// <summary>
@@ -342,6 +349,8 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="newDepth">The new depth value to be set.</param>
         protected internal void ChangeInternalChildDepth(Drawable child, float newDepth)
         {
+            if (child.Depth == newDepth) return;
+
             var index = IndexOfInternal(child);
             if (index < 0)
                 throw new InvalidOperationException($"Can not change depth of drawable which is not contained within this {nameof(CompositeDrawable)}.");
@@ -376,6 +385,24 @@ namespace osu.Framework.Graphics.Containers
         /// <returns>True iff the life status of at least one child changed.</returns>
         protected virtual bool UpdateChildrenLife()
         {
+            // Can not have alive children if we are not loaded.
+            if (LoadState < LoadState.Ready)
+                return false;
+
+            if (!checkChildrenLife())
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Checks whether the alive state of any child has changed and processes it. This will add or remove
+        /// children from <see cref="aliveInternalChildren"/> depending on their alive states.
+        /// <para>Note that this does NOT check the load state of this <see cref="CompositeDrawable"/> to check if it can hold any alive children.</para>
+        /// </summary>
+        /// <returns>Whether any child's alive state has changed.</returns>
+        private bool checkChildrenLife()
+        {
             bool anyAliveChanged = false;
 
             // checkChildLife may remove a child from internalChildren. In order to not skip children,
@@ -391,18 +418,15 @@ namespace osu.Framework.Graphics.Containers
         }
 
         /// <summary>
-        /// Checks whether the alive state of a child has changed processes it. This will add or remove
+        /// Checks whether the alive state of a child has changed and processes it. This will add or remove
         /// the child from <see cref="aliveInternalChildren"/> depending on its alive state.
+        /// <para>Note that this does NOT check the load state of this <see cref="CompositeDrawable"/> to check if it can hold any alive children.</para>
         /// </summary>
         /// <param name="child">The child to check.</param>
         /// <returns>Whether the child's alive state has changed.</returns>
         private bool checkChildLife(Drawable child)
         {
             Debug.Assert(internalChildren.Contains(child), "Can only check and react to the life of our own children.");
-
-            // Can not have alive children if we are not loaded.
-            if (LoadState < LoadState.Ready)
-                return false;
 
             bool changed = false;
 
@@ -443,7 +467,7 @@ namespace osu.Framework.Graphics.Containers
             return changed;
         }
 
-        public override void UpdateClock(IFrameBasedClock clock)
+        internal override void UpdateClock(IFrameBasedClock clock)
         {
             if (Clock == clock)
                 return;
@@ -475,6 +499,8 @@ namespace osu.Framework.Graphics.Containers
             // for children, as they should never affect our present status.
             if (!IsPresent || !RequiresChildrenUpdate) return false;
 
+            UpdateAfterChildrenLife();
+
             // We iterate by index to gain performance
             // ReSharper disable once ForCanBeConvertedToForeach
             for (int i = 0; i < aliveInternalChildren.Count; ++i)
@@ -495,6 +521,64 @@ namespace osu.Framework.Graphics.Containers
             updateChildrenSizeDependencies();
             UpdateAfterAutoSize();
             return true;
+        }
+
+        /// <summary>
+        /// Updates all masking calculations for this <see cref="CompositeDrawable"/> and its <see cref="AliveInternalChildren"/>.
+        /// This occurs post-<see cref="UpdateSubTree"/> to ensure that all <see cref="Drawable"/> updates have taken place.
+        /// </summary>
+        /// <param name="source">The parent that triggered this update on this <see cref="Drawable"/>.</param>
+        /// <param name="maskingBounds">The <see cref="RectangleF"/> that defines the masking bounds.</param>
+        /// <returns>Whether masking calculations have taken place.</returns>
+        public override bool UpdateSubTreeMasking(Drawable source, RectangleF maskingBounds)
+        {
+            if (!base.UpdateSubTreeMasking(source, maskingBounds))
+                return false;
+
+            if (IsMaskedAway)
+                return true;
+
+            if (aliveInternalChildren.Count == 0)
+                return true;
+
+            if (RequiresChildrenUpdate)
+            {
+                var childMaskingBounds = ComputeChildMaskingBounds(maskingBounds);
+
+
+                // We iterate by index to gain performance
+                // ReSharper disable once ForCanBeConvertedToForeach
+                for (int i = 0; i < aliveInternalChildren.Count; i++)
+                    aliveInternalChildren[i].UpdateSubTreeMasking(this, childMaskingBounds);
+            }
+
+            return true;
+        }
+
+        protected override bool ComputeIsMaskedAway(RectangleF maskingBounds)
+        {
+            if (!CanBeFlattened)
+                return base.ComputeIsMaskedAway(maskingBounds);
+
+            // The masking check is overly expensive (requires creation of ScreenSpaceDrawQuad)
+            // when only few children exist.
+            return aliveInternalChildren.Count >= amount_children_required_for_masking_check && base.ComputeIsMaskedAway(maskingBounds);
+        }
+
+        /// <summary>
+        /// Computes the <see cref="RectangleF"/> to be used as the masking bounds for all <see cref="AliveInternalChildren"/>.
+        /// </summary>
+        /// <param name="maskingBounds">The <see cref="RectangleF"/> that defines the masking bounds for this <see cref="CompositeDrawable"/>.</param>
+        /// <returns>The <see cref="RectangleF"/> to be used as the masking bounds for <see cref="AliveInternalChildren"/>.</returns>
+        protected virtual RectangleF ComputeChildMaskingBounds(RectangleF maskingBounds) => Masking ? RectangleF.Intersect(maskingBounds, ScreenSpaceDrawQuad.AABBFloat) : maskingBounds;
+
+        /// <summary>
+        /// Invoked after <see cref="UpdateChildrenLife"/> and <see cref="Drawable.IsPresent"/> state checks have taken place,
+        /// but before <see cref="Drawable.UpdateSubTree"/> is invoked for all <see cref="InternalChildren"/>.
+        /// This occurs after <see cref="Drawable.Update"/> has been invoked on this <see cref="CompositeDrawable"/>
+        /// </summary>
+        protected virtual void UpdateAfterChildrenLife()
+        {
         }
 
         /// <summary>
@@ -521,8 +605,13 @@ namespace osu.Framework.Graphics.Containers
         /// Informs this <see cref="CompositeDrawable"/> that a child has been invalidated.
         /// </summary>
         /// <param name="invalidation">The type of invalidation applied to the child.</param>
-        public virtual void InvalidateFromChild(Invalidation invalidation)
+        /// <param name="source">The child which caused this invalidation. May be null to indicate that a specific child wasn't specified.</param>
+        public virtual void InvalidateFromChild(Invalidation invalidation, Drawable source = null)
         {
+            // We only want to recompute autosize if the child isn't bypassing all of our autosize axes
+            if (source != null && (source.BypassAutoSizeAxes & AutoSizeAxes) == AutoSizeAxes)
+                return;
+
             //Colour captures potential changes in IsPresent. If this ever becomes a bottleneck,
             //Invalidation could be further separated into presence changes.
             if ((invalidation & (Invalidation.RequiredParentSizeToFit | Invalidation.Colour)) > 0)
@@ -554,6 +643,7 @@ namespace osu.Framework.Graphics.Containers
                 childInvalidation &= ~Invalidation.MiscGeometry;
 
                 // Relative positioning can however affect child geometry
+                // ReSharper disable once PossibleNullReferenceException
                 if (c.RelativePositionAxes != Axes.None && (invalidation & Invalidation.DrawSize) > 0)
                     childInvalidation |= Invalidation.MiscGeometry;
 
@@ -612,7 +702,15 @@ namespace osu.Framework.Graphics.Containers
             base.ApplyDrawNode(node);
         }
 
-        protected virtual bool CanBeFlattened => !Masking;
+        /// <summary>
+        /// A flattened <see cref="CompositeDrawable"/> has its <see cref="DrawNode"/> merged into its parents'.
+        /// In some cases, the <see cref="DrawNode"/> must always be generated and flattening should not occur.
+        /// </summary>
+        protected virtual bool CanBeFlattened =>
+            // Masking composite DrawNodes define the masking area for their children
+            !Masking
+            // Proxied drawables have their DrawNodes drawn elsewhere in the scene graph
+            && !HasProxy;
 
         private const int amount_children_required_for_masking_check = 2;
 
@@ -620,12 +718,12 @@ namespace osu.Framework.Graphics.Containers
         /// This function adds all children's <see cref="DrawNode"/>s to a target List, flattening the children of certain types
         /// of <see cref="CompositeDrawable"/> subtrees for optimization purposes.
         /// </summary>
-        /// <param name="treeIndex">The index of the currently in-use DrawNode tree.</param>
+        /// <param name="frame">The frame which <see cref="DrawNode"/>s should be generated for.</param>
+        /// <param name="treeIndex">The index of the currently in-use <see cref="DrawNode"/> tree.</param>
         /// <param name="j">The running index into the target List.</param>
-        /// <param name="parentComposite">The <see cref="CompositeDrawable"/> whose children's DrawNodes to add.</param>
+        /// <param name="parentComposite">The <see cref="CompositeDrawable"/> whose children's <see cref="DrawNode"/>s to add.</param>
         /// <param name="target">The target list to fill with DrawNodes.</param>
-        /// <param name="maskingBounds">The masking bounds. Children lying outside of them should be ignored.</param>
-        private static void addFromComposite(int treeIndex, ref int j, CompositeDrawable parentComposite, List<DrawNode> target, RectangleF maskingBounds, bool shouldDrawDepth)
+        private static void addFromComposite(ulong frame, int treeIndex, ref int j, CompositeDrawable parentComposite, List<DrawNode> target)
         {
             SortedList<Drawable> current = parentComposite.aliveInternalChildren;
             // ReSharper disable once ForCanBeConvertedToForeach
@@ -633,80 +731,66 @@ namespace osu.Framework.Graphics.Containers
             {
                 Drawable drawable = current[i];
 
-                // If we are proxied somewhere, then we want to be drawn at the proxy's location
-                // in the scene graph, rather than at our own location, thus no draw nodes for us.
-                if (drawable.HasProxy)
-                    continue;
-
-                // Take drawable.Original until drawable.Original == drawable
-                while (drawable != (drawable = drawable.Original))
+                if (!drawable.IsProxy)
                 {
+                    if (!drawable.IsPresent)
+                        continue;
+
+                    CompositeDrawable composite = drawable as CompositeDrawable;
+                    if (composite?.CanBeFlattened == true)
+                    {
+                        if (!composite.IsMaskedAway)
+                            addFromComposite(frame, treeIndex, ref j, composite, target);
+
+                        continue;
+                    }
+
+                    if (drawable.IsMaskedAway)
+                        continue;
                 }
 
-                if (!drawable.IsPresent)
-                    continue;
-
-                CompositeDrawable composite = drawable as CompositeDrawable;
-                if (composite?.CanBeFlattened == true)
-                {
-                    // The masking check is overly expensive (requires creation of ScreenSpaceDrawQuad)
-                    // when only few children exist.
-                    composite.IsMaskedAway = composite.AliveInternalChildren.Count >= amount_children_required_for_masking_check &&
-                                             !maskingBounds.IntersectsWith(drawable.ScreenSpaceDrawQuad.AABBFloat);
-
-                    if (!composite.IsMaskedAway)
-                        addFromComposite(treeIndex, ref j, composite, target, maskingBounds, shouldDrawDepth && composite.ShouldDrawDepth);
-
-                    continue;
-                }
-
-                drawable.IsMaskedAway = !maskingBounds.IntersectsWith(drawable.ScreenSpaceDrawQuad.AABBFloat);
-                if (drawable.IsMaskedAway)
-                    continue;
-
-                DrawNode next = drawable.GenerateDrawNodeSubtree(treeIndex, maskingBounds, shouldDrawDepth);
+                DrawNode next = drawable.GenerateDrawNodeSubtree(frame, treeIndex);
                 if (next == null)
                     continue;
 
-                if (j < target.Count)
-                    target[j] = next;
+                if (drawable.HasProxy)
+                    drawable.ValidateProxyDrawNode(treeIndex, frame);
                 else
-                    target.Add(next);
-
-                j++;
+                {
+                    if (j < target.Count)
+                        target[j] = next;
+                    else
+                        target.Add(next);
+                    j++;
+                }
             }
         }
 
-        internal sealed override DrawNode GenerateDrawNodeSubtree(int treeIndex, RectangleF bounds, bool shouldDrawDepth)
+        internal virtual bool AddChildDrawNodes => true;
+
+        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex)
         {
             // No need for a draw node at all if there are no children and we are not glowing.
             if (aliveInternalChildren.Count == 0 && CanBeFlattened)
                 return null;
 
             shouldDrawDepth &= ShouldDrawDepth;
-
-            CompositeDrawNode cNode = base.GenerateDrawNodeSubtree(treeIndex, bounds, shouldDrawDepth) as CompositeDrawNode;
-            if (cNode == null)
+            if (!(base.GenerateDrawNodeSubtree(frame, treeIndex) is CompositeDrawNode cNode))
                 return null;
-
-            RectangleF childBounds = bounds;
-            // If we are going to render a buffered container we need to make sure no children get masked away,
-            // even if they are off-screen.
-            if (this is IBufferedContainer)
-                childBounds = ScreenSpaceDrawQuad.AABBFloat;
-            else if (Masking)
-                childBounds.Intersect(ScreenSpaceDrawQuad.AABBFloat);
 
             if (cNode.Children == null)
                 cNode.Children = new List<DrawNode>(aliveInternalChildren.Count);
 
-            List<DrawNode> target = cNode.Children;
+            if (AddChildDrawNodes)
+            {
+                List<DrawNode> target = cNode.Children;
 
-            int j = 0;
-            addFromComposite(treeIndex, ref j, this, target, childBounds, shouldDrawDepth);
+                int j = 0;
+                addFromComposite(frame, treeIndex, ref j, this, target);
 
-            if (j < target.Count)
-                target.RemoveRange(j, target.Count - j);
+                if (j < target.Count)
+                    target.RemoveRange(j, target.Count - j);
+            }
 
             return cNode;
         }
@@ -723,7 +807,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public override bool RemoveCompletedTransforms
         {
-            get { return base.RemoveCompletedTransforms; }
+            get => base.RemoveCompletedTransforms;
             internal set
             {
                 if (base.RemoveCompletedTransforms == value)
@@ -829,7 +913,8 @@ namespace osu.Framework.Graphics.Containers
 
         // Required to pass through input to children by default.
         // TODO: Evaluate effects of this on performance and address.
-        public override bool HandleInput => true;
+        public override bool HandleKeyboardInput => true;
+        public override bool HandleMouseInput => true;
 
         public override bool Contains(Vector2 screenSpacePos)
         {
@@ -841,22 +926,22 @@ namespace osu.Framework.Graphics.Containers
             return DrawRectangle.Shrink(cRadius).DistanceSquared(ToLocalSpace(screenSpacePos)) <= cRadius * cRadius;
         }
 
-        internal override bool BuildKeyboardInputQueue(List<Drawable> queue)
+        internal override bool BuildKeyboardInputQueue(List<Drawable> queue, bool allowBlocking = true)
         {
-            if (!base.BuildKeyboardInputQueue(queue))
+            if (!base.BuildKeyboardInputQueue(queue, allowBlocking))
                 return false;
 
             // We iterate by index to gain performance
             // ReSharper disable once ForCanBeConvertedToForeach
             for (int i = 0; i < aliveInternalChildren.Count; ++i)
-                aliveInternalChildren[i].BuildKeyboardInputQueue(queue);
+                aliveInternalChildren[i].BuildKeyboardInputQueue(queue, allowBlocking);
 
             return true;
         }
 
         internal override bool BuildMouseInputQueue(Vector2 screenSpaceMousePos, List<Drawable> queue)
         {
-            if (!base.BuildMouseInputQueue(screenSpaceMousePos, queue) && (!CanReceiveInput || Masking))
+            if (!base.BuildMouseInputQueue(screenSpaceMousePos, queue) && (!CanReceiveMouseInput || Masking))
                 return false;
 
             // We iterate by index to gain performance
@@ -879,7 +964,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public bool Masking
         {
-            get { return masking; }
+            get => masking;
             protected set
             {
                 if (masking == value)
@@ -898,7 +983,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public float MaskingSmoothness
         {
-            get { return maskingSmoothness; }
+            get => maskingSmoothness;
             protected set
             {
                 //must be above zero to avoid a div-by-zero in the shader logic.
@@ -920,7 +1005,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public float CornerRadius
         {
-            get { return cornerRadius; }
+            get => cornerRadius;
             protected set
             {
                 if (cornerRadius == value)
@@ -945,7 +1030,7 @@ namespace osu.Framework.Graphics.Containers
         /// </remarks>
         public float BorderThickness
         {
-            get { return borderThickness; }
+            get => borderThickness;
             protected set
             {
                 if (borderThickness == value)
@@ -964,7 +1049,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public SRGBColour BorderColour
         {
-            get { return borderColour; }
+            get => borderColour;
             protected set
             {
                 if (borderColour.Equals(value))
@@ -984,7 +1069,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public EdgeEffectParameters EdgeEffect
         {
-            get { return edgeEffect; }
+            get => edgeEffect;
             protected set
             {
                 if (edgeEffect.Equals(value))
@@ -1035,7 +1120,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public MarginPadding Padding
         {
-            get { return padding; }
+            get => padding;
             protected set
             {
                 if (padding.Equals(value)) return;
@@ -1069,7 +1154,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public Vector2 RelativeChildSize
         {
-            get { return relativeChildSize; }
+            get => relativeChildSize;
             protected set
             {
                 if (relativeChildSize == value)
@@ -1093,7 +1178,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public Vector2 RelativeChildOffset
         {
-            get { return relativeChildOffset; }
+            get => relativeChildOffset;
             protected set
             {
                 if (relativeChildOffset == value)
@@ -1133,7 +1218,7 @@ namespace osu.Framework.Graphics.Containers
 
         public override Axes RelativeSizeAxes
         {
-            get { return base.RelativeSizeAxes; }
+            get => base.RelativeSizeAxes;
             set
             {
                 if ((AutoSizeAxes & value) != 0)
@@ -1155,7 +1240,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public virtual Axes AutoSizeAxes
         {
-            get { return autoSizeAxes; }
+            get => autoSizeAxes;
             protected set
             {
                 if (value == autoSizeAxes)
@@ -1293,16 +1378,10 @@ namespace osu.Framework.Graphics.Containers
 
             Vector2 b = computeAutoSize() + Padding.Total;
 
-            if (AutoSizeDuration > 0)
-                autoSizeResizeTo(new Vector2(
-                    (AutoSizeAxes & Axes.X) > 0 ? b.X : base.Width,
-                    (AutoSizeAxes & Axes.Y) > 0 ? b.Y : base.Height
-                ), AutoSizeDuration, AutoSizeEasing);
-            else
-            {
-                if ((AutoSizeAxes & Axes.X) > 0) base.Width = b.X;
-                if ((AutoSizeAxes & Axes.Y) > 0) base.Height = b.Y;
-            }
+            autoSizeResizeTo(new Vector2(
+                (AutoSizeAxes & Axes.X) > 0 ? b.X : base.Width,
+                (AutoSizeAxes & Axes.Y) > 0 ? b.Y : base.Height
+            ), AutoSizeDuration, AutoSizeEasing);
 
             //note that this is called before autoSize becomes valid. may be something to consider down the line.
             //might work better to add an OnRefresh event in Cached<> and invoke there.
@@ -1328,19 +1407,26 @@ namespace osu.Framework.Graphics.Containers
         }
 
         private void autoSizeResizeTo(Vector2 newSize, double duration = 0, Easing easing = Easing.None) =>
-            this.TransformTo(nameof(baseSize), newSize, duration, easing);
+            this.TransformTo(this.PopulateTransform(new AutoSizeTransform { Rewindable = false }, newSize, duration, easing));
 
         /// <summary>
         /// A helper property for <see cref="autoSizeResizeTo(Vector2, double, Easing)"/> to change the size of <see cref="CompositeDrawable"/>s with <see cref="AutoSizeAxes"/>.
         /// </summary>
         private Vector2 baseSize
         {
-            get { return new Vector2(base.Width, base.Height); }
-
+            get => new Vector2(base.Width, base.Height);
             set
             {
                 base.Width = value.X;
                 base.Height = value.Y;
+            }
+        }
+
+        private class AutoSizeTransform : TransformCustom<Vector2, CompositeDrawable>
+        {
+            public AutoSizeTransform()
+                : base(nameof(baseSize))
+            {
             }
         }
 

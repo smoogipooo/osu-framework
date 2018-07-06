@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using osu.Framework.Extensions.Color4Extensions;
@@ -19,7 +19,7 @@ namespace osu.Framework.Graphics.UserInterface
 
         public string LabelText
         {
-            get { return labelSpriteText?.Text; }
+            get => labelSpriteText?.Text;
             set
             {
                 if (labelSpriteText != null)
@@ -29,7 +29,7 @@ namespace osu.Framework.Graphics.UserInterface
 
         public MarginPadding LabelPadding
         {
-            get { return labelSpriteText?.Padding ?? new MarginPadding(); }
+            get => labelSpriteText?.Padding ?? new MarginPadding();
             set
             {
                 if (labelSpriteText != null)

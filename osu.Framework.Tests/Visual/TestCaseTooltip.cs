@@ -1,7 +1,6 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
@@ -14,8 +13,7 @@ using OpenTK.Graphics;
 
 namespace osu.Framework.Tests.Visual
 {
-    [TestFixture]
-    internal class TestCaseTooltip : TestCase
+    public class TestCaseTooltip : TestCase
     {
         private readonly Container testContainer;
 
@@ -92,6 +90,7 @@ namespace osu.Framework.Tests.Visual
                         Children = new Drawable[]
                         {
                             new TooltipSpriteText("this text has a tooltip!"),
+                            new InstantTooltipSpriteText("this text has an instant tooltip!"),
                             new TooltipSpriteText("this one too!"),
                             new CustomTooltipSpriteText("this text has an empty tooltip!", string.Empty),
                             new CustomTooltipSpriteText("this text has a nulled tooltip!", null),
@@ -175,6 +174,16 @@ namespace osu.Framework.Tests.Visual
             }
         }
 
+        private class InstantTooltipSpriteText : CustomTooltipSpriteText, IHasAppearDelay
+        {
+            public InstantTooltipSpriteText(string tooltipText)
+                : base(tooltipText, tooltipText)
+            {
+            }
+
+            public double AppearDelay => 0;
+        }
+
         private class TooltipTooltipContainer : TooltipContainer, IHasTooltip
         {
             public string TooltipText { get; set; }
@@ -194,7 +203,8 @@ namespace osu.Framework.Tests.Visual
         {
             public string TooltipText { get; set; }
 
-            public override bool HandleInput => true;
+            public override bool HandleKeyboardInput => true;
+            public override bool HandleMouseInput => true;
         }
 
         private class RectangleCursorContainer : CursorContainer

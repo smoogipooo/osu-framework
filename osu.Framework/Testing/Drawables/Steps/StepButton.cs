@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -23,14 +23,20 @@ namespace osu.Framework.Testing.Drawables.Steps
 
         public string Text
         {
-            get { return SpriteText.Text; }
-            set { SpriteText.Text = value; }
+            get => SpriteText.Text;
+            set => SpriteText.Text = value;
         }
 
-        public Color4 BackgroundColour
+        private Color4 lightColour = Color4.BlueViolet;
+
+        public Color4 LightColour
         {
-            get { return Light.Colour; }
-            set { Light.FadeColour(value); }
+            get => lightColour;
+            set
+            {
+                lightColour = value;
+                if (IsLoaded) Reset();
+            }
         }
 
         private readonly Color4 idleColour = new Color4(0.15f, 0.15f, 0.15f, 1);
@@ -65,8 +71,6 @@ namespace osu.Framework.Testing.Drawables.Steps
             Height = 20;
             RelativeSizeAxes = Axes.X;
 
-            BackgroundColour = Color4.BlueViolet;
-
             BorderThickness = 1.5f;
             BorderColour = new Color4(0.15f, 0.15f, 0.15f, 1);
 
@@ -74,10 +78,39 @@ namespace osu.Framework.Testing.Drawables.Steps
             Masking = true;
         }
 
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            Reset();
+        }
+
         protected override bool OnClick(InputState state)
         {
+            try
+            {
+                PerformStep(true);
+            }
+            catch (Exception e)
+            {
+                Logging.Logger.Error(e, $"Step {this} triggered an error");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Reset this step to a default state.
+        /// </summary>
+        public virtual void Reset()
+        {
+            Background.DelayUntilTransformsFinished().FadeColour(idleColour, 1000, Easing.OutQuint);
+            Light.FadeColour(lightColour);
+        }
+
+        public virtual void PerformStep(bool userTriggered = false)
+        {
             Background.ClearTransforms();
-            Background.FadeColour(runningColour, 40, Easing.OutQuint);
+            Background.FadeColour(runningColour, 400, Easing.OutQuint);
 
             try
             {
@@ -86,23 +119,22 @@ namespace osu.Framework.Testing.Drawables.Steps
             catch (Exception)
             {
                 Failure();
-
-                // if our state is null, we were triggered programmatically and want to handle the exception in the outer scope.
-                if (state == null)
-                    throw;
+                throw;
             }
-
-            return true;
         }
 
         protected virtual void Failure()
         {
             Background.DelayUntilTransformsFinished().FadeColour(new Color4(0.3f, 0.15f, 0.15f, 1), 1000, Easing.OutQuint);
+            Light.FadeColour(Color4.Red);
         }
 
         protected virtual void Success()
         {
-            Background.DelayUntilTransformsFinished().FadeColour(idleColour, 1000, Easing.OutQuint);
+            Background.FinishTransforms();
+            Background.FadeColour(idleColour, 1000, Easing.OutQuint);
+
+            Light.FadeColour(Color4.YellowGreen);
             SpriteText.Alpha = 0.8f;
         }
 

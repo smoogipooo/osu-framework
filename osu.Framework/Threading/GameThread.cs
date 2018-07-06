@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -25,7 +25,7 @@ namespace osu.Framework.Threading
 
         public bool IsActive
         {
-            get { return isActive; }
+            get => isActive;
             set
             {
                 isActive = value;
@@ -37,8 +37,7 @@ namespace osu.Framework.Threading
 
         public double ActiveHz
         {
-            get { return activeHz; }
-
+            get => activeHz;
             set
             {
                 activeHz = value;
@@ -51,8 +50,7 @@ namespace osu.Framework.Threading
 
         public double InactiveHz
         {
-            get { return inactiveHz; }
-
+            get => inactiveHz;
             set
             {
                 inactiveHz = value;
@@ -61,11 +59,9 @@ namespace osu.Framework.Threading
             }
         }
 
+        public static string PrefixedThreadNameFor(string name) => $"{nameof(GameThread)}.{name}";
+
         public bool Running => Thread.IsAlive;
-
-        public virtual void Exit() => exitRequested = true;
-
-        private volatile bool exitRequested;
 
         private readonly ManualResetEvent initializedEvent = new ManualResetEvent(false);
 
@@ -73,15 +69,19 @@ namespace osu.Framework.Threading
 
         internal virtual IEnumerable<StatisticsCounterType> StatisticsCounters => Array.Empty<StatisticsCounterType>();
 
-        public GameThread(Action onNewFrame, string threadName)
+        public readonly string Name;
+
+        internal GameThread(Action onNewFrame, string name)
         {
             this.onNewFrame = onNewFrame;
+
             Thread = new Thread(runWork)
             {
-                Name = threadName,
+                Name = PrefixedThreadNameFor(name),
                 IsBackground = true,
             };
 
+            Name = name;
             Clock = new ThrottledFrameClock();
             Monitor = new PerformanceMonitor(Clock, Thread, StatisticsCounters);
             Scheduler = new Scheduler(null, Clock);
@@ -100,12 +100,22 @@ namespace osu.Framework.Threading
 
             initializedEvent.Set();
 
-            while (!exitRequested)
+            while (!exitCompleted)
                 ProcessFrame();
         }
 
         protected void ProcessFrame()
         {
+            if (exitCompleted)
+                return;
+
+            if (exitRequested)
+            {
+                PerformExit();
+                exitCompleted = true;
+                return;
+            }
+
             Monitor.NewFrame();
 
             using (Monitor.BeginCollecting(PerformanceCollectionType.Scheduler))
@@ -118,9 +128,18 @@ namespace osu.Framework.Threading
                 Clock.ProcessFrame();
         }
 
-        public void Start()
+        private volatile bool exitRequested;
+        private volatile bool exitCompleted;
+
+        public bool Exited => exitCompleted;
+
+        public void Exit() => exitRequested = true;
+        public void Start() => Thread?.Start();
+
+        protected virtual void PerformExit()
         {
-            Thread?.Start();
+            Monitor?.Dispose();
+            initializedEvent?.Dispose();
         }
     }
 }

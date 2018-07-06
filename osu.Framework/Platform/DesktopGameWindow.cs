@@ -1,23 +1,23 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
 using System.Drawing;
+using System.IO;
 using osu.Framework.Configuration;
 using osu.Framework.Input;
 using OpenTK;
+using OpenTK.Graphics;
 
 namespace osu.Framework.Platform
 {
-    public class DesktopGameWindow : GameWindow
+    public abstract class DesktopGameWindow : GameWindow
     {
         private const int default_width = 1366;
         private const int default_height = 768;
 
-        private readonly BindableInt widthFullscreen = new BindableInt();
-        private readonly BindableInt heightFullscreen = new BindableInt();
-        private readonly BindableInt width = new BindableInt();
-        private readonly BindableInt height = new BindableInt();
+        private readonly BindableSize sizeFullscreen = new BindableSize();
+        private readonly BindableSize sizeWindowed = new BindableSize();
 
         private readonly BindableDouble windowPositionX = new BindableDouble();
         private readonly BindableDouble windowPositionY = new BindableDouble();
@@ -26,23 +26,41 @@ namespace osu.Framework.Platform
 
         public readonly Bindable<ConfineMouseMode> ConfineMouseMode = new Bindable<ConfineMouseMode>();
 
-        public DesktopGameWindow()
+        internal override IGraphicsContext Context => Implementation.Context;
+
+        protected new OpenTK.GameWindow Implementation => (OpenTK.GameWindow)base.Implementation;
+
+        public readonly BindableBool MapAbsoluteInputToWindow = new BindableBool();
+
+        public override DisplayDevice GetCurrentDisplay() => DisplayDevice.Default;
+
+        protected DesktopGameWindow()
             : base(default_width, default_height)
         {
+            Resize += OnResize;
+            Move += OnMove;
         }
+
+        public virtual void SetIconFromStream(Stream stream) { }
 
         public override void SetupWindow(FrameworkConfigManager config)
         {
-            config.BindWith(FrameworkSetting.WidthFullscreen, widthFullscreen);
-            config.BindWith(FrameworkSetting.HeightFullscreen, heightFullscreen);
+            config.BindWith(FrameworkSetting.SizeFullscreen, sizeFullscreen);
 
-            config.BindWith(FrameworkSetting.Width, width);
-            config.BindWith(FrameworkSetting.Height, height);
+            sizeFullscreen.ValueChanged += newSize =>
+            {
+                if (WindowState == WindowState.Fullscreen)
+                    changeResolution(newSize);
+            };
+
+            config.BindWith(FrameworkSetting.WindowedSize, sizeWindowed);
 
             config.BindWith(FrameworkSetting.WindowedPositionX, windowPositionX);
             config.BindWith(FrameworkSetting.WindowedPositionY, windowPositionY);
 
             config.BindWith(FrameworkSetting.ConfineMouseMode, ConfineMouseMode);
+
+            config.BindWith(FrameworkSetting.MapAbsoluteInputToWindow, MapAbsoluteInputToWindow);
 
             ConfineMouseMode.ValueChanged += confineMouseMode_ValueChanged;
             ConfineMouseMode.TriggerChange();
@@ -55,25 +73,46 @@ namespace osu.Framework.Platform
             Exited += onExit;
         }
 
-        protected override void OnResize(EventArgs e)
+        private void changeResolution(Size newSize)
+        {
+            var currentDisplay = DisplayDevice.Default;
+
+            if (newSize.Width == currentDisplay.Width && newSize.Height == currentDisplay.Height)
+                return;
+
+            DisplayResolution newResolution = currentDisplay.SelectResolution(
+                newSize.Width,
+                newSize.Height,
+                currentDisplay.BitsPerPixel,
+                currentDisplay.RefreshRate
+            );
+
+            if (newResolution.Width == currentDisplay.Width && newResolution.Height == currentDisplay.Height)
+            {
+                // we wanted a new resolution but got the old one, which means OpenTK didn't find this resolution
+                currentDisplay.RestoreResolution();
+            }
+            else
+            {
+                currentDisplay.ChangeResolution(newResolution);
+                ClientSize = newSize;
+            }
+        }
+
+        protected void OnResize(object sender, EventArgs e)
         {
             if (ClientSize.IsEmpty) return;
-
-            base.OnResize(e);
 
             switch (WindowMode.Value)
             {
                 case Configuration.WindowMode.Windowed:
-                    width.Value = ClientSize.Width;
-                    height.Value = ClientSize.Height;
+                    sizeWindowed.Value = ClientSize;
                     break;
             }
         }
 
-        protected override void OnMove(EventArgs e)
+        protected void OnMove(object sender, EventArgs e)
         {
-            base.OnMove(e);
-
             // The game is windowed and the whole window is on the screen (it is not minimized or moved outside of the screen)
             if (WindowMode.Value == Configuration.WindowMode.Windowed
                 && Position.X > 0 && Position.X < 1
@@ -109,8 +148,7 @@ namespace osu.Framework.Platform
             switch (newMode)
             {
                 case Configuration.WindowMode.Fullscreen:
-                    DisplayResolution newResolution = DisplayDevice.Default.SelectResolution(widthFullscreen, heightFullscreen, 0, DisplayDevice.Default.RefreshRate);
-                    DisplayDevice.Default.ChangeResolution(newResolution);
+                    changeResolution(sizeFullscreen);
 
                     WindowState = WindowState.Fullscreen;
                     break;
@@ -130,7 +168,7 @@ namespace osu.Framework.Platform
                     WindowState = WindowState.Normal;
                     WindowBorder = WindowBorder.Resizable;
 
-                    ClientSize = new Size(width, height);
+                    ClientSize = sizeWindowed;
                     Position = new Vector2((float)windowPositionX, (float)windowPositionY);
                     break;
             }
@@ -143,22 +181,20 @@ namespace osu.Framework.Platform
             switch (WindowMode.Value)
             {
                 case Configuration.WindowMode.Fullscreen:
-                    widthFullscreen.Value = ClientSize.Width;
-                    heightFullscreen.Value = ClientSize.Height;
+                    sizeFullscreen.Value = ClientSize;
                     break;
             }
 
             DisplayDevice.Default.RestoreResolution();
         }
 
-        public override Vector2 Position
+        public Vector2 Position
         {
             get
             {
                 return new Vector2((float)Location.X / (DisplayDevice.Default.Width - Size.Width),
                     (float)Location.Y / (DisplayDevice.Default.Height - Size.Height));
             }
-
             set
             {
                 Location = new Point(
@@ -181,6 +217,12 @@ namespace osu.Framework.Platform
                     WindowMode.Value = Configuration.WindowMode.Windowed;
                     break;
             }
+        }
+
+        public override VSyncMode VSync
+        {
+            get => Implementation.VSync;
+            set => Implementation.VSync = value;
         }
     }
 }

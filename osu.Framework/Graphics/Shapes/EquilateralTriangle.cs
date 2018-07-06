@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using OpenTK;
@@ -29,8 +29,8 @@ namespace osu.Framework.Graphics.Shapes
         /// </summary>
         public override float Height
         {
-            get { return Width * sidelength_to_height_factor; }
-            set { Size = new Vector2(value / sidelength_to_height_factor); }
+            get => Width * sidelength_to_height_factor;
+            set => Size = new Vector2(value / sidelength_to_height_factor);
         }
     }
 }

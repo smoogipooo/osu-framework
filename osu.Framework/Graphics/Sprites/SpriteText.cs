@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using OpenTK;
@@ -14,6 +14,7 @@ using osu.Framework.IO.Stores;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using osu.Framework.Extensions.IEnumerableExtensions;
 
 namespace osu.Framework.Graphics.Sprites
 {
@@ -37,15 +38,15 @@ namespace osu.Framework.Graphics.Sprites
         /// </summary>
         public bool UseFullGlyphHeight = true;
 
-        public override bool IsPresent => base.IsPresent && !string.IsNullOrEmpty(text);
+        public override bool IsPresent => base.IsPresent && (!string.IsNullOrEmpty(text) || !layout.IsValid);
 
         /// <summary>
         /// True if the text should be wrapped if it gets too wide. Note that \n does NOT cause a line break. If you need explicit line breaks, use <see cref="TextFlowContainer"/> instead.
         /// </summary>
         public bool AllowMultiline
         {
-            get { return Direction == FillDirection.Full; }
-            set { Direction = value ? FillDirection.Full : FillDirection.Horizontal; }
+            get => Direction == FillDirection.Full;
+            set => Direction = value ? FillDirection.Full : FillDirection.Horizontal;
         }
 
         private string font;
@@ -55,7 +56,7 @@ namespace osu.Framework.Graphics.Sprites
         /// </summary>
         public string Font
         {
-            get { return font; }
+            get => font;
             set
             {
                 font = value;
@@ -70,7 +71,7 @@ namespace osu.Framework.Graphics.Sprites
         /// </summary>
         public bool Shadow
         {
-            get { return shadow; }
+            get => shadow;
             set
             {
                 if (shadow == value) return;
@@ -88,7 +89,7 @@ namespace osu.Framework.Graphics.Sprites
         /// </summary>
         public Color4 ShadowColour
         {
-            get { return shadowColour; }
+            get => shadowColour;
             set
             {
                 shadowColour = value;
@@ -121,7 +122,8 @@ namespace osu.Framework.Graphics.Sprites
 
         private FontStore store;
 
-        public override bool HandleInput => false;
+        public override bool HandleKeyboardInput => false;
+        public override bool HandleMouseInput => false;
 
         /// <summary>
         /// Creates a new sprite text. <see cref="Container{T}.AutoSizeAxes"/> is set to <see cref="Axes.Both"/> by default.
@@ -141,15 +143,14 @@ namespace osu.Framework.Graphics.Sprites
         /// </summary>
         public float TextSize
         {
-            get { return textSize; }
+            get => textSize;
             set
             {
                 if (textSize == value) return;
 
                 textSize = value;
 
-                foreach (Drawable d in Children)
-                    d.Scale = new Vector2(textSize);
+                layout.Invalidate();
             }
         }
 
@@ -170,7 +171,7 @@ namespace osu.Framework.Graphics.Sprites
         /// </summary>
         public Bindable<string> Current
         {
-            get { return current; }
+            get => current;
             set
             {
                 if (current != null)
@@ -201,7 +202,7 @@ namespace osu.Framework.Graphics.Sprites
         /// </summary>
         public string Text
         {
-            get { return text; }
+            get => text;
             set
             {
                 if (current != null)
@@ -246,8 +247,6 @@ namespace osu.Framework.Graphics.Sprites
 
         private void computeLayout()
         {
-            bool allowKeepingExistingDrawables = true;
-
             //adjust shadow alpha based on highest component intensity to avoid muddy display of darker text.
             //squared result for quadratic fall-off seems to give the best result.
             var avgColour = (Color4)DrawInfo.Colour.AverageColour;
@@ -255,7 +254,7 @@ namespace osu.Framework.Graphics.Sprites
 
             //we can't keep existing drawabled if our shadow has changed, as the shadow is applied in the add-loop.
             //this could potentially be optimised if necessary.
-            allowKeepingExistingDrawables &= shadowAlpha == lastShadowAlpha && font == lastFont;
+            bool allowKeepingExistingDrawables = shadowAlpha == lastShadowAlpha && font == lastFont;
 
             lastShadowAlpha = shadowAlpha;
             lastFont = font;
@@ -266,7 +265,10 @@ namespace osu.Framework.Graphics.Sprites
             if (allowKeepingExistingDrawables)
             {
                 if (lastText == text)
+                {
+                    Children.ForEach(c => c.Scale = new Vector2(TextSize));
                     return;
+                }
 
                 int length = Math.Min(lastText?.Length ?? 0, text.Length);
                 keepDrawables.AddRange(Children.TakeWhile((n, i) => i < length && lastText[i] == text[i]));
@@ -276,13 +278,23 @@ namespace osu.Framework.Graphics.Sprites
             Clear();
 
             if (text.Length == 0)
+            {
+                lastText = string.Empty;
+
+                // We're going to become not present, so parents need to be signalled to recompute size/layout
+                Invalidate(InvalidationFromParentSize | Invalidation.Colour);
+
                 return;
+            }
 
             if (FixedWidth && !constantWidth.HasValue)
                 constantWidth = CreateCharacterDrawable('D').DrawWidth;
 
             foreach (var k in keepDrawables)
+            {
+                k.Scale = new Vector2(TextSize);
                 Add(k);
+            }
 
             for (int index = keepDrawables.Count; index < text.Length; index++)
             {

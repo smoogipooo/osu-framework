@@ -1,10 +1,9 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
 using System.Globalization;
 using System.IO;
-using NUnit.Framework;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -17,8 +16,7 @@ using OpenTK.Graphics;
 
 namespace osu.Framework.Tests.Visual
 {
-    [TestFixture]
-    internal class TestCaseLocalisation : TestCase
+    public class TestCaseLocalisation : TestCase
     {
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly LocalisationEngine engine; //keep a reference to avoid GC of the engine
@@ -100,6 +98,10 @@ namespace osu.Framework.Tests.Visual
             public Stream GetStream(string name)
             {
                 throw new NotSupportedException();
+            }
+
+            public void Dispose()
+            {
             }
         }
     }

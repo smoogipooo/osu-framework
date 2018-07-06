@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Linq;
@@ -27,11 +27,6 @@ namespace osu.Framework
         public ResourceStore<byte[]> Resources;
 
         public TextureStore Textures;
-
-        /// <summary>
-        /// This should point to the main resource dll file. If not specified, it will use resources embedded in your executable.
-        /// </summary>
-        protected virtual string MainResourceFile => Host.FullPath;
 
         protected GameHost Host { get; private set; }
 
@@ -101,7 +96,6 @@ namespace osu.Framework
         {
             Resources = new ResourceStore<byte[]>();
             Resources.AddStore(new NamespacedResourceStore<byte[]>(new DllResourceStore(@"osu.Framework.dll"), @"Resources"));
-            Resources.AddStore(new DllResourceStore(MainResourceFile));
 
             Textures = new TextureStore(new RawTextureLoaderStore(new NamespacedResourceStore<byte[]>(Resources, @"Textures")));
             Textures.AddStore(new RawTextureLoaderStore(new OnlineStore()));
@@ -115,12 +109,8 @@ namespace osu.Framework
             samples.AddStore(new NamespacedResourceStore<byte[]>(Resources, @"Samples"));
             samples.AddStore(new OnlineStore());
 
-            Audio = dependencies.Cache(new AudioManager(
-                tracks,
-                samples)
-            {
-                EventScheduler = Scheduler
-            });
+            Audio = new AudioManager(tracks, samples) { EventScheduler = Scheduler };
+            dependencies.Cache(Audio);
 
             Host.RegisterThread(Audio.Thread);
 
@@ -164,7 +154,7 @@ namespace osu.Framework
         /// </summary>
         public bool IsActive
         {
-            get { return isActive; }
+            get => isActive;
             private set
             {
                 if (value == isActive)
@@ -180,8 +170,8 @@ namespace osu.Framework
 
         protected FrameStatisticsMode FrameStatisticsMode
         {
-            get { return performanceContainer.State; }
-            set { performanceContainer.State = value; }
+            get => performanceContainer.State;
+            set => performanceContainer.State = value;
         }
 
         public bool OnPressed(FrameworkAction action)

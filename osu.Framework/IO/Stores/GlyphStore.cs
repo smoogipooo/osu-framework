@@ -1,14 +1,14 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using Cyotek.Drawing.BitmapFont;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Textures;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using osu.Framework.Logging;
 
 namespace osu.Framework.IO.Stores
 {
@@ -21,7 +21,25 @@ namespace osu.Framework.IO.Stores
         private const float default_size = 96;
 
         private readonly ResourceStore<byte[]> store;
+
         private BitmapFont font;
+
+        protected BitmapFont Font
+        {
+            get
+            {
+                try
+                {
+                    fontLoadTask?.Wait();
+                }
+                catch
+                {
+                    return null;
+                }
+
+                return font;
+            }
+        }
 
         private readonly TimedExpiryCache<int, RawTexture> texturePages = new TimedExpiryCache<int, RawTexture>();
 
@@ -39,7 +57,7 @@ namespace osu.Framework.IO.Stores
 
         private async Task readFontMetadataAsync(bool precache)
         {
-            await Task.Run(() =>
+            await Task.Factory.StartNew(() =>
             {
                 try
                 {
@@ -48,26 +66,28 @@ namespace osu.Framework.IO.Stores
                         font.LoadText(s);
 
                     if (precache)
-                        for (int i = 0; i < font.Pages.Length; i++)
+                        for (int i = 0; i < Font.Pages.Length; i++)
                             getTexturePage(i);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    throw new IOException($@"Couldn't load font asset from {assetName}.");
+                    Logger.Error(ex, $"Couldn't load font asset from {assetName}.");
+                    throw;
                 }
-            });
+            }, TaskCreationOptions.LongRunning);
 
             fontLoadTask = null;
         }
 
-        public bool HasGlyph(char c) => font.Characters.ContainsKey(c);
-        public int GetBaseHeight() => font.BaseHeight;
+        public bool HasGlyph(char c) => Font.Characters.ContainsKey(c);
+        public int GetBaseHeight() => Font.BaseHeight;
+
         public int? GetBaseHeight(string name)
         {
             if (name != fontName)
                 return null;
 
-            return font.BaseHeight;
+            return Font.BaseHeight;
         }
 
         public RawTexture Get(string name)
@@ -75,11 +95,16 @@ namespace osu.Framework.IO.Stores
             if (name.Length > 1 && !name.StartsWith($@"{fontName}/", StringComparison.Ordinal))
                 return null;
 
-            fontLoadTask?.Wait();
+            try
+            {
+                fontLoadTask?.Wait();
+            }
+            catch
+            {
+                return null;
+            }
 
-            Character c;
-
-            if (!font.Characters.TryGetValue(name.Last(), out c))
+            if (!font.Characters.TryGetValue(name.Last(), out Character c))
                 return null;
 
             RawTexture page = getTexturePage(c.TexturePage);
@@ -100,10 +125,10 @@ namespace osu.Framework.IO.Stores
                     {
                         int srci = (c.Bounds.Y + y - c.Offset.Y) * page.Width * 4
                                    + (c.Bounds.X + x - c.Offset.X) * 4;
-                        pixels[desti] = page.Pixels[srci];
-                        pixels[desti + 1] = page.Pixels[srci + 1];
-                        pixels[desti + 2] = page.Pixels[srci + 2];
-                        pixels[desti + 3] = page.Pixels[srci + 3];
+                        pixels[desti] = page.Data[srci];
+                        pixels[desti + 1] = page.Data[srci + 1];
+                        pixels[desti + 2] = page.Data[srci + 2];
+                        pixels[desti + 3] = page.Data[srci + 3];
                     }
                     else
                     {
@@ -115,23 +140,16 @@ namespace osu.Framework.IO.Stores
                 }
             }
 
-            return new RawTexture
-            {
-                Pixels = pixels,
-                PixelFormat = OpenTK.Graphics.ES30.PixelFormat.Rgba,
-                Width = width,
-                Height = height,
-            };
+            return new RawTexture(width, height, pixels);
         }
 
         private RawTexture getTexturePage(int texturePage)
         {
-            RawTexture t;
-            if (!texturePages.TryGetValue(texturePage, out t))
+            if (!texturePages.TryGetValue(texturePage, out RawTexture t))
             {
                 loadedPageCount++;
                 using (var stream = store.GetStream($@"{assetName}_{texturePage.ToString().PadLeft((font.Pages.Length - 1).ToString().Length, '0')}.png"))
-                    texturePages.Add(texturePage, t = RawTexture.FromStream(stream));
+                    texturePages.Add(texturePage, t = new RawTexture(stream));
             }
 
             return t;
@@ -146,54 +164,31 @@ namespace osu.Framework.IO.Stores
         private int loadedGlyphCount;
 
         public override string ToString() => $@"GlyphStore({assetName}) LoadedPages:{loadedPageCount} LoadedGlyphs:{loadedGlyphCount}";
-    }
 
-    public class FontStore : TextureStore
-    {
-        private readonly List<GlyphStore> glyphStores = new List<GlyphStore>();
+        #region IDisposable Support
 
-        public FontStore()
-        {
-        }
+        private bool isDisposed;
 
-        public FontStore(GlyphStore glyphStore)
-            : base(glyphStore)
+        protected virtual void Dispose(bool disposing)
         {
-        }
-
-        public override void AddStore(IResourceStore<RawTexture> store)
-        {
-            var gs = store as GlyphStore;
-            if (gs != null)
-                glyphStores.Add(gs);
-            base.AddStore(store);
-        }
-        public override void RemoveStore(IResourceStore<RawTexture> store)
-        {
-            var gs = store as GlyphStore;
-            if (gs != null)
-                glyphStores.Remove(gs);
-            base.RemoveStore(store);
-        }
-
-        public float? GetBaseHeight(char c)
-        {
-            foreach (var store in glyphStores)
+            if (!isDisposed)
             {
-                if (store.HasGlyph(c))
-                    return store.GetBaseHeight() / ScaleAdjust;
+                isDisposed = true;
+                texturePages.Dispose();
             }
-            return null;
         }
-        public float? GetBaseHeight(string fontName)
+
+        ~GlyphStore()
         {
-            foreach (var store in glyphStores)
-            {
-                var bh = store.GetBaseHeight(fontName);
-                if (bh.HasValue)
-                    return bh.Value / ScaleAdjust;
-            }
-            return null;
+            Dispose(false);
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
     }
 }

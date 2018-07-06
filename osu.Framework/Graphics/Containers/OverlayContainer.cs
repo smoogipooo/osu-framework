@@ -1,7 +1,9 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
+using System.Collections.Generic;
 using osu.Framework.Input;
+using OpenTK;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -20,24 +22,28 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         protected virtual bool BlockPassThroughKeyboard => false;
 
-        protected override bool OnHover(InputState state) => BlockPassThroughMouse;
+        internal override bool BuildKeyboardInputQueue(List<Drawable> queue, bool allowBlocking = true)
+        {
+            if (CanReceiveKeyboardInput && BlockPassThroughKeyboard)
+            {
+                // when blocking keyboard input behind us, we still want to make sure the global handlers receive events
+                // but we don't want other drawables behind us handling them.
+                queue.RemoveAll(d => !(d is IHandleGlobalInput));
+            }
 
-        protected override bool OnMouseDown(InputState state, MouseDownEventArgs args) => BlockPassThroughMouse;
+            return base.BuildKeyboardInputQueue(queue, allowBlocking);
+        }
 
-        protected override bool OnClick(InputState state) => BlockPassThroughMouse;
+        internal override bool BuildMouseInputQueue(Vector2 screenSpaceMousePos, List<Drawable> queue)
+        {
+            if (CanReceiveMouseInput && BlockPassThroughMouse && ReceiveMouseInputAt(screenSpaceMousePos))
+            {
+                // when blocking mouse input behind us, we still want to make sure the global handlers receive events
+                // but we don't want other drawables behind us handling them.
+                queue.RemoveAll(d => !(d is IHandleGlobalInput));
+            }
 
-        protected override bool OnDragStart(InputState state) => BlockPassThroughMouse;
-
-        protected override bool OnWheel(InputState state) => BlockPassThroughMouse;
-
-        protected override bool OnKeyDown(InputState state, KeyDownEventArgs args) => BlockPassThroughKeyboard;
-
-        protected override bool OnKeyUp(InputState state, KeyUpEventArgs args) => BlockPassThroughKeyboard;
-    }
-
-    public enum Visibility
-    {
-        Hidden,
-        Visible
+            return base.BuildMouseInputQueue(screenSpaceMousePos, queue);
+        }
     }
 }

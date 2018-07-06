@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -57,10 +57,10 @@ namespace osu.Framework.Graphics.Textures
             using (var whiteTex = Add(3, 3))
             {
                 //add an empty white rect to use for solid box drawing (shader optimisation).
-                byte[] white = new byte[whiteTex.Width * whiteTex.Height * 4];
-                for (int i = 0; i < white.Length; i++)
-                    white[i] = 255;
-                whiteTex.SetData(new TextureUpload(white));
+                var raw = new RawTexture(whiteTex.Width, whiteTex.Height);
+                for (int i = 0; i < raw.Data.Length; i++)
+                    raw.Data[i] = 255;
+                whiteTex.SetData(new TextureUpload(raw));
             }
         }
 

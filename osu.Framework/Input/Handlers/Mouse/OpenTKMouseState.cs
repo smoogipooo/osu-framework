@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using OpenTK;
@@ -10,11 +10,15 @@ namespace osu.Framework.Input.Handlers.Mouse
     {
         public readonly bool WasActive;
 
-        public override int WheelDelta => WasActive ? base.WheelDelta : 0;
+        public OpenTK.Input.MouseState RawState;
+
+        public override Vector2 ScrollDelta => WasActive ? base.ScrollDelta : Vector2.Zero;
 
         protected OpenTKMouseState(OpenTK.Input.MouseState tkState, bool active, Vector2? mappedPosition)
         {
             WasActive = active;
+
+            RawState = tkState;
 
             // While not focused, let's silently ignore everything but position.
             if (active && tkState.IsAnyButtonDown)
@@ -26,7 +30,8 @@ namespace osu.Framework.Input.Handlers.Mouse
                 addIfPressed(tkState.XButton2, MouseButton.Button2);
             }
 
-            Wheel = tkState.Wheel;
+            Scroll = new Vector2(-tkState.Scroll.X, tkState.Scroll.Y);
+            HasPreciseScroll = (tkState.Flags & MouseStateFlags.HasPreciseScroll) > 0;
             Position = new Vector2(mappedPosition?.X ?? tkState.X, mappedPosition?.Y ?? tkState.Y);
         }
 

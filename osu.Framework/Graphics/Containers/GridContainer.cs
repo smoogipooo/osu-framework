@@ -1,8 +1,9 @@
-// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
 using System.Linq;
+using osu.Framework.Allocation;
 using OpenTK;
 using osu.Framework.Caching;
 
@@ -23,7 +24,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         public Drawable[][] Content
         {
-            get { return content; }
+            get => content;
             set
             {
                 if (content == value)
@@ -66,6 +67,12 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            layoutContent();
+        }
+
         protected override void Update()
         {
             base.Update();
@@ -82,12 +89,12 @@ namespace osu.Framework.Graphics.Containers
             return base.Invalidate(invalidation, source, shallPropagate);
         }
 
-        public override void InvalidateFromChild(Invalidation invalidation)
+        public override void InvalidateFromChild(Invalidation invalidation, Drawable source = null)
         {
             if ((invalidation & Invalidation.RequiredParentSizeToFit) > 0)
                 cellLayout.Invalidate();
 
-            base.InvalidateFromChild(invalidation);
+            base.InvalidateFromChild(invalidation, source);
         }
 
         private Cached cellContent = new Cached();

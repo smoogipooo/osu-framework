@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -235,7 +235,7 @@ namespace osu.Framework.Graphics.Transforms
         /// with <paramref name="pause"/> milliseconds between iterations.
         /// </summary>
         /// <param name="pause">The pause between iterations in milliseconds.</param>
-        /// <param name="numIters">The amount of iterations.</param>
+        /// <param name="numIters">The number of iterations.</param>
         /// <param name="childGenerators">The functions to generate the <see cref="TransformSequence{T}"/>s to be looped.</param>
         /// <returns>This <see cref="TransformSequence{T}"/>.</returns>
         public TransformSequence<T> Loop(double pause, int numIters, params Generator[] childGenerators)
@@ -256,7 +256,7 @@ namespace osu.Framework.Graphics.Transforms
         /// <paramref name="numIters"/> times with <paramref name="pause"/> milliseconds between iterations.
         /// </summary>
         /// <param name="pause">The pause between iterations in milliseconds.</param>
-        /// <param name="numIters">The amount of iterations.</param>
+        /// <param name="numIters">The number of iterations.</param>
         /// <returns>This <see cref="TransformSequence{T}"/>.</returns>
         public TransformSequence<T> Loop(double pause, int numIters)
         {
@@ -275,8 +275,13 @@ namespace osu.Framework.Graphics.Transforms
                 foreach (var t in toLoop)
                 {
                     var clone = t.Clone();
+
                     clone.StartTime += i * iterDuration;
                     clone.EndTime += i * iterDuration;
+
+                    clone.AppliedToEnd = false;
+                    clone.Applied = false;
+
                     Add(clone);
                     t.TargetTransformable.AddTransform(clone);
                 }
@@ -329,8 +334,36 @@ namespace osu.Framework.Graphics.Transforms
             var iterDuration = endTime - startTime + pause;
             foreach (var t in transforms)
             {
+                Action tmpOnAbort = t.OnAbort;
+                t.OnAbort = null;
+                t.TargetTransformable.RemoveTransform(t);
+                t.OnAbort = tmpOnAbort;
+
+                // Update start and end times such that no transformations need to be instantly
+                // looped right after they're added. This is required so that transforms can be
+                // inserted in the correct order such that none of them trigger abortions on
+                // each other due to instant re-sorting upon adding.
+                double currentTransformTime = t.TargetTransformable.Time.Current;
+                while (t.EndTime <= currentTransformTime)
+                {
+                    t.StartTime += iterDuration;
+                    t.EndTime += iterDuration;
+                }
+            }
+
+            // This sort is required such that no abortions happen.
+            var sortedTransforms = new List<Transform>(transforms);
+            sortedTransforms.Sort(Transform.COMPARER);
+
+            foreach (var t in sortedTransforms)
+            {
                 t.IsLooping = true;
                 t.LoopDelay = iterDuration;
+
+                t.Applied = false;
+                t.AppliedToEnd = false; // we want to force a reprocess of this transform. it may have been applied-to-end in the Add, but not correctly looped as a result.
+
+                t.TargetTransformable.AddTransform(t, t.TransformID);
             }
 
             onLoopingTransform();

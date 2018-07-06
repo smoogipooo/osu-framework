@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Collections.Generic;
@@ -52,8 +52,7 @@ namespace osu.Framework.IO.Stores
         {
             base.AddStore(store);
 
-            ChangeableResourceStore<T> crm = store as ChangeableResourceStore<T>;
-            if (crm != null)
+            if (store is ChangeableResourceStore<T> crm)
                 crm.OnChanged += NotifyChanged;
         }
 
@@ -65,8 +64,7 @@ namespace osu.Framework.IO.Stores
         {
             base.RemoveStore(store);
 
-            ChangeableResourceStore<T> crm = store as ChangeableResourceStore<T>;
-            if (crm != null)
+            if (store is ChangeableResourceStore<T> crm)
                 crm.OnChanged -= NotifyChanged;
         }
 
@@ -77,9 +75,7 @@ namespace osu.Framework.IO.Stores
         /// <returns>The object.</returns>
         public override T Get(string name)
         {
-            T result;
-
-            if (cache.TryGetValue(name, out result))
+            if (cache.TryGetValue(name, out T result))
                 return result;
 
             result = base.Get(name);
@@ -105,6 +101,12 @@ namespace osu.Framework.IO.Stores
         public void ResetCache()
         {
             cache.Clear();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            ResetCache();
         }
     }
 }

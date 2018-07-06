@@ -1,24 +1,24 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Configuration;
 using osu.Framework.Extensions;
+using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input;
+using osu.Framework.Input.Bindings;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
-using osu.Framework.Screens;
 using osu.Framework.Testing.Drawables;
 using osu.Framework.Timing;
 using OpenTK;
@@ -27,7 +27,7 @@ using OpenTK.Input;
 
 namespace osu.Framework.Testing
 {
-    public class TestBrowser : Screen
+    public class TestBrowser : KeyBindingContainer<TestBrowserAction>, IKeyBindingHandler<TestBrowserAction>
     {
         public TestCase CurrentTest { get; private set; }
 
@@ -52,23 +52,18 @@ namespace osu.Framework.Testing
         /// <param name="assemblyNamespace">Assembly prefix which is used to match assemblies whose tests should be displayed</param>
         public TestBrowser(string assemblyNamespace = null)
         {
-            var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
-            var loadedPaths = loadedAssemblies.Where(a => !a.IsDynamic).Select(a => a.Location).ToArray();
-
-            var referencedPaths = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*Test*.dll");
-            var toLoad = referencedPaths.Where(r => !loadedPaths.Contains(r, StringComparer.InvariantCultureIgnoreCase)).ToList();
-            toLoad.ForEach(path => loadedAssemblies.Add(AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(path))));
-
-
             assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(n => n.FullName.StartsWith("osu") || assemblyNamespace != null && n.FullName.StartsWith(assemblyNamespace)).ToList();
 
             //we want to build the lists here because we're interested in the assembly we were *created* on.
-            foreach (Assembly asm in assemblies)
+            foreach (Assembly asm in assemblies.ToList())
             {
-                var tests = asm.GetLoadableTypes().Where(t => t.IsSubclassOf(typeof(TestCase)) && !t.IsAbstract).ToList();
+                var tests = asm.GetLoadableTypes().Where(t => t.IsSubclassOf(typeof(TestCase)) && !t.IsAbstract && t.IsPublic).ToList();
 
                 if (!tests.Any())
+                {
+                    assemblies.Remove(asm);
                     continue;
+                }
 
                 foreach (Type type in tests)
                     TestTypes.Add(type);
@@ -87,12 +82,24 @@ namespace osu.Framework.Testing
         private BindableDouble rateBindable;
 
         private Toolbar toolbar;
+        private Container leftContainer;
+        private Container mainContainer;
+
+        private const float test_list_width = 200;
+
+        private Action exit;
+
+        private Bindable<bool> showLogOverlay;
 
         [BackgroundDependencyLoader]
-        private void load(Storage storage, GameHost host)
+        private void load(Storage storage, GameHost host, FrameworkConfigManager frameworkConfig)
         {
             interactive = host.Window != null;
             config = new TestBrowserConfig(storage);
+
+            exit = host.Exit;
+
+            showLogOverlay = frameworkConfig.GetBindable<bool>(FrameworkSetting.ShowLogOverlay);
 
             rateBindable = new BindableDouble(1)
             {
@@ -105,10 +112,10 @@ namespace osu.Framework.Testing
 
             Children = new Drawable[]
             {
-                new Container
+                leftContainer = new Container
                 {
                     RelativeSizeAxes = Axes.Y,
-                    Size = new Vector2(200, 1),
+                    Size = new Vector2(test_list_width, 1),
                     Children = new Drawable[]
                     {
                         new Box
@@ -124,6 +131,12 @@ namespace osu.Framework.Testing
                             {
                                 searchTextBox = new TextBox
                                 {
+                                    OnCommit = delegate
+                                    {
+                                        var firstVisible = leftFlowContainer.FirstOrDefault(b => b.IsPresent);
+                                        if (firstVisible != null)
+                                            LoadTest(firstVisible.TestType);
+                                    },
                                     Height = 20,
                                     RelativeSizeAxes = Axes.X,
                                     PlaceholderText = "type to search"
@@ -146,10 +159,10 @@ namespace osu.Framework.Testing
                         }
                     }
                 },
-                new Container
+                mainContainer = new Container
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Padding = new MarginPadding { Left = 200 },
+                    Padding = new MarginPadding { Left = test_list_width },
                     Children = new Drawable[]
                     {
                         toolbar = new Toolbar
@@ -197,6 +210,7 @@ namespace osu.Framework.Testing
             {
                 CompilationStarted = compileStarted,
                 CompilationFinished = compileFinished,
+                CompilationFailed = compileFailed
             };
             try
             {
@@ -218,26 +232,47 @@ namespace osu.Framework.Testing
             rateBindable.TriggerChange();
         }
 
-        private void compileStarted()
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            backgroundCompiler?.Dispose();
+        }
+
+        private void compileStarted() => Schedule(() =>
         {
             compilingNotice.Show();
             compilingNotice.FadeColour(Color4.White);
-        }
+        });
 
-        private void compileFinished(Type newType)
+        private void compileFailed(Exception ex) => Schedule(() => {
+            showLogOverlay.Value = true;
+            Logger.Error(ex, "Error with dynamic compilation!");
+
+            compilingNotice.FadeIn(100, Easing.OutQuint).Then().FadeOut(800, Easing.InQuint);
+            compilingNotice.FadeColour(Color4.Red, 100);
+        });
+
+        private void compileFinished(Type newType) => Schedule(() =>
         {
-            Schedule(() =>
-            {
-                compilingNotice.FadeOut(800, Easing.InQuint);
-                compilingNotice.FadeColour(newType == null ? Color4.Red : Color4.YellowGreen, 100);
+            compilingNotice.FadeOut(800, Easing.InQuint);
+            compilingNotice.FadeColour(Color4.YellowGreen, 100);
 
-                if (newType == null) return;
+            int i = TestTypes.FindIndex(t => t.Name == newType.Name && t.Assembly.GetName().Name == newType.Assembly.GetName().Name);
 
-                int i = TestTypes.FindIndex(t => t.Name == newType.Name);
+            if (i < 0)
+                TestTypes.Add(newType);
+            else
                 TestTypes[i] = newType;
-                LoadTest(i);
-            });
-        }
+
+            try
+            {
+                LoadTest(newType, isDynamicLoad: true);
+            }
+            catch (Exception e)
+            {
+                compileFailed(e);
+            }
+        });
 
         protected override void LoadComplete()
         {
@@ -247,12 +282,18 @@ namespace osu.Framework.Testing
                 LoadTest(TestTypes.Find(t => t.Name == config.Get<string>(TestBrowserSetting.LastTest)));
         }
 
-        protected override bool OnExiting(Screen next)
+        private void toggleTestList()
         {
-            if (next == null)
-                Game?.Exit();
-
-            return base.OnExiting(next);
+            if (leftContainer.Width > 0)
+            {
+                leftContainer.Width = 0;
+                mainContainer.Padding = new MarginPadding();
+            }
+            else
+            {
+                leftContainer.Width = test_list_width;
+                mainContainer.Padding = new MarginPadding { Left = test_list_width };
+            }
         }
 
         protected override bool OnKeyDown(InputState state, KeyDownEventArgs args)
@@ -262,7 +303,7 @@ namespace osu.Framework.Testing
                 switch (args.Key)
                 {
                     case Key.Escape:
-                        Exit();
+                        exit();
                         return true;
                 }
             }
@@ -270,71 +311,110 @@ namespace osu.Framework.Testing
             return base.OnKeyDown(state, args);
         }
 
+        public override IEnumerable<KeyBinding> DefaultKeyBindings => new[]
+        {
+            new KeyBinding(new [] {InputKey.Control, InputKey.F},TestBrowserAction.Search),
+            new KeyBinding(new [] {InputKey.Control, InputKey.R},TestBrowserAction.Reload), // for macOS
+
+            new KeyBinding(new [] {InputKey.Super, InputKey.F},TestBrowserAction.Search), // for macOS
+            new KeyBinding(new [] {InputKey.Super, InputKey.R},TestBrowserAction.Reload), // for macOS
+
+            new KeyBinding(new [] {InputKey.Control, InputKey.H},TestBrowserAction.ToggleTestList),
+        };
+
+        public bool OnPressed(TestBrowserAction action)
+        {
+            switch (action)
+            {
+                case TestBrowserAction.Search:
+                    if (leftContainer.Width == 0) toggleTestList();
+                    GetContainingInputManager().ChangeFocus(searchTextBox);
+                    return true;
+                case TestBrowserAction.Reload:
+                    LoadTest(CurrentTest.GetType());
+                    return true;
+                case TestBrowserAction.ToggleTestList:
+                    toggleTestList();
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool OnReleased(TestBrowserAction action) => false;
+
         public void LoadTest(int testIndex) => LoadTest(TestTypes[testIndex]);
 
-
-        public void LoadTest(Type testType = null, Action onCompletion = null)
+        public void LoadTest(Type testType = null, Action onCompletion = null, bool isDynamicLoad = false)
         {
             if (testType == null && TestTypes.Count > 0)
                 testType = TestTypes[0];
 
-            config.Set(TestBrowserSetting.LastTest, testType?.Name);
+            config.Set(TestBrowserSetting.LastTest, testType?.Name ?? string.Empty);
 
             var lastTest = CurrentTest;
-            CurrentTest = null;
 
-            if (testType != null)
+            if (testType == null)
+                return;
+
+            var newTest = (TestCase)Activator.CreateInstance(testType);
+
+            var dropdown = toolbar.AssemblyDropdown;
+
+            const string dynamic = "dynamic";
+
+            dropdown.RemoveDropdownItem(dropdown.Items.LastOrDefault(i => i.Value.FullName.Contains(dynamic)).Value);
+
+            // if we are a dynamically compiled type (via DynamicClassCompiler) we should update the dropdown accordingly.
+            if (isDynamicLoad)
+                dropdown.AddDropdownItem($"{dynamic} ({testType.Name})", testType.Assembly);
+            else
+                TestTypes.RemoveAll(t => t.Assembly.FullName.Contains(dynamic));
+
+            dropdown.Current.Value = testType.Assembly;
+
+            CurrentTest = newTest;
+
+            updateButtons();
+
+            testContentContainer.Add(new ErrorCatchingDelayedLoadWrapper(CurrentTest, isDynamicLoad)
             {
-                var dropdown = toolbar.AssemblyDropdown;
+                OnCaughtError = compileFailed
+            });
 
-                dropdown.RemoveDropdownItem(dropdown.Items.LastOrDefault(i => i.Value.FullName.Contains("DotNetCompiler")).Value);
+            newTest.OnLoadComplete = d => Schedule(() =>
+            {
+                if (lastTest?.Parent != null)
+                {
+                    testContentContainer.Remove(lastTest.Parent);
+                    lastTest.Clear();
+                    lastTest.Dispose();
+                }
 
-                // if we are a dynamically compiled type (via DynamicClassCompiler) we should update the dropdown accordingly.
-                if (testType.Assembly.FullName.Contains("DotNetCompiler"))
-                    dropdown.AddDropdownItem($"dynamic ({testType.Name})", testType.Assembly);
-
-                dropdown.Current.Value = testType.Assembly;
-
-                var newTest = (TestCase)Activator.CreateInstance(testType);
-
-                CurrentTest = newTest;
+                if (CurrentTest != newTest)
+                {
+                    // There could have been multiple loads fired after us. In such a case we want to silently remove ourselves.
+                    testContentContainer.Remove(newTest.Parent);
+                    return;
+                }
 
                 updateButtons();
 
-                testContentContainer.Add(new DelayedLoadWrapper(CurrentTest, 0));
+                var methods = testType.GetMethods();
 
-                newTest.OnLoadComplete = d =>
+                var setUpMethods = methods.Where(m => m.GetCustomAttributes(typeof(SetUpAttribute), false).Length > 0);
+
+                foreach (var m in methods.Where(m => m.Name != "TestConstructor" && m.GetCustomAttributes(typeof(TestAttribute), false).Length > 0))
                 {
-                    if (lastTest?.Parent != null)
-                    {
-                        testContentContainer.Remove(lastTest);
-                        lastTest.Clear();
-                    }
+                    var step = CurrentTest.AddStep($"Setup: {m.Name}", () => setUpMethods.ForEach(s => s.Invoke(CurrentTest, null)));
+                    step.LightColour = Color4.Teal;
+                    m.Invoke(CurrentTest, null);
+                }
 
-                    if (CurrentTest != newTest)
-                    {
-                        testContentContainer.Remove(newTest);
-                        return;
-                    }
-
-                    updateButtons();
-
-                    var methods = testType.GetMethods();
-
-                    var setUpMethod = methods.FirstOrDefault(m => m.GetCustomAttributes(typeof(SetUpAttribute), false).Length > 0);
-
-                    foreach (var m in methods.Where(m => m.Name != "TestConstructor" && m.GetCustomAttributes(typeof(TestAttribute), false).Length > 0))
-                    {
-                        var step = CurrentTest.AddStep(m.Name, () => { setUpMethod?.Invoke(CurrentTest, null); });
-                        step.BackgroundColour = Color4.Teal;
-                        m.Invoke(CurrentTest, null);
-                    }
-
-                    backgroundCompiler.Checkpoint(CurrentTest);
-                    runTests(onCompletion);
-                    updateButtons();
-                };
-            }
+                backgroundCompiler.Checkpoint(CurrentTest);
+                runTests(onCompletion);
+                updateButtons();
+            });
         }
 
         private void runTests(Action onCompletion)
@@ -349,6 +429,37 @@ namespace osu.Framework.Testing
         {
             foreach (var b in leftFlowContainer.Children)
                 b.Current = b.TestType.Name == CurrentTest?.GetType().Name;
+        }
+
+        private class ErrorCatchingDelayedLoadWrapper : DelayedLoadWrapper
+        {
+            private readonly bool catchErrors;
+
+            public Action<Exception> OnCaughtError;
+
+            public ErrorCatchingDelayedLoadWrapper(Drawable content, bool catchErrors)
+                : base(content, 0)
+            {
+                this.catchErrors = catchErrors;
+            }
+
+            public override bool UpdateSubTree()
+            {
+                try
+                {
+                    return base.UpdateSubTree();
+                }
+                catch (Exception e)
+                {
+                    if (!catchErrors)
+                        throw;
+
+                    OnCaughtError?.Invoke(e);
+                    RemoveInternal(Content);
+                }
+
+                return false;
+            }
         }
 
         private class Toolbar : CompositeDrawable
@@ -406,6 +517,7 @@ namespace osu.Framework.Testing
                                             RunAllSteps = new BasicCheckbox
                                             {
                                                 LabelText = "Run all steps",
+                                                LabelPadding = new MarginPadding { Left = 5, Right = 10 },
                                                 AutoSizeAxes = Axes.Y,
                                                 Width = 140,
                                                 Anchor = Anchor.CentreLeft,
@@ -453,5 +565,12 @@ namespace osu.Framework.Testing
                 RateAdjustSlider.Current.ValueChanged += v => playbackSpeedDisplay.Text = v.ToString("0%");
             }
         }
+    }
+
+    public enum TestBrowserAction
+    {
+        ToggleTestList,
+        Reload,
+        Search
     }
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using osu.Framework.Allocation;
@@ -10,7 +10,7 @@ using System.Threading;
 
 namespace osu.Framework.Statistics
 {
-    internal class PerformanceMonitor
+    internal class PerformanceMonitor : IDisposable
     {
         private readonly StopwatchClock ourClock = new StopwatchClock(true);
 
@@ -30,11 +30,17 @@ namespace osu.Framework.Statistics
 
         internal bool[] ActiveCounters => (bool[])activeCounters.Clone();
 
+        public bool EnablePerformanceProfiling
+        {
+            get => traceCollector.Enabled;
+            set => traceCollector.Enabled = value;
+        }
+
         private double consumptionTime;
 
         internal ThrottledFrameClock Clock;
 
-        public double FrameAimTime => 1000.0 / Clock?.MaximumUpdateHz ?? double.MaxValue;
+        public double FrameAimTime => 1000.0 / (Clock?.MaximumUpdateHz ?? double.MaxValue);
 
         internal PerformanceMonitor(ThrottledFrameClock clock, Thread thread, IEnumerable<StatisticsCounterType> counters)
         {
@@ -103,8 +109,7 @@ namespace osu.Framework.Statistics
             PendingFrames.Enqueue(currentFrame);
             if (PendingFrames.Count >= max_pending_frames)
             {
-                FrameStatistics oldFrame;
-                PendingFrames.TryDequeue(out oldFrame);
+                PendingFrames.TryDequeue(out FrameStatistics oldFrame);
                 FramesHeap.FreeObject(oldFrame);
             }
 
@@ -143,5 +148,30 @@ namespace osu.Framework.Statistics
 
         internal double FramesPerSecond => Clock.FramesPerSecond;
         internal double AverageFrameTime => Clock.AverageFrameTime;
+
+        #region IDisposable Support
+
+        private bool isDisposed;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!isDisposed)
+            {
+                isDisposed = true;
+                traceCollector.Dispose();
+            }
+        }
+
+        ~PerformanceMonitor()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

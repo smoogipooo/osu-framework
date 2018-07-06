@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2007-2017 ppy Pty Ltd <contact@ppy.sh>.
+﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
@@ -26,6 +26,11 @@ namespace osu.Framework.Graphics.UserInterface
 
         public override bool IsRemovable => false;
 
+        /// <summary>
+        /// When true, this tab can be switched to using PlatformAction.DocumentPrevious and PlatformAction.DocumentNext. Otherwise, it will be skipped.
+        /// </summary>
+        public virtual bool IsSwitchable => true;
+
         public readonly T Value;
 
         protected TabItem(T value)
@@ -47,7 +52,7 @@ namespace osu.Framework.Graphics.UserInterface
 
         public bool Pinned
         {
-            get { return pinned; }
+            get => pinned;
             set
             {
                 if (pinned == value) return;
