@@ -131,7 +131,6 @@ namespace osu.Framework.Graphics.Sprites
         public SpriteText()
         {
             AutoSizeAxes = Axes.Both;
-            ShouldDrawDepth = false;
         }
 
         private const float default_text_size = 20;

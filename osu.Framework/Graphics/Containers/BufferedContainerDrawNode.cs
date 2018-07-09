@@ -131,44 +131,14 @@ namespace osu.Framework.Graphics.Containers
             // Fill the frame buffer with drawn children
             using (bindFrameBuffer(currentFrameBuffer, frameBufferSize))
             {
-                bool lastForDepth = Shader.GetGlobalProperty<bool>("g_ForDepth");
-
                 // We need to draw children as if they were zero-based to the top-left of the texture.
                 // We can do this by adding a translation component to our (orthogonal) projection matrix.
                 GLWrapper.PushOrtho(ScreenSpaceDrawRectangle);
                 GLWrapper.Clear(BackgroundColour, 1);
 
-                Vector2 diffBackbuffer = Vector2.ComponentMax(Vector2.Zero, (ScreenSize - frameBufferSize) / 2);
-                Vector2 diffFramebuffer = Vector2.ComponentMax(Vector2.Zero, (frameBufferSize - ScreenSize) / 2);
-
-                GL.BlitFramebuffer((int)diffBackbuffer.X, (int)diffBackbuffer.Y, (int)(ScreenSize.X - diffBackbuffer.X), (int)(ScreenSize.Y - diffBackbuffer.Y),
-                    (int)diffFramebuffer.X, (int)diffFramebuffer.Y, (int)(frameBufferSize.X - diffFramebuffer.X), (int)(frameBufferSize.Y - diffFramebuffer.Y), ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
-
-                GLWrapper.PushDepthInfo(new DepthInfo
-                {
-                    DepthTest = true,
-                    DepthTestFunction = DepthFunction.Less,
-                    WriteDepth = true
-                });
-
-                Shader.SetGlobalProperty("g_ForDepth", true);
-                base.DrawDepth(vertexAction);
-
-                GLWrapper.PushDepthInfo(new DepthInfo
-                {
-                    DepthTest = true,
-                    DepthTestFunction = DepthFunction.Lequal,
-                    WriteDepth = false
-                });
-
-                Shader.SetGlobalProperty("g_ForDepth", false);
                 base.Draw(vertexAction);
 
-                GLWrapper.PopDepthInfo();
-                GLWrapper.PopDepthInfo(); // Second time since we pushed two times above
                 GLWrapper.PopOrtho();
-
-                Shader.SetGlobalProperty("g_ForDepth", lastForDepth);
             }
         }
 
@@ -236,14 +206,6 @@ namespace osu.Framework.Graphics.Containers
         // drawn children we need to put them in a separate buffer; in this case buffer 2. Otherwise,
         // we do not want to allocate a third buffer for nothing and hence we start with 0.
         private int originalIndex => DrawOriginal && (BlurRadius.X > 0 || BlurRadius.Y > 0) ? 2 : 0;
-
-        public override void DrawDepth(Action<TexturedVertex2D> vertexAction)
-        {
-            if (!ShouldDrawDepth)
-                return;
-
-            Draw(vertexAction);
-        }
 
         public override void Draw(Action<TexturedVertex2D> vertexAction)
         {

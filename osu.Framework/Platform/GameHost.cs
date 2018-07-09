@@ -23,7 +23,6 @@ using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.Shaders;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -282,7 +281,7 @@ namespace osu.Framework.Platform
             using (var buffer = DrawRoots.Get(UsageType.Write))
             {
                 Drawable.DepthIndex = 0;
-                buffer.Object = Root.GenerateDrawNodeSubtree(frameCount, buffer.Index, true);
+                buffer.Object = Root.GenerateDrawNodeSubtree(frameCount, buffer.Index);
             }
         }
 
@@ -322,35 +321,6 @@ namespace osu.Framework.Platform
                     }
 
                     BufferedContainerDrawNode.ScreenSize = Root.DrawSize;
-
-                    if (depthPrePass)
-                    {
-                        int query2 = GL.GenQuery();
-                        GL.BeginQuery(QueryTarget.SamplesPassed, query2);
-
-                        using (drawMonitor.BeginCollecting(PerformanceCollectionType.DepthPass))
-                        {
-                            Shader.SetGlobalProperty("g_ForDepth", true);
-                            GLWrapper.PushDepthInfo(new DepthInfo
-                            {
-                                DepthTest = true,
-                                WriteDepth = true,
-                                DepthTestFunction = DepthFunction.Less
-                            });
-
-                            buffer.Object.DrawDepth(null);
-
-                            Shader.SetGlobalProperty("g_ForDepth", false);
-                            GLWrapper.PopDepthInfo();
-                        }
-
-                        GL.EndQuery(QueryTarget.SamplesPassed);
-
-                        int numFragments2;
-                        GL.GetQueryObject(query2, GetQueryObjectParam.QueryResult, out numFragments2);
-
-                        FrameStatistics.Add(StatisticsCounterType.Depth, numFragments2);
-                    }
 
                     int query = GL.GenQuery();
                     GL.BeginQuery(QueryTarget.SamplesPassed, query);
@@ -595,7 +565,6 @@ namespace osu.Framework.Platform
         private InvokeOnDisposal inputPerformanceCollectionPeriod;
 
         private Bindable<GCLatencyMode> activeGCMode;
-        private Bindable<bool> depthPrePass;
         public Bindable<bool> DepthTesting { get; private set; }
 
         private Bindable<FrameSync> frameSyncMode;
@@ -617,7 +586,6 @@ namespace osu.Framework.Platform
                 GCSettings.LatencyMode = IsActive ? newMode : GCLatencyMode.Interactive;
             };
 
-            depthPrePass = debugConfig.GetBindable<bool>(DebugSetting.DepthPrePass);
             DepthTesting = debugConfig.GetBindable<bool>(DebugSetting.DepthTesting);
 
             frameSyncMode = config.GetBindable<FrameSync>(FrameworkSetting.FrameSync);

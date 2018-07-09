@@ -98,10 +98,10 @@ namespace osu.Framework.Tests.Visual
                 Alpha = 0;
             }
 
-            internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex, bool shouldDrawDepth)
+            internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex)
             {
                 hasDrawn = true;
-                return base.GenerateDrawNodeSubtree(frame, treeIndex, shouldDrawDepth);
+                return base.GenerateDrawNodeSubtree(frame, treeIndex);
             }
         }
     }

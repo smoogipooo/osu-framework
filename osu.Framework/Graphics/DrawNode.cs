@@ -4,7 +4,6 @@
 using osu.Framework.Graphics.OpenGL;
 using System;
 using osu.Framework.Graphics.OpenGL.Vertices;
-using OpenTK.Graphics.ES30;
 
 namespace osu.Framework.Graphics
 {
@@ -27,20 +26,7 @@ namespace osu.Framework.Graphics
         /// </summary>
         internal long InvalidationID;
 
-        /// <summary>
-        /// <see cref="DrawDepth(Action{TexturedVertex2D})"/> is only performed if this field is true.
-        /// </summary>
-        internal bool ShouldDrawDepth;
-
         protected internal int DepthIndex { get; internal set; }
-
-        public virtual void DrawDepth(Action<TexturedVertex2D> vertexAction)
-        {
-            if (!ShouldDrawDepth || DrawInfo.Blending.Destination == BlendingFactorDest.One || DrawInfo.Colour.MinAlpha < 1)
-                return;
-
-            Draw(vertexAction);
-        }
 
         /// <summary>
         /// Draws this draw node to the screen.

@@ -11,7 +11,6 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Colour;
 using System;
 using osu.Framework.Graphics.OpenGL.Vertices;
-using OpenTK.Graphics.ES30;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -189,38 +188,6 @@ namespace osu.Framework.Graphics.Containers
             int clampedAmountChildren = MathHelper.Clamp(Children.Count, 1, 1000);
             if (mayHaveOwnVertexBatch(clampedAmountChildren) && (Shared.VertexBatch == null || Shared.VertexBatch.Size < clampedAmountChildren))
                 Shared.VertexBatch = new QuadBatch<TexturedVertex2D>(clampedAmountChildren * 2, 500);
-        }
-
-        public override void DrawDepth(Action<TexturedVertex2D> vertexAction)
-        {
-            if (!ShouldDrawDepth || DrawInfo.Blending.Destination == BlendingFactorDest.One || DrawInfo.Colour.MinAlpha < 1)
-                return;
-
-            updateVertexBatch();
-
-            // Prefer to use own vertex batch instead of the parent-owned one.
-            if (Shared.VertexBatch != null)
-                vertexAction = Shared.VertexBatch.Add;
-
-            base.Draw(vertexAction);
-
-            if (MaskingInfo != null)
-            {
-                MaskingInfo info = MaskingInfo.Value;
-                if (info.BorderThickness > 0)
-                    info.BorderColour *= DrawInfo.Colour.AverageColour;
-
-                GLWrapper.PushMaskingInfo(info);
-            }
-
-            if (Children != null)
-            {
-                for (int i = Children.Count - 1; i >= 0; i--)
-                    Children[i].DrawDepth(vertexAction);
-            }
-
-            if (MaskingInfo != null)
-                GLWrapper.PopMaskingInfo();
         }
 
         public override void Draw(Action<TexturedVertex2D> vertexAction)

@@ -1538,13 +1538,6 @@ namespace osu.Framework.Graphics
 
         private readonly DrawNode[] drawNodes = new DrawNode[3];
 
-        /// <summary>
-        /// Whether this <see cref="Drawable"/> is drawn into the depth buffer
-        /// during the depth pre-pass. This should be disabled if this <see cref="Drawable"/>
-        /// is mostly translucent.
-        /// </summary>
-        public bool ShouldDrawDepth = true;
-
         internal static int DepthIndex;
 
         /// <summary>
@@ -1553,7 +1546,7 @@ namespace osu.Framework.Graphics
         /// <param name="frame">The frame which the <see cref="DrawNode"/> subtree should be generated for.</param>
         /// <param name="treeIndex">The index of the <see cref="DrawNode"/> to use.</param>
         /// <returns>A complete and updated <see cref="DrawNode"/>, or null if the <see cref="DrawNode"/> would be invisible.</returns>
-        internal virtual DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex, bool shouldDrawDepth)
+        internal virtual DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex)
         {
             DrawNode node = drawNodes[treeIndex];
             if (node == null)
@@ -1569,9 +1562,6 @@ namespace osu.Framework.Graphics
             }
 
             node.DepthIndex = DepthIndex;
-            node.ShouldDrawDepth = shouldDrawDepth && ShouldDrawDepth;
-            if (node.ShouldDrawDepth)
-                DepthIndex++;
 
             return node;
         }

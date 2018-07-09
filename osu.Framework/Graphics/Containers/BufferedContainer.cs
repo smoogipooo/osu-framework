@@ -283,9 +283,9 @@ namespace osu.Framework.Graphics.Containers
             addChildDrawNodes = n.RequiresRedraw;
         }
 
-        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex, bool shouldDrawDepth)
+        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex)
         {
-            var result = base.GenerateDrawNodeSubtree(frame, treeIndex, shouldDrawDepth);
+            var result = base.GenerateDrawNodeSubtree(frame, treeIndex);
 
             // The framebuffers may be redrawn this time around, but will be cached the next time around
             addChildDrawNodes = false;
