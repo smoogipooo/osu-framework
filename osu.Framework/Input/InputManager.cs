@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -14,7 +15,6 @@ using osu.Framework.Input.States;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Statistics;
-using OpenTK;
 using OpenTK.Input;
 using JoystickEventArgs = osu.Framework.Input.EventArgs.JoystickEventArgs;
 using JoystickState = osu.Framework.Input.States.JoystickState;

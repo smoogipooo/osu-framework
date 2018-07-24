@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using osu.Framework.Graphics;
-using OpenTK;
 using OpenTK.Input;
 using System.Linq;
 using System.Diagnostics;
+using System.Numerics;
 using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.StateChanges;
 using osu.Framework.Input.States;
@@ -108,7 +108,7 @@ namespace osu.Framework.Input
                 if (!DragStarted)
                 {
                     var mouse = state.Mouse;
-                    if (mouse.IsPressed(Button) && Vector2Extensions.Distance(MouseDownPosition ?? mouse.Position, mouse.Position) > ClickDragDistance)
+                    if (mouse.IsPressed(Button) && Vector2.Distance(MouseDownPosition ?? mouse.Position, mouse.Position) > ClickDragDistance)
                         HandleMouseDragStart(state);
                 }
                 else

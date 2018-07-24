@@ -1,7 +1,7 @@
 ﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using OpenTK;
+using System.Numerics;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
@@ -21,7 +21,7 @@ namespace osu.Framework.Graphics.Effects
 
         /// <summary>
         /// The sigma value for the blur effect used to draw the outline. This controls over how many pixels the outline gets spread.
-        /// Default is <see cref="Vector2.One"/>.
+        /// Default is <see cref="System.Numerics.Vector2.One"/>.
         /// </summary>
         public Vector2 BlurSigma = Vector2.One;
 

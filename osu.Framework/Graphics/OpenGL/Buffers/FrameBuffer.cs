@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using osu.Framework.Graphics.OpenGL.Textures;
-using OpenTK;
 using OpenTK.Graphics.ES30;
 
 namespace osu.Framework.Graphics.OpenGL.Buffers

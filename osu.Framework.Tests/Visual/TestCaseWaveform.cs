@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Track;
@@ -15,7 +16,6 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.States;
-using OpenTK;
 using OpenTK.Graphics;
 
 namespace osu.Framework.Tests.Visual

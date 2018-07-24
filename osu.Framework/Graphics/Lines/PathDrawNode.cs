@@ -6,12 +6,14 @@ using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
 using OpenTK.Graphics.ES30;
 using osu.Framework.Graphics.OpenGL;
-using OpenTK;
 using System;
 using System.Collections.Generic;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.OpenGL.Vertices;
+using OpenTK;
 using OpenTK.Graphics;
+using Vector2 = System.Numerics.Vector2;
+using Vector3 = System.Numerics.Vector3;
 
 namespace osu.Framework.Graphics.Lines
 {

@@ -5,12 +5,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.OpenGL.Textures;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Threading;
-using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES30;
 using osu.Framework.Statistics;
@@ -18,6 +19,10 @@ using osu.Framework.MathUtils;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Platform;
+using OpenTK;
+using Vector2 = System.Numerics.Vector2;
+using Vector3 = System.Numerics.Vector3;
+using Vector4 = System.Numerics.Vector4;
 
 namespace osu.Framework.Graphics.OpenGL
 {
@@ -26,7 +31,7 @@ namespace osu.Framework.Graphics.OpenGL
         public static MaskingInfo CurrentMaskingInfo { get; private set; }
         public static RectangleI Viewport { get; private set; }
         public static RectangleF Ortho { get; private set; }
-        public static Matrix4 ProjectionMatrix { get; private set; }
+        public static Matrix4x4 ProjectionMatrix { get; private set; }
 
         public static bool UsingBackbuffer => lastFrameBuffer == 0;
 
@@ -111,7 +116,7 @@ namespace osu.Framework.Graphics.OpenGL
             {
                 ScreenSpaceAABB = new RectangleI(0, 0, (int)size.X, (int)size.Y),
                 MaskingRect = new RectangleF(0, 0, size.X, size.Y),
-                ToMaskingSpace = Matrix3.Identity,
+                ToMaskingSpace = Matrix4x4.Identity,
                 BlendRange = 1,
                 AlphaExponent = 1,
             }, true);
@@ -363,7 +368,7 @@ namespace osu.Framework.Graphics.OpenGL
                 return;
             Ortho = ortho;
 
-            ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(Ortho.Left, Ortho.Right, Ortho.Bottom, Ortho.Top, -1, 1);
+            ProjectionMatrix = Matrix4x4.CreateOrthographicOffCenter(Ortho.Left, Ortho.Right, Ortho.Bottom, Ortho.Top, -1, 1);
             Shader.SetGlobalProperty(@"g_ProjMatrix", ProjectionMatrix);
 
             UpdateScissorToCurrentViewportAndOrtho();
@@ -385,7 +390,7 @@ namespace osu.Framework.Graphics.OpenGL
                 return;
             Ortho = actualRect;
 
-            ProjectionMatrix = Matrix4.CreateOrthographicOffCenter(Ortho.Left, Ortho.Right, Ortho.Bottom, Ortho.Top, -1, 1);
+            ProjectionMatrix = Matrix4x4.CreateOrthographicOffCenter(Ortho.Left, Ortho.Right, Ortho.Bottom, Ortho.Top, -1, 1);
             Shader.SetGlobalProperty(@"g_ProjMatrix", ProjectionMatrix);
 
             UpdateScissorToCurrentViewportAndOrtho();
@@ -621,34 +626,49 @@ namespace osu.Framework.Graphics.OpenGL
                 case ActiveUniformType.BoolVec2:
                 case ActiveUniformType.IntVec2:
                 case ActiveUniformType.FloatVec2:
-                    GL.Uniform2(location, (Vector2)value);
+                    unsafe
+                    {
+                        var v = (Vector2)value;
+                        GL.Uniform2(location, 1, (float*)Unsafe.AsPointer(ref v.X));
+                    }
                     break;
                 case ActiveUniformType.FloatMat2:
                     {
-                        Matrix2 mat = (Matrix2)value;
-                        GL.UniformMatrix2(location, false, ref mat);
+                        var v = (Matrix2)value;
+                        GL.UniformMatrix2(location, false, ref v);
                         break;
                     }
                 case ActiveUniformType.BoolVec3:
                 case ActiveUniformType.IntVec3:
                 case ActiveUniformType.FloatVec3:
-                    GL.Uniform3(location, (Vector3)value);
+                    unsafe
+                    {
+                        var v = (Vector3)value;
+                        GL.Uniform3(location, 1, (float*)Unsafe.AsPointer(ref v.X));
+                    }
                     break;
                 case ActiveUniformType.FloatMat3:
                     {
-                        Matrix3 mat = (Matrix3)value;
-                        GL.UniformMatrix3(location, false, ref mat);
+                        var v = (Matrix3)value;
+                        GL.UniformMatrix3(location, false, ref v);
                         break;
                     }
                 case ActiveUniformType.BoolVec4:
                 case ActiveUniformType.IntVec4:
                 case ActiveUniformType.FloatVec4:
-                    GL.Uniform4(location, (Vector4)value);
+                    unsafe
+                    {
+                        var v = (Vector4)value;
+                        GL.Uniform4(location, 1, (float*)Unsafe.AsPointer(ref v.X));
+                    }
                     break;
                 case ActiveUniformType.FloatMat4:
                     {
-                        Matrix4 mat = (Matrix4)value;
-                        GL.UniformMatrix4(location, false, ref mat);
+                        unsafe
+                        {
+                            var v = (Matrix4x4)value;
+                            GL.UniformMatrix4(location, 1, false, (float*)Unsafe.AsPointer(ref v.M11));
+                        }
                         break;
                     }
                 case ActiveUniformType.Sampler2D:
@@ -668,7 +688,7 @@ namespace osu.Framework.Graphics.OpenGL
         /// space of the container doing the masking).
         /// It is used by a shader to determine which pixels to discard.
         /// </summary>
-        public Matrix3 ToMaskingSpace;
+        public Matrix4x4 ToMaskingSpace;
 
         public float CornerRadius;
 

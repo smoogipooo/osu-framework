@@ -5,8 +5,8 @@ using System;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics.Containers;
 using OpenTK.Input;
-using OpenTK;
 using System.Diagnostics;
+using System.Numerics;
 using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.States;
 

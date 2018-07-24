@@ -1,7 +1,6 @@
 ﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using OpenTK;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Primitives;
@@ -11,6 +10,7 @@ using osu.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace osu.Framework.Graphics.Cursor
 {
@@ -109,11 +109,11 @@ namespace osu.Framework.Graphics.Cursor
                 // We only need to check 2 of the 4 vertices, because we only allow affine transformations
                 // and the quad is therefore symmetric around the centre.
                 boundingRadius = Math.Max(
-                    (cursorQuad.TopLeft - cursorCentre).Length,
-                    (cursorQuad.TopRight - cursorCentre).Length);
+                    (cursorQuad.TopLeft - cursorCentre).Length(),
+                    (cursorQuad.TopRight - cursorCentre).Length());
             }
 
-            Vector2 southEast = new Vector2(1).Normalized();
+            Vector2 southEast = Vector2.Normalize(new Vector2(1));
             Vector2 tooltipPos = cursorCentre + southEast * boundingRadius;
 
             // Clamp position to tooltip container
@@ -217,14 +217,14 @@ namespace osu.Framework.Graphics.Cursor
             Vector2 first = relevantPositions.FirstOrDefault().Position;
             float appearRadiusSq = AppearRadius * AppearRadius;
 
-            if (relevantPositions.All(t => Vector2Extensions.DistanceSquared(t.Position, first) < appearRadiusSq))
+            if (relevantPositions.All(t => Vector2.DistanceSquared(t.Position, first) < appearRadiusSq))
                 return targetCandidate;
 
             return null;
         }
 
         /// <summary>
-        /// Refreshes the displayed tooltip. By default, this <see cref="ITooltip.Move(Vector2)"/>s the tooltip to the cursor position, updates its <see cref="ITooltip.TooltipText"/> and calls its <see cref="ITooltip.Refresh"/> method.
+        /// Refreshes the displayed tooltip. By default, this <see cref="ITooltip.Move(System.Numerics.Vector2)"/>s the tooltip to the cursor position, updates its <see cref="ITooltip.TooltipText"/> and calls its <see cref="ITooltip.Refresh"/> method.
         /// </summary>
         /// <param name="tooltip">The tooltip that is refreshed.</param>
         /// <param name="tooltipTarget">The target of the tooltip.</param>

@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using OpenTK;
 using System.Linq;
+using System.Numerics;
 using osu.Framework.MathUtils;
 
 namespace osu.Framework.Graphics.Containers
@@ -69,7 +69,7 @@ namespace osu.Framework.Graphics.Containers
         private Vector2 spacing;
 
         /// <summary>
-        /// The spacing between individual elements. Default is <see cref="Vector2.Zero"/>.
+        /// The spacing between individual elements. Default is <see cref="System.Numerics.Vector2.Zero"/>.
         /// </summary>
         public Vector2 Spacing
         {

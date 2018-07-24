@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using osu.Framework.Configuration;
 using osu.Framework.Logging;
-using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES30;
 using OpenTK.Platform;
@@ -13,6 +12,7 @@ using OpenTK.Input;
 using System.ComponentModel;
 using System.Drawing;
 using JetBrains.Annotations;
+using OpenTK;
 using Icon = OpenTK.Icon;
 
 namespace osu.Framework.Platform

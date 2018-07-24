@@ -2,6 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
+using System.Numerics;
 using System.Threading;
 using NUnit.Framework;
 using osu.Framework.Allocation;
@@ -12,7 +13,6 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.MathUtils;
 using osu.Framework.Screens;
 using osu.Framework.Testing;
-using OpenTK;
 using OpenTK.Graphics;
 
 namespace osu.Framework.Tests.Visual

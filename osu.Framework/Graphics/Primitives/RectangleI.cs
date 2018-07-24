@@ -4,8 +4,8 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
+using System.Numerics;
 using System.Runtime.InteropServices;
-using OpenTK;
 
 namespace osu.Framework.Graphics.Primitives
 {

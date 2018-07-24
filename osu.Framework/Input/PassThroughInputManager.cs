@@ -3,11 +3,11 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using osu.Framework.Graphics;
 using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.StateChanges;
 using osu.Framework.Input.States;
-using OpenTK;
 using OpenTK.Input;
 using JoystickEventArgs = osu.Framework.Input.EventArgs.JoystickEventArgs;
 

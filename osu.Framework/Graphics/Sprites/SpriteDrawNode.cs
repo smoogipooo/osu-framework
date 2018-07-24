@@ -6,8 +6,8 @@ using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
 using OpenTK.Graphics.ES30;
 using osu.Framework.Graphics.OpenGL;
-using OpenTK;
 using System;
+using System.Numerics;
 using osu.Framework.Graphics.OpenGL.Vertices;
 
 namespace osu.Framework.Graphics.Sprites

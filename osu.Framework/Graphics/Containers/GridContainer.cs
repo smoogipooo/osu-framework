@@ -3,8 +3,8 @@
 
 using System;
 using System.Linq;
+using System.Numerics;
 using osu.Framework.Allocation;
-using OpenTK;
 using osu.Framework.Caching;
 
 namespace osu.Framework.Graphics.Containers

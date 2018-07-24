@@ -2,7 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
-using OpenTK;
+using System.Numerics;
 
 namespace osu.Framework.Graphics.Containers
 {

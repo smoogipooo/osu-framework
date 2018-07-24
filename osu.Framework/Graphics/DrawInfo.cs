@@ -2,25 +2,27 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
+using System.Numerics;
 using osu.Framework.Extensions.MatrixExtensions;
-using OpenTK;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Extensions.TypeExtensions;
+using OpenTK;
+using Vector2 = System.Numerics.Vector2;
 
 namespace osu.Framework.Graphics
 {
     public struct DrawInfo : IEquatable<DrawInfo>
     {
-        public Matrix3 Matrix;
-        public Matrix3 MatrixInverse;
+        public Matrix4x4 Matrix;
+        public Matrix4x4 MatrixInverse;
         public ColourInfo Colour;
         public BlendingInfo Blending;
 
-        public DrawInfo(Matrix3? matrix = null, Matrix3? matrixInverse = null, ColourInfo? colour = null, BlendingInfo? blending = null)
+        public DrawInfo(Matrix4x4? matrix = null, Matrix4x4? matrixInverse = null, ColourInfo? colour = null, BlendingInfo? blending = null)
         {
-            Matrix = matrix ?? Matrix3.Identity;
-            MatrixInverse = matrixInverse ?? Matrix3.Identity;
+            Matrix = matrix ?? Matrix4x4.Identity;
+            MatrixInverse = matrixInverse ?? Matrix4x4.Identity;
             Colour = colour ?? ColourInfo.SingleColour(Color4.White);
             Blending = blending ?? new BlendingInfo();
         }

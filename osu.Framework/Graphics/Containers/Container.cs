@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System;
 using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics.Colour;
-using OpenTK;
 using System.Collections;
+using System.Numerics;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -354,7 +354,7 @@ namespace osu.Framework.Graphics.Containers
 
         /// <summary>
         /// The size of the relative position/size coordinate space of children of this <see cref="Container"/>.
-        /// Children positioned at this size will appear as if they were positioned at <see cref="Drawable.Position"/> = <see cref="Vector2.One"/> in this <see cref="Container"/>.
+        /// Children positioned at this size will appear as if they were positioned at <see cref="Drawable.Position"/> = <see cref="System.Numerics.Vector2.One"/> in this <see cref="Container"/>.
         /// </summary>
         public new Vector2 RelativeChildSize
         {
@@ -364,7 +364,7 @@ namespace osu.Framework.Graphics.Containers
 
         /// <summary>
         /// The offset of the relative position/size coordinate space of children of this <see cref="Container"/>.
-        /// Children positioned at this offset will appear as if they were positioned at <see cref="Drawable.Position"/> = <see cref="Vector2.Zero"/> in this <see cref="Container"/>.
+        /// Children positioned at this offset will appear as if they were positioned at <see cref="Drawable.Position"/> = <see cref="System.Numerics.Vector2.Zero"/> in this <see cref="Container"/>.
         /// </summary>
         public new Vector2 RelativeChildOffset
         {

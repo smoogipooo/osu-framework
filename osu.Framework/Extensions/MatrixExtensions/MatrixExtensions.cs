@@ -2,18 +2,21 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
-using OpenTK;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using Vector2 = System.Numerics.Vector2;
+using Vector4 = System.Numerics.Vector4;
 
 namespace osu.Framework.Extensions.MatrixExtensions
 {
     public static class MatrixExtensions
     {
-        public static void TranslateFromLeft(ref Matrix3 m, Vector2 v)
+        public static void TranslateFromLeft(ref Matrix4x4 m, Vector2 v)
         {
-            m.Row2 += m.Row0 * v.X + m.Row1 * v.Y;
+            m.Row2(m.Row2() + m.Row0() * v.X + m.Row1() * v.Y);
         }
 
-        public static void TranslateFromRight(ref Matrix3 m, Vector2 v)
+        public static void TranslateFromRight(ref Matrix4x4 m, Vector2 v)
         {
             //m.Column0 += m.Column2 * v.X;
             m.M11 += m.M13 * v.X;
@@ -26,17 +29,17 @@ namespace osu.Framework.Extensions.MatrixExtensions
             m.M32 += m.M33 * v.Y;
         }
 
-        public static void RotateFromLeft(ref Matrix3 m, float radians)
+        public static void RotateFromLeft(ref Matrix4x4 m, float radians)
         {
             float cos = (float)Math.Cos(radians);
             float sin = (float)Math.Sin(radians);
 
-            Vector3 row0 = m.Row0 * cos + m.Row1 * sin;
-            m.Row1 = m.Row1 * cos - m.Row0 * sin;
-            m.Row0 = row0;
+            Vector4 row0 = m.Row0() * cos + m.Row1() * sin;
+            m.Row1(m.Row1() * cos - m.Row0() * sin);
+            m.Row0(row0);
         }
 
-        public static void RotateFromRight(ref Matrix3 m, float radians)
+        public static void RotateFromRight(ref Matrix4x4 m, float radians)
         {
             float cos = (float)Math.Cos(radians);
             float sin = (float)Math.Sin(radians);
@@ -57,13 +60,13 @@ namespace osu.Framework.Extensions.MatrixExtensions
             m.M31 = m31;
         }
 
-        public static void ScaleFromLeft(ref Matrix3 m, Vector2 v)
+        public static void ScaleFromLeft(ref Matrix4x4 m, Vector2 v)
         {
-            m.Row0 *= v.X;
-            m.Row1 *= v.Y;
+            m.Row0(m.Row0() * v.X);
+            m.Row1(m.Row1() * v.Y);
         }
 
-        public static void ScaleFromRight(ref Matrix3 m, Vector2 v)
+        public static void ScaleFromRight(ref Matrix4x4 m, Vector2 v)
         {
             //m.Column0 *= v.X;
             m.M11 *= v.X;
@@ -83,11 +86,11 @@ namespace osu.Framework.Extensions.MatrixExtensions
         /// </summary>
         /// <param name="m">The matrix to apply the shearing operation to.</param>
         /// <param name="v">The X and Y amounts of shearing.</param>
-        public static void ShearFromLeft(ref Matrix3 m, Vector2 v)
+        public static void ShearFromLeft(ref Matrix4x4 m, Vector2 v)
         {
-            Vector3 row0 = m.Row0 + m.Row1 * v.Y + m.Row0 * v.X * v.Y;
-            m.Row1 += m.Row0 * v.X;
-            m.Row0 = row0;
+            Vector4 row0 = m.Row0() + m.Row1() * v.Y + m.Row0() * v.X * v.Y;
+            m.Row1(m.Row1() + m.Row0() * v.X);
+            m.Row0(row0);
         }
 
         /// <summary>
@@ -97,7 +100,7 @@ namespace osu.Framework.Extensions.MatrixExtensions
         /// </summary>
         /// <param name="m">The matrix to apply the shearing operation to.</param>
         /// <param name="v">The X and Y amounts of shearing.</param>
-        public static void ShearFromRight(ref Matrix3 m, Vector2 v)
+        public static void ShearFromRight(ref Matrix4x4 m, Vector2 v)
         {
             float xy = v.X * v.Y;
 
@@ -116,7 +119,7 @@ namespace osu.Framework.Extensions.MatrixExtensions
             m.M31 = m31;
         }
 
-        public static void FastInvert(ref Matrix3 value)
+        public static void FastInvert(ref Matrix4x4 value)
         {
             float d11 = value.M22 * value.M33 + value.M23 * -value.M32;
             float d12 = value.M21 * value.M33 + value.M23 * -value.M31;
@@ -126,7 +129,7 @@ namespace osu.Framework.Extensions.MatrixExtensions
 
             if (Math.Abs(det) == 0.0f)
             {
-                value = Matrix3.Zero;
+                value = Zero;
                 return;
             }
 
@@ -150,5 +153,31 @@ namespace osu.Framework.Extensions.MatrixExtensions
             value.M32 = -d23 * det;
             value.M33 = +d33 * det;
         }
+
+        public static Matrix4x4 Zero = new Matrix4x4(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f);
+
+        public static unsafe Vector4 Row0(ref this Matrix4x4 matrix)
+            => Unsafe.AsRef<Vector4>(Unsafe.AsPointer(ref matrix.M11));
+
+        public static unsafe void Row0(ref this Matrix4x4 matrix, Vector4 vec)
+            => Unsafe.Write(Unsafe.AsPointer(ref matrix.M11), vec);
+
+        public static unsafe Vector4 Row1(ref this Matrix4x4 matrix)
+            => Unsafe.AsRef<Vector4>(Unsafe.AsPointer(ref matrix.M21));
+
+        public static unsafe void Row1(ref this Matrix4x4 matrix, Vector4 vec)
+            => Unsafe.Write(Unsafe.AsPointer(ref matrix.M21), vec);
+
+        public static unsafe Vector4 Row2(ref this Matrix4x4 matrix)
+            => Unsafe.AsRef<Vector4>(Unsafe.AsPointer(ref matrix.M31));
+
+        public static unsafe void Row2(ref this Matrix4x4 matrix, Vector4 vec)
+            => Unsafe.Write(Unsafe.AsPointer(ref matrix.M31), vec);
+
+        public static unsafe Vector4 Row3(ref this Matrix4x4 matrix)
+            => Unsafe.AsRef<Vector4>(Unsafe.AsPointer(ref matrix.M41));
+
+        public static unsafe void Row3(ref this Matrix4x4 matrix, Vector4 vec)
+            => Unsafe.Write(Unsafe.AsPointer(ref matrix.M41), vec);
     }
 }

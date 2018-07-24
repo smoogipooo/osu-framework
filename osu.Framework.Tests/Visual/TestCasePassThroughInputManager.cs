@@ -2,13 +2,13 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Linq;
+using System.Numerics;
 using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Input;
 using osu.Framework.Input.States;
 using osu.Framework.Testing;
 using osu.Framework.Testing.Input;
-using OpenTK;
 using OpenTK.Input;
 
 namespace osu.Framework.Tests.Visual

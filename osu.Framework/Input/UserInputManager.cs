@@ -2,10 +2,10 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Collections.Generic;
+using System.Numerics;
 using osu.Framework.Input.Handlers;
 using osu.Framework.Input.States;
 using osu.Framework.Platform;
-using OpenTK;
 
 namespace osu.Framework.Input
 {

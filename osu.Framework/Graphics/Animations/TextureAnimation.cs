@@ -1,7 +1,7 @@
 ﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using OpenTK;
+using System.Numerics;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 
@@ -28,7 +28,7 @@ namespace osu.Framework.Graphics.Animations
         {
             base.OnFrameAdded(content, displayDuration);
 
-            maxTextureSize = Vector2.ComponentMax(new Vector2(content?.DisplayWidth ?? 0, content?.DisplayHeight ?? 0), maxTextureSize);
+            maxTextureSize = Vector2.Max(new Vector2(content?.DisplayWidth ?? 0, content?.DisplayHeight ?? 0), maxTextureSize);
         }
 
         protected override void DisplayFrame(Texture content)

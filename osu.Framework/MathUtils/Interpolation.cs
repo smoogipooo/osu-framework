@@ -3,8 +3,8 @@
 
 using System;
 using System.Linq;
+using System.Numerics;
 using osu.Framework.Graphics;
-using OpenTK;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;

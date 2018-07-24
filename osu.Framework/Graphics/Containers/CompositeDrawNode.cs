@@ -6,11 +6,12 @@ using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Batches;
-using OpenTK;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Colour;
 using System;
 using osu.Framework.Graphics.OpenGL.Vertices;
+using OpenTK;
+using Vector2 = System.Numerics.Vector2;
 
 namespace osu.Framework.Graphics.Containers
 {

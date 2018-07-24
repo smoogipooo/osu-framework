@@ -2,6 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
+using System.Numerics;
 using osu.Framework.Allocation;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics;
@@ -13,7 +14,6 @@ using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.Handlers.Mouse;
 using osu.Framework.Input.States;
 using osu.Framework.Testing;
-using OpenTK;
 using OpenTK.Graphics;
 
 namespace osu.Framework.Tests.Visual

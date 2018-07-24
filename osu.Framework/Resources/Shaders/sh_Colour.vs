@@ -7,12 +7,12 @@ varying vec2 v_MaskingPosition;
 varying vec4 v_Colour;
 
 uniform mat4 g_ProjMatrix;
-uniform mat3 g_ToMaskingSpace;
+uniform mat4 g_ToMaskingSpace;
 
 void main(void)
 {
 	// Transform to position to masking space.
-	vec3 localPos = g_ToMaskingSpace * vec3(m_Position, 1.0);
+	vec3 localPos = (g_ToMaskingSpace * vec4(m_Position, 1.0, 1.0)).xyz;
 	localPos.xy /= localPos.z;
 
 	v_MaskingPosition = localPos.xy;

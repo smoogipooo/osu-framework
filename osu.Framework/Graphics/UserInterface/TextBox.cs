@@ -10,7 +10,6 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input;
 using osu.Framework.MathUtils;
 using osu.Framework.Threading;
-using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
 using osu.Framework.Allocation;
@@ -23,6 +22,8 @@ using osu.Framework.Input.Bindings;
 using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.States;
 using osu.Framework.Timing;
+using OpenTK;
+using Vector2 = System.Numerics.Vector2;
 
 namespace osu.Framework.Graphics.UserInterface
 {

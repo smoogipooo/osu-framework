@@ -2,6 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Collections.Generic;
+using System.Numerics;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Lines;
 using osu.Framework.Graphics.OpenGL.Textures;
@@ -9,7 +10,6 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.States;
 using osu.Framework.Testing;
-using OpenTK;
 using OpenTK.Graphics;
 
 namespace osu.Framework.Tests.Visual
@@ -115,7 +115,7 @@ namespace osu.Framework.Tests.Visual
             protected override bool OnDrag(InputState state)
             {
                 Vector2 pos = state.Mouse.Position;
-                if ((pos - oldPos).Length > 10)
+                if ((pos - oldPos).Length() > 10)
                 {
                     AddVertex(pos);
                     oldPos = pos;

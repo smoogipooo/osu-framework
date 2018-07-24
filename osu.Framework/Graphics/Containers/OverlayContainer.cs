@@ -2,8 +2,8 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Collections.Generic;
+using System.Numerics;
 using osu.Framework.Input;
-using OpenTK;
 
 namespace osu.Framework.Graphics.Containers
 {

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using osu.Framework.Caching;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using OpenTK.Graphics;
@@ -14,7 +15,6 @@ using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.States;
 using osu.Framework.MathUtils;
 using osu.Framework.Threading;
-using OpenTK;
 using OpenTK.Input;
 
 namespace osu.Framework.Graphics.UserInterface

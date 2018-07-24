@@ -2,6 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Linq;
+using System.Numerics;
 using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -10,7 +11,6 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.States;
 using osu.Framework.Testing;
-using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
 

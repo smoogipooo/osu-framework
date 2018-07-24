@@ -3,10 +3,10 @@
 
 using System;
 using System.Linq;
+using System.Numerics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
-using OpenTK;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.States;

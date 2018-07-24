@@ -2,8 +2,8 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
+using System.Numerics;
 using osu.Framework.Extensions.PolygonExtensions;
-using OpenTK;
 using osu.Framework.MathUtils;
 
 namespace osu.Framework.Graphics.Primitives
@@ -43,7 +43,7 @@ namespace osu.Framework.Graphics.Primitives
                 new Vector2(rectangle.Right, rectangle.Bottom));
         }
 
-        public static Quad operator *(Quad r, Matrix3 m)
+        public static Quad operator *(Quad r, Matrix4x4 m)
         {
             return new Quad(
                 Vector2Extensions.Transform(r.TopLeft, m),
@@ -52,7 +52,7 @@ namespace osu.Framework.Graphics.Primitives
                 Vector2Extensions.Transform(r.BottomRight, m));
         }
 
-        public Matrix2 BasisTransform
+        public OpenTK.Matrix2 BasisTransform
         {
             get
             {
@@ -60,12 +60,12 @@ namespace osu.Framework.Graphics.Primitives
                 Vector2 row1 = BottomLeft - TopLeft;
 
                 if (row0 != Vector2.Zero)
-                    row0 /= row0.LengthSquared;
+                    row0 /= row0.LengthSquared();
 
                 if (row1 != Vector2.Zero)
-                    row1 /= row1.LengthSquared;
+                    row1 /= row1.LengthSquared();
 
-                return new Matrix2(
+                return new OpenTK.Matrix2(
                     row0.X, row0.Y,
                     row1.X, row1.Y);
             }
@@ -74,8 +74,8 @@ namespace osu.Framework.Graphics.Primitives
         public Vector2 Centre => (TopLeft + TopRight + BottomLeft + BottomRight) / 4;
         public Vector2 Size => new Vector2(Width, Height);
 
-        public float Width => Vector2Extensions.Distance(TopLeft, TopRight);
-        public float Height => Vector2Extensions.Distance(TopLeft, BottomLeft);
+        public float Width => Vector2.Distance(TopLeft, TopRight);
+        public float Height => Vector2.Distance(TopLeft, BottomLeft);
 
         public RectangleI AABB
         {
@@ -126,10 +126,10 @@ namespace osu.Framework.Graphics.Primitives
                 //return Math.Sqrt(Vector2Extensions.DistanceSquared(TopLeft, TopRight) * Vector2Extensions.DistanceSquared(TopLeft, BottomLeft));
 
                 Vector2 d1 = TopLeft - TopRight;
-                float lsq1 = d1.LengthSquared;
+                float lsq1 = d1.LengthSquared();
 
                 Vector2 d2 = TopLeft - BottomLeft;
-                float lsq2 = Vector2Extensions.DistanceSquared(d2, d1 * Vector2.Dot(d2, d1 * MathHelper.InverseSqrtFast(lsq1)));
+                float lsq2 = Vector2.DistanceSquared(d2, d1 * Vector2.Dot(d2, d1 * OpenTK.MathHelper.InverseSqrtFast(lsq1)));
 
                 return (float)Math.Sqrt(lsq1 * lsq2);
             }

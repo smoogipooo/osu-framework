@@ -4,7 +4,6 @@
 using System.Collections.Generic;
 using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Graphics.OpenGL.Buffers;
-using OpenTK;
 using OpenTK.Graphics.ES30;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Primitives;
@@ -14,6 +13,9 @@ using System;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.OpenGL.Vertices;
 using System.Diagnostics;
+using System.Numerics;
+using OpenTK;
+using Vector2 = System.Numerics.Vector2;
 
 namespace osu.Framework.Graphics.Containers
 {
@@ -83,7 +85,7 @@ namespace osu.Framework.Graphics.Containers
             {
                 ScreenSpaceAABB = screenSpaceMaskingRect,
                 MaskingRect = ScreenSpaceDrawRectangle,
-                ToMaskingSpace = Matrix3.Identity,
+                ToMaskingSpace = Matrix4x4.Identity,
                 BlendRange = 1,
                 AlphaExponent = 1,
             }, true);

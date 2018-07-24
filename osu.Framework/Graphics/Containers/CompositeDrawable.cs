@@ -5,7 +5,7 @@ using osu.Framework.Lists;
 using System.Collections.Generic;
 using System;
 using System.Diagnostics;
-using OpenTK;
+using System.Numerics;
 using osu.Framework.Graphics.OpenGL;
 using OpenTK.Graphics;
 using osu.Framework.Graphics.Shaders;
@@ -672,7 +672,7 @@ namespace osu.Framework.Graphics.Containers
             if (!Masking && (BorderThickness != 0.0f || EdgeEffect.Type != EdgeEffectType.None))
                 throw new InvalidOperationException("Can not have border effects/edge effects if masking is disabled.");
 
-            Vector3 scale = DrawInfo.MatrixInverse.ExtractScale();
+            Matrix4x4.Decompose(DrawInfo.MatrixInverse, out var scale, out _, out _);
 
             n.MaskingInfo = !Masking
                 ? (MaskingInfo?)null

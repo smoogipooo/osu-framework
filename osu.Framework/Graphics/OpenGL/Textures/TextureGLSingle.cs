@@ -3,11 +3,11 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Primitives;
-using OpenTK;
 using OpenTK.Graphics.ES30;
 using osu.Framework.Statistics;
 using osu.Framework.Graphics.Colour;

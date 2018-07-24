@@ -4,12 +4,12 @@
 using System;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
-using OpenTK;
 using OpenTK.Graphics;
 using osu.Framework.Extensions.Color4Extensions;
 using OpenTK.Input;
 using osu.Framework.Graphics.Shapes;
 using System.Collections.Generic;
+using System.Numerics;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.States;

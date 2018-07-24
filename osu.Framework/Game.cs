@@ -2,6 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System.Linq;
+using System.Numerics;
 using osu.Framework.Audio;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -15,7 +16,6 @@ using osu.Framework.Platform;
 using osu.Framework.Allocation;
 using osu.Framework.Configuration;
 using osu.Framework.Input.Bindings;
-using OpenTK;
 using GameWindow = osu.Framework.Platform.GameWindow;
 
 namespace osu.Framework

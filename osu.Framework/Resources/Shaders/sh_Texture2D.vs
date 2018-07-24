@@ -13,12 +13,12 @@ varying vec4 v_TexRect;
 varying vec2 v_BlendRange;
 
 uniform mat4 g_ProjMatrix;
-uniform mat3 g_ToMaskingSpace;
+uniform mat4 g_ToMaskingSpace;
 
 void main(void)
 {
 	// Transform to position to masking space.
-	vec3 maskingPos = g_ToMaskingSpace * vec3(m_Position, 1.0);
+	vec3 maskingPos = (g_ToMaskingSpace * vec4(m_Position, 1.0, 1.0)).xyz;
 	v_MaskingPosition = maskingPos.xy / maskingPos.z;
 
 	v_Colour = m_Colour;

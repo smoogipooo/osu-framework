@@ -3,11 +3,11 @@
 
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
-using OpenTK;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Allocation;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using osu.Framework.Caching;
 
 namespace osu.Framework.Graphics.Lines

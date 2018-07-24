@@ -13,7 +13,6 @@ using System.Runtime;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
-using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.ES30;
 using OpenTK.Input;
@@ -32,7 +31,9 @@ using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using osu.Framework.Timing;
 using osu.Framework.IO.File;
+using OpenTK;
 using Bitmap = System.Drawing.Bitmap;
+using Vector2 = System.Numerics.Vector2;
 
 namespace osu.Framework.Platform
 {
@@ -274,7 +275,7 @@ namespace osu.Framework.Platform
                 Root.Size = new Vector2(Window.ClientSize.Width, Window.ClientSize.Height);
 
             // Ensure we maintain a valid size for any children immediately scaling by the window size
-            Root.Size = Vector2.ComponentMax(Vector2.One, Root.Size);
+            Root.Size = Vector2.Max(Vector2.One, Root.Size);
 
             Root.UpdateSubTree();
             Root.UpdateSubTreeMasking(Root, Root.ScreenSpaceDrawQuad.AABBFloat);

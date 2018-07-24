@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using NUnit.Framework;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
@@ -14,7 +15,6 @@ using osu.Framework.Input;
 using osu.Framework.Input.EventArgs;
 using osu.Framework.Input.States;
 using osu.Framework.Testing;
-using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
 using MouseEventArgs = osu.Framework.Input.EventArgs.MouseEventArgs;
@@ -367,8 +367,8 @@ namespace osu.Framework.Tests.Visual
         }
 
         private void checkLastPositionDelta(Func<float> expected) => AddAssert("correct position delta", () =>
-            s1.CounterFor("Move").LastState.Mouse.NativeState.Delta.Length == expected() &&
-            s2.CounterFor("Move").LastState.Mouse.NativeState.Delta.Length == expected());
+            s1.CounterFor("Move").LastState.Mouse.NativeState.Delta.Length() == expected() &&
+            s2.CounterFor("Move").LastState.Mouse.NativeState.Delta.Length() == expected());
 
         private void checkLastScrollDelta(Vector2 expected) => AddAssert("correct scroll delta", () =>
             Precision.AlmostEquals(s1.CounterFor("Scroll").LastState.Mouse.ScrollDelta, expected) &&

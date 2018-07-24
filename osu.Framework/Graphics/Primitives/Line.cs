@@ -2,7 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
-using OpenTK;
+using System.Numerics;
 
 namespace osu.Framework.Graphics.Primitives
 {
@@ -24,14 +24,14 @@ namespace osu.Framework.Graphics.Primitives
         /// <summary>
         /// The length of the line.
         /// </summary>
-        public float Rho => (EndPoint - StartPoint).Length;
+        public float Rho => (EndPoint - StartPoint).Length();
 
         /// <summary>
         /// The direction of the second point from the first.
         /// </summary>
         public float Theta => (float)Math.Atan2(EndPoint.Y - StartPoint.Y, EndPoint.X - StartPoint.X);
 
-        public Vector2 Direction => (EndPoint - StartPoint).Normalized();
+        public Vector2 Direction => Vector2.Normalize(EndPoint - StartPoint);
 
         public Vector2 OrthogonalDirection
         {
@@ -54,7 +54,7 @@ namespace osu.Framework.Graphics.Primitives
         /// </summary>
         public float DistanceSquaredToPoint(Vector2 p)
         {
-            return Vector2Extensions.DistanceSquared(p, ClosestPointTo(p));
+            return Vector2.DistanceSquared(p, ClosestPointTo(p));
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace osu.Framework.Graphics.Primitives
         /// </summary>
         public float DistanceToPoint(Vector2 p)
         {
-            return Vector2Extensions.Distance(p, ClosestPointTo(p));
+            return Vector2.Distance(p, ClosestPointTo(p));
         }
 
         /// <summary>
@@ -93,17 +93,17 @@ namespace osu.Framework.Graphics.Primitives
             return pB;
         }
 
-        public Matrix4 WorldMatrix()
+        public Matrix4x4 WorldMatrix()
         {
-            return Matrix4.CreateRotationZ(Theta) * Matrix4.CreateTranslation(StartPoint.X, StartPoint.Y, 0);
+            return Matrix4x4.CreateRotationZ(Theta) * Matrix4x4.CreateTranslation(StartPoint.X, StartPoint.Y, 0);
         }
 
         /// <summary>
         /// It's the end of the world as we know it
         /// </summary>
-        public Matrix4 EndWorldMatrix()
+        public Matrix4x4 EndWorldMatrix()
         {
-            return Matrix4.CreateRotationZ(Theta) * Matrix4.CreateTranslation(EndPoint.X, EndPoint.Y, 0);
+            return Matrix4x4.CreateRotationZ(Theta) * Matrix4x4.CreateTranslation(EndPoint.X, EndPoint.Y, 0);
         }
 
         public object Clone()

@@ -2,9 +2,9 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
+using System.Numerics;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
-using OpenTK;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Allocation;
 
@@ -125,7 +125,7 @@ namespace osu.Framework.Graphics.Sprites
                 throw new InvalidOperationException(
                     $"May not smooth more than {MAX_EDGE_SMOOTHNESS} or will leak neighboring textures in atlas. Tried to smooth by ({EdgeSmoothness.X}, {EdgeSmoothness.Y}).");
 
-            Vector3 scale = DrawInfo.MatrixInverse.ExtractScale();
+            Matrix4x4.Decompose(DrawInfo.MatrixInverse, out var scale, out _, out _);
 
             inflationAmount = new Vector2(scale.X * EdgeSmoothness.X, scale.Y * EdgeSmoothness.Y);
             return ToScreenSpace(DrawRectangle.Inflate(inflationAmount));

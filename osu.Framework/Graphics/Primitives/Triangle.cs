@@ -1,8 +1,8 @@
 ﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using OpenTK;
 using System;
+using System.Numerics;
 
 namespace osu.Framework.Graphics.Primitives
 {
@@ -62,9 +62,9 @@ namespace osu.Framework.Graphics.Primitives
         {
             get
             {
-                float a = (P0 - P1).Length;
-                float b = (P0 - P2).Length;
-                float c = (P1 - P2).Length;
+                float a = (P0 - P1).Length();
+                float b = (P0 - P2).Length();
+                float c = (P1 - P2).Length();
                 float s = (a + b + c) / 2.0f;
                 return (float)Math.Sqrt(s * (s - a) * (s - b) * (s - c));
             }

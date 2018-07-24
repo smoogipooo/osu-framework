@@ -5,6 +5,7 @@ using System.Drawing;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
 using OpenTK;
+using Vector2 = System.Numerics.Vector2;
 
 namespace osu.Framework.Input.Handlers.Mouse
 {
