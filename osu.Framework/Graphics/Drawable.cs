@@ -833,7 +833,7 @@ namespace osu.Framework.Graphics
         /// <summary>
         /// Computes the bounding box of this drawable in its parent's space.
         /// </summary>
-        public virtual RectangleF BoundingBox => ToParentSpace(LayoutRectangle).AABBFloat;
+        public virtual RectangleF BoundingBox => ToParentSpaceNonRecursive(LayoutRectangle).AABBFloat;
 
         /// <summary>
         /// Called whenever the <see cref="RelativeSizeAxes"/> of this drawable is changed, or when the <see cref="Container{T}.AutoSizeAxes"/> are changed if this drawable is a <see cref="Container{T}"/>.
@@ -1705,6 +1705,22 @@ namespace osu.Framework.Graphics
         public Quad ToLocalSpace(Quad screenSpaceQuad)
         {
             return screenSpaceQuad * DrawInfo.MatrixInverse;
+        }
+
+        public Vector2 ToParentSpaceNonRecursive(Vector2 input)
+        {
+            var di = new DrawInfo(null);
+            di.ApplyTransform(DrawPosition + AnchorPosition + (Parent?.ChildOffset ?? Vector2.Zero), DrawScale, Rotation, Shear, OriginPosition);
+
+            return Vector2Extensions.Transform(input, di.Matrix);
+        }
+
+        public Quad ToParentSpaceNonRecursive(RectangleF input)
+        {
+            var di = new DrawInfo(null);
+            di.ApplyTransform(DrawPosition + AnchorPosition + (Parent?.ChildOffset ?? Vector2.Zero), DrawScale, Rotation, Shear, OriginPosition);
+
+            return Quad.FromRectangle(input) * di.Matrix;
         }
 
         #endregion

@@ -1137,12 +1137,12 @@ namespace osu.Framework.Graphics.Containers
 
                 // Inflate bounding box in parent space by the half-size of the bounding box of the
                 // ellipse obtained by transforming the unit circle into parent space.
-                Vector2 offset = ToParentSpace(Vector2.Zero);
-                Vector2 u = ToParentSpace(new Vector2(cRadius, 0)) - offset;
-                Vector2 v = ToParentSpace(new Vector2(0, cRadius)) - offset;
+                Vector2 offset = ToParentSpaceNonRecursive(Vector2.Zero);
+                Vector2 u = ToParentSpaceNonRecursive(new Vector2(cRadius, 0)) - offset;
+                Vector2 v = ToParentSpaceNonRecursive(new Vector2(0, cRadius)) - offset;
                 Vector2 inflation = new Vector2((float)Math.Sqrt(u.X * u.X + v.X * v.X), (float)Math.Sqrt(u.Y * u.Y + v.Y * v.Y));
 
-                RectangleF result = ToParentSpace(drawRect).AABBFloat.Inflate(inflation);
+                RectangleF result = ToParentSpaceNonRecursive(drawRect).AABBFloat.Inflate(inflation);
                 // The above algorithm will return incorrect results if the rounded corners are not fully visible.
                 // To limit bad behavior we at least enforce here, that the bounding box with rounded corners
                 // is never larger than the bounding box without.
