@@ -589,10 +589,18 @@ namespace osu.Framework.Graphics.Containers
 
             if (validations >= max_iterations)
                 Logger.Log($"{this} exceeded the maximum number of allowable validations to fully validate.", LoggingTarget.Performance, LogLevel.Error);
-            else if (validations > 1)
+            else if (validations > 2) // 2 validations will be due to autosize + any other sort of layout (e.g. flow)
                 Logger.Log($"{this} took {validations} iterations to fully validate.", LoggingTarget.Performance);
 
             return true;
+        }
+
+        public override bool RequiresLayoutValidation => base.RequiresLayoutValidation || !childrenSizeDependencies.IsValid;
+
+        protected override void ValidateLayout()
+        {
+            base.ValidateLayout();
+            updateChildrenSizeDependencies();
         }
 
         protected override bool ComputeIsMaskedAway(RectangleF maskingBounds)
