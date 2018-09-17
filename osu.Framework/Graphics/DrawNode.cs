@@ -28,10 +28,11 @@ namespace osu.Framework.Graphics
         /// </summary>
         internal long InvalidationID;
 
-        protected internal int DepthIndex { get; internal set; }
+        protected int DepthIndex { get; private set; }
 
-        public virtual void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder)
+        public virtual void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder, ref int depthIndex)
         {
+            DepthIndex = depthIndex;
             GLWrapper.SetBlend(DrawColourInfo.Blending);
         }
 

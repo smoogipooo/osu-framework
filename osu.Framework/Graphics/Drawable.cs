@@ -1638,8 +1638,6 @@ namespace osu.Framework.Graphics
 
         private readonly DrawNode[] drawNodes = new DrawNode[3];
 
-        internal static int DepthIndex;
-
         /// <summary>
         /// Generates the <see cref="DrawNode"/> for ourselves.
         /// </summary>
@@ -1661,8 +1659,6 @@ namespace osu.Framework.Graphics
                 ApplyDrawNode(node);
                 FrameStatistics.Increment(StatisticsCounterType.DrawNodeAppl);
             }
-
-            node.DepthIndex = DepthIndex;
 
             return node;
         }

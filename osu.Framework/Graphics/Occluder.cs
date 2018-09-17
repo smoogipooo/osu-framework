@@ -5,7 +5,6 @@ using System;
 using osu.Framework.Allocation;
 using osu.Framework.Configuration;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Shapes;
@@ -38,22 +37,18 @@ namespace osu.Framework.Graphics
             base.ApplyDrawNode(node);
         }
 
-        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex, bool forceNewDrawNode)
-        {
-            DepthIndex++;
-            return base.GenerateDrawNodeSubtree(frame, treeIndex, forceNewDrawNode);
-        }
-
         private class OccluderDrawNode : CompositeDrawNode
         {
             public bool Bypass;
 
-            public override void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder)
+            public override void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder, ref int depthIndex)
             {
                 if (Bypass || DrawColourInfo.Blending.Destination == BlendingFactorDest.One || DrawColourInfo.Colour.MinAlpha < 1)
                     return;
 
-                base.DrawDepth(vertexAction, true);
+                ++depthIndex;
+
+                base.DrawDepth(vertexAction, true, ref depthIndex);
             }
 
             public override void Draw(Action<TexturedVertex2D> vertexAction)

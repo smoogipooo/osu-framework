@@ -24,7 +24,6 @@ using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
-using osu.Framework.Graphics.Shaders;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -318,10 +317,7 @@ namespace osu.Framework.Platform
             Root.UpdateSubTreeMasking(Root, Root.ScreenSpaceDrawQuad.AABBFloat);
 
             using (var buffer = DrawRoots.Get(UsageType.Write))
-            {
-                Drawable.DepthIndex = 0;
                 buffer.Object = Root.GenerateDrawNodeSubtree(frameCount, buffer.Index, false);
-            }
         }
 
         protected virtual void DrawInitialize()
@@ -365,7 +361,6 @@ namespace osu.Framework.Platform
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.DepthPass))
                     {
-                        GlobalPropertyManager.Set(GlobalProperty.ForDepth, true);
                         GLWrapper.PushDepthInfo(new DepthInfo
                         {
                             DepthTest = true,
@@ -376,14 +371,14 @@ namespace osu.Framework.Platform
                         query = GL.GenQuery();
                         GL.BeginQuery(QueryTarget.SamplesPassed, query);
 
-                        buffer.Object.DrawDepth(null, false);
+                        int depthIndex = 0;
+                        buffer.Object.DrawDepth(null, false, ref depthIndex);
 
                         GL.EndQuery(QueryTarget.SamplesPassed);
                         GL.GetQueryObject(query, GetQueryObjectParam.QueryResult, out var numFragmentsDepth);
 
                         FrameStatistics.Add(StatisticsCounterType.Depth, numFragmentsDepth);
 
-                        GlobalPropertyManager.Set(GlobalProperty.ForDepth, false);
                         GLWrapper.PopDepthInfo();
                     }
 

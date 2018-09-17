@@ -34,12 +34,12 @@ namespace osu.Framework.Graphics.Sprites
                 new Vector2(InflationAmount.X / DrawRectangle.Width, InflationAmount.Y / DrawRectangle.Height));
         }
 
-        public override void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder)
+        public override void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder, ref int depthIndex)
         {
+            base.DrawDepth(vertexAction, true, ref depthIndex);
+
             if (!fromOccluder)
                 return;
-
-            base.DrawDepth(vertexAction, true);
 
             if (Texture?.Available != true)
                 return;
