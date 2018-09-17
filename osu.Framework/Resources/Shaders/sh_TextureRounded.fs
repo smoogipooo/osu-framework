@@ -71,7 +71,7 @@ void main(void)
         // effect from that.
         float innerBlendFactor = (g_CornerRadius - g_MaskingBlendRange - dist) / v_BlendRange.x;
         if (innerBlendFactor > 1.0)
-            discard;
+            return;
 
         // We exponentiate our factor to exactly counteract the later exponentiation by g_AlphaExponent for a smoother inner border.
         alphaFactor *= pow(min(1.0 - innerBlendFactor, 1.0), 1.0 / g_AlphaExponent);
@@ -88,7 +88,7 @@ void main(void)
         alphaFactor *= clamp(1.0 - distanceFromDrawingRect(), 0.0, 1.0);
 
     if (alphaFactor <= 0.0)
-        discard;
+        return;
 
     // This ends up softening glow without negatively affecting edge smoothness much.
     alphaFactor = pow(alphaFactor, g_AlphaExponent);

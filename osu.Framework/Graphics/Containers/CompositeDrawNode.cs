@@ -190,6 +190,25 @@ namespace osu.Framework.Graphics.Containers
                 Shared.VertexBatch = new QuadBatch<TexturedVertex2D>(clampedAmountChildren * 2, 500);
         }
 
+        public override void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder)
+        {
+            updateVertexBatch();
+
+            // Prefer to use own vertex batch instead of the parent-owned one.
+            if (Shared.VertexBatch != null)
+                vertexAction = Shared.VertexBatch.AddAction;
+
+            if (MaskingInfo != null)
+                GLWrapper.PushMaskingInfo(MaskingInfo.Value);
+
+            if (Children != null)
+                for (int i = 0; i < Children.Count; i++)
+                    Children[i].DrawDepth(vertexAction, fromOccluder);
+
+            if (MaskingInfo != null)
+                GLWrapper.PopMaskingInfo();
+        }
+
         public override void Draw(Action<TexturedVertex2D> vertexAction)
         {
             updateVertexBatch();

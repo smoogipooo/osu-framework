@@ -34,6 +34,27 @@ namespace osu.Framework.Graphics.Sprites
                 new Vector2(InflationAmount.X / DrawRectangle.Width, InflationAmount.Y / DrawRectangle.Height));
         }
 
+        public override void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder)
+        {
+            if (!fromOccluder)
+                return;
+
+            base.DrawDepth(vertexAction, true);
+
+            if (Texture?.Available != true)
+                return;
+
+            Shader shader = TextureShader;
+
+            shader.Bind();
+
+            Texture.TextureGL.WrapMode = WrapTexture ? TextureWrapMode.Repeat : TextureWrapMode.ClampToEdge;
+
+            Blit(vertexAction);
+
+            shader.Unbind();
+        }
+
         public override void Draw(Action<TexturedVertex2D> vertexAction)
         {
             base.Draw(vertexAction);

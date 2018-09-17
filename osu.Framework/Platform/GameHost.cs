@@ -24,6 +24,7 @@ using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
+using osu.Framework.Graphics.Shaders;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -360,15 +361,39 @@ namespace osu.Framework.Platform
 
                     BufferedContainerDrawNode.ScreenSize = Root.DrawSize;
 
-                    int query = GL.GenQuery();
+                    int query;
+
+                    using (drawMonitor.BeginCollecting(PerformanceCollectionType.DepthPass))
+                    {
+                        GlobalPropertyManager.Set(GlobalProperty.ForDepth, true);
+                        GLWrapper.PushDepthInfo(new DepthInfo
+                        {
+                            DepthTest = true,
+                            WriteDepth = true,
+                            DepthTestFunction = DepthFunction.Less
+                        });
+
+                        query = GL.GenQuery();
+                        GL.BeginQuery(QueryTarget.SamplesPassed, query);
+
+                        buffer.Object.DrawDepth(null, false);
+
+                        GL.EndQuery(QueryTarget.SamplesPassed);
+                        GL.GetQueryObject(query, GetQueryObjectParam.QueryResult, out var numFragmentsDepth);
+
+                        FrameStatistics.Add(StatisticsCounterType.Depth, numFragmentsDepth);
+
+                        GlobalPropertyManager.Set(GlobalProperty.ForDepth, false);
+                        GLWrapper.PopDepthInfo();
+                    }
+
+                    query = GL.GenQuery();
                     GL.BeginQuery(QueryTarget.SamplesPassed, query);
 
                     buffer.Object.Draw(null);
 
                     GL.EndQuery(QueryTarget.SamplesPassed);
-
-                    int numFragments;
-                    GL.GetQueryObject(query, GetQueryObjectParam.QueryResult, out numFragments);
+                    GL.GetQueryObject(query, GetQueryObjectParam.QueryResult, out var numFragments);
 
                     FrameStatistics.Add(StatisticsCounterType.Draw, numFragments);
 

@@ -18,13 +18,9 @@ namespace osu.Framework.Graphics
     {
         private readonly IBindable<bool> depthTesting = new Bindable<bool>();
 
-        private Shader shader;
-
         [BackgroundDependencyLoader]
         private void load(GameHost host, ShaderManager shaders)
         {
-            shader = shaders.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.COLOUR);
-
             InternalChild = new Box { RelativeSizeAxes = Axes.Both };
 
             depthTesting.BindTo(host.DepthTesting);
@@ -39,13 +35,12 @@ namespace osu.Framework.Graphics
         {
             var n = (OccluderDrawNode)node;
             n.Bypass = !depthTesting.Value;
-            n.Shader = shader;
             base.ApplyDrawNode(node);
         }
 
         internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex, bool forceNewDrawNode)
         {
-            DepthIndex = DepthIndex++;
+            DepthIndex++;
             return base.GenerateDrawNodeSubtree(frame, treeIndex, forceNewDrawNode);
         }
 
@@ -53,25 +48,16 @@ namespace osu.Framework.Graphics
         {
             public bool Bypass;
 
-            public override void Draw(Action<TexturedVertex2D> vertexAction)
+            public override void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder)
             {
-                if (Bypass || DrawInfo.Blending.Destination == BlendingFactorDest.One || DrawInfo.Colour.MinAlpha < 1)
+                if (Bypass || DrawColourInfo.Blending.Destination == BlendingFactorDest.One || DrawColourInfo.Colour.MinAlpha < 1)
                     return;
 
-                Shader.Bind();
+                base.DrawDepth(vertexAction, true);
+            }
 
-                GLWrapper.PushDepthInfo(new DepthInfo
-                {
-                    DepthTest = true,
-                    WriteDepth = true,
-                    DepthTestFunction = DepthFunction.Less
-                });
-
-                base.Draw(vertexAction);
-
-                GLWrapper.PopDepthInfo();
-
-                Shader.Unbind();
+            public override void Draw(Action<TexturedVertex2D> vertexAction)
+            {
             }
         }
     }

@@ -30,6 +30,11 @@ namespace osu.Framework.Graphics
 
         protected internal int DepthIndex { get; internal set; }
 
+        public virtual void DrawDepth(Action<TexturedVertex2D> vertexAction, bool fromOccluder)
+        {
+            GLWrapper.SetBlend(DrawColourInfo.Blending);
+        }
+
         /// <summary>
         /// Draws this draw node to the screen.
         /// </summary>
