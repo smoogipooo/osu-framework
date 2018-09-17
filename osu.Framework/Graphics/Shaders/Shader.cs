@@ -207,11 +207,7 @@ namespace osu.Framework.Graphics.Shaders
             EnsureLoaded();
 
             return (Uniform<T>)Uniforms[name];
-            GLWrapper.FlushCurrentBatch();
-
         }
-
-        public static T GetGlobalProperty<T>(string name) => (T)global_properties[name];
 
         public static implicit operator int(Shader shader)
         {

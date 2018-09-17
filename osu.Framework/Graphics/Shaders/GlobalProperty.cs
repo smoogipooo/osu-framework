@@ -17,5 +17,6 @@ namespace osu.Framework.Graphics.Shaders
         MaskingBlendRange,
         AlphaExponent,
         DiscardInner,
+        ForDepth
     }
 }

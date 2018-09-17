@@ -119,7 +119,7 @@ namespace osu.Framework.Graphics.OpenGL
                 DepthTestFunction = DepthFunction.Lequal
             });
 
-            Shader.SetGlobalProperty("g_ForDepth", false);
+            GlobalPropertyManager.Set(GlobalProperty.ForDepth, false);
 
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, 0);
         }

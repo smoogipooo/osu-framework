@@ -28,6 +28,7 @@ namespace osu.Framework.Graphics.Shaders
             global_properties[(int)GlobalProperty.MaskingBlendRange] = new UniformMapping<float>("g_MaskingBlendRange");
             global_properties[(int)GlobalProperty.AlphaExponent] = new UniformMapping<float>("g_AlphaExponent");
             global_properties[(int)GlobalProperty.DiscardInner] = new UniformMapping<bool>("g_DiscardInner");
+            global_properties[(int)GlobalProperty.ForDepth] = new UniformMapping<bool>("g_ForDepth");
         }
 
         /// <summary>

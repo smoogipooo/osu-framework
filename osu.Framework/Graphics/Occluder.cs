@@ -43,10 +43,10 @@ namespace osu.Framework.Graphics
             base.ApplyDrawNode(node);
         }
 
-        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex)
+        internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex, bool forceNewDrawNode)
         {
             DepthIndex = DepthIndex++;
-            return base.GenerateDrawNodeSubtree(frame, treeIndex);
+            return base.GenerateDrawNodeSubtree(frame, treeIndex, forceNewDrawNode);
         }
 
         private class OccluderDrawNode : CompositeDrawNode
