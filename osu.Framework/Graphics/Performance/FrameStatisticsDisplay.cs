@@ -1,24 +1,26 @@
 ﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.OpenGL.Textures;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.Input;
 using osu.Framework.MathUtils;
 using osu.Framework.Statistics;
 using osu.Framework.Threading;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using osu.Framework.Input.EventArgs;
+using osu.Framework.Input.States;
+using OpenTK;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace osu.Framework.Graphics.Performance
 {
@@ -36,7 +38,6 @@ namespace osu.Framework.Graphics.Performance
         private const float alpha_when_active = 0.75f;
 
         private readonly TimeBar[] timeBars;
-        private readonly BufferStack<byte> textureBufferStack;
 
         private static readonly Color4[] garbage_collect_colors = { Color4.Green, Color4.Yellow, Color4.Red };
         private readonly PerformanceMonitor monitor;
@@ -45,8 +46,6 @@ namespace osu.Framework.Graphics.Performance
 
         private int timeBarIndex => currentX / WIDTH;
         private int timeBarX => currentX % WIDTH;
-
-        private bool processFrames = true;
 
         private readonly Container overlayContainer;
         private readonly Drawable labelText;
@@ -58,7 +57,7 @@ namespace osu.Framework.Graphics.Performance
         private readonly Drawable[] legendMapping = new Drawable[FrameStatistics.NUM_PERFORMANCE_COLLECTION_TYPES];
         private readonly Dictionary<StatisticsCounterType, CounterBar> counterBars = new Dictionary<StatisticsCounterType, CounterBar>();
 
-        private readonly FpsDisplay fpsDisplay;
+        private readonly FrameTimeDisplay frameTimeDisplay;
 
         private FrameStatisticsMode state;
 
@@ -94,7 +93,8 @@ namespace osu.Framework.Graphics.Performance
                         break;
                 }
 
-                Active = true;
+                Running = true;
+                Expanded = false;
 
                 StateChanged?.Invoke(State);
             }
@@ -144,7 +144,7 @@ namespace osu.Framework.Graphics.Performance
                                     {
                                         counterBarBackground = new Sprite
                                         {
-                                            Texture = atlas.Add(1, HEIGHT),
+                                            Texture = new Texture(atlas.Add(1, HEIGHT)),
                                             RelativeSizeAxes = Axes.Both,
                                             Size = new Vector2(1, 1),
                                         },
@@ -182,7 +182,7 @@ namespace osu.Framework.Graphics.Performance
                                     new TimeBar(atlas),
                                 },
                             },
-                            fpsDisplay = new FpsDisplay(monitor.Clock)
+                            frameTimeDisplay = new FrameTimeDisplay(monitor.Clock)
                             {
                                 Anchor = Anchor.BottomRight,
                                 Origin = Anchor.BottomRight,
@@ -191,7 +191,7 @@ namespace osu.Framework.Graphics.Performance
                             {
                                 RelativeSizeAxes = Axes.Both,
                                 Alpha = 0,
-                                Children = new[]
+                                Children = new Drawable[]
                                 {
                                     new FillFlowContainer
                                     {
@@ -227,30 +227,28 @@ namespace osu.Framework.Graphics.Performance
                     }
                 }
             };
-
-            textureBufferStack = new BufferStack<byte>(timeBars.Length * WIDTH);
         }
 
         [BackgroundDependencyLoader]
         private void load()
         {
             //initialise background
-            byte[] column = new byte[HEIGHT * 4];
-            byte[] fullBackground = new byte[WIDTH * HEIGHT * 4];
+            var column = new Image<Rgba32>(1, HEIGHT);
+            var fullBackground = new Image<Rgba32>(WIDTH, HEIGHT);
 
-            addArea(null, null, HEIGHT, column, amount_ms_steps);
+            addArea(null, null, HEIGHT, column.GetPixelSpan(), amount_ms_steps);
 
             for (int i = 0; i < HEIGHT; i++)
             for (int k = 0; k < WIDTH; k++)
-                Buffer.BlockCopy(column, i * 4, fullBackground, i * WIDTH * 4 + k * 4, 4);
+                fullBackground[k, i] = column[0, i];
 
-            addArea(null, null, HEIGHT, column, amount_count_steps);
+            addArea(null, null, HEIGHT, column.GetPixelSpan(), amount_count_steps);
 
             counterBarBackground?.Texture.SetData(new TextureUpload(column));
             Schedule(() =>
             {
                 foreach (var t in timeBars)
-                    t.Sprite.Texture.SetData(new TextureUpload(fullBackground));
+                    t.Sprite.Texture.SetData(new TextureUpload(fullBackground.Clone()));
             });
         }
 
@@ -267,37 +265,75 @@ namespace osu.Framework.Graphics.Performance
             timeBars[timeBarIndex].Add(b);
         }
 
-        private bool active = true;
+        private bool running = true;
 
-        public bool Active
+        public bool Running
         {
-            get => active;
+            get => running;
             set
             {
-                if (active == value) return;
+                if (running == value) return;
 
-                active = value || state != FrameStatisticsMode.Full;
+                running = value;
 
-                overlayContainer.FadeTo(active ? 0 : 1, 100);
-                this.FadeTo(active ? alpha_when_active : 1, 100);
-                fpsDisplay.Counting = active;
-                processFrames = active;
-                foreach (CounterBar bar in counterBars.Values)
-                    bar.Active = active;
+                frameTimeDisplay.Counting = running;
+
+                // dequeue all pending frames on state change.
+                while (monitor.PendingFrames.TryDequeue(out _))
+                {
+                }
             }
         }
 
+        private bool expanded;
+
+        public bool Expanded
+        {
+            get => expanded;
+            set
+            {
+                value &= state == FrameStatisticsMode.Full;
+
+                if (expanded == value) return;
+
+                expanded = value;
+
+                overlayContainer.FadeTo(expanded ? 1 : 0, 100);
+                this.FadeTo(expanded ? 1 : alpha_when_active, 100);
+
+                foreach (CounterBar bar in counterBars.Values)
+                    bar.Expanded = expanded;
+            }
+        }
+
+
         protected override bool OnKeyDown(InputState state, KeyDownEventArgs args)
         {
-            if (args.Key == Key.ControlLeft)
-                Active = false;
+            switch (args.Key)
+            {
+                case Key.ControlLeft:
+                    Expanded = true;
+                    break;
+                case Key.ShiftLeft:
+                    Running = false;
+                    break;
+            }
+
             return base.OnKeyDown(state, args);
         }
 
         protected override bool OnKeyUp(InputState state, KeyUpEventArgs args)
         {
-            if (args.Key == Key.ControlLeft)
-                Active = true;
+            switch (args.Key)
+            {
+                case Key.ControlLeft:
+                    Expanded = false;
+                    break;
+                case Key.ShiftLeft:
+                    Running = true;
+                    break;
+            }
+
             return base.OnKeyUp(state, args);
         }
 
@@ -307,10 +343,12 @@ namespace osu.Framework.Graphics.Performance
                 addEvent(gcLevel);
         }
 
+        private readonly BufferStack<Rgba32> timeBarImages = new BufferStack<Rgba32>(100);
+
         private void applyFrameTime(FrameStatistics frame)
         {
             TimeBar timeBar = timeBars[timeBarIndex];
-            TextureUpload upload = new TextureUpload(new RawTexture(1, HEIGHT, textureBufferStack))
+            var upload = new BufferStackTextureUpload(1, HEIGHT, timeBarImages)
             {
                 Bounds = new RectangleI(timeBarX, 0, 1, HEIGHT)
             };
@@ -318,8 +356,8 @@ namespace osu.Framework.Graphics.Performance
             int currentHeight = HEIGHT;
 
             for (int i = 0; i < FrameStatistics.NUM_PERFORMANCE_COLLECTION_TYPES; i++)
-                currentHeight = addArea(frame, (PerformanceCollectionType)i, currentHeight, upload.Data, amount_ms_steps);
-            addArea(frame, null, currentHeight, upload.Data, amount_ms_steps);
+                currentHeight = addArea(frame, (PerformanceCollectionType)i, currentHeight, upload.RawData, amount_ms_steps);
+            addArea(frame, null, currentHeight, upload.RawData, amount_ms_steps);
 
             timeBar.Sprite.Texture.SetData(upload);
 
@@ -353,12 +391,13 @@ namespace osu.Framework.Graphics.Performance
         {
             base.Update();
 
-            while (monitor.PendingFrames.TryDequeue(out FrameStatistics frame))
+            if (running)
             {
-                if (processFrames)
+                while (monitor.PendingFrames.TryDequeue(out FrameStatistics frame))
+                {
                     applyFrame(frame);
-
-                monitor.FramesHeap.FreeObject(frame);
+                    monitor.FramesHeap.FreeObject(frame);
+                }
             }
         }
 
@@ -410,10 +449,8 @@ namespace osu.Framework.Graphics.Performance
             }
         }
 
-        private int addArea(FrameStatistics frame, PerformanceCollectionType? frameTimeType, int currentHeight, byte[] textureData, int amountSteps)
+        private int addArea(FrameStatistics frame, PerformanceCollectionType? frameTimeType, int currentHeight, Span<Rgba32> image, int amountSteps)
         {
-            Trace.Assert(textureData.Length >= HEIGHT * 4, $"textureData is too small ({textureData.Length}) to hold area data.");
-
             int drawHeight;
 
             if (!frameTimeType.HasValue)
@@ -443,11 +480,7 @@ namespace osu.Framework.Graphics.Performance
                 else if (acceptableRange)
                     brightnessAdjust *= 0.8f;
 
-                int index = i * 4;
-                textureData[index] = (byte)(255 * col.R * brightnessAdjust);
-                textureData[index + 1] = (byte)(255 * col.G * brightnessAdjust);
-                textureData[index + 2] = (byte)(255 * col.B * brightnessAdjust);
-                textureData[index + 3] = (byte)(255 * col.A);
+                image[i] = new Rgba32(col.R * brightnessAdjust, col.G * brightnessAdjust, col.B * brightnessAdjust, col.A);
 
                 currentHeight--;
             }
@@ -464,7 +497,7 @@ namespace osu.Framework.Graphics.Performance
                 Size = new Vector2(WIDTH, HEIGHT);
                 Child = Sprite = new Sprite();
 
-                Sprite.Texture = atlas.Add(WIDTH, HEIGHT);
+                Sprite.Texture = new Texture(atlas.Add(WIDTH, HEIGHT));
             }
 
             public override bool HandleKeyboardInput => false;
@@ -478,28 +511,25 @@ namespace osu.Framework.Graphics.Performance
 
             public string Label;
 
-            private bool active;
+            private bool expanded;
 
-            public bool Active
+            public bool Expanded
             {
-                get => active;
+                get => expanded;
                 set
                 {
-                    if (active == value)
-                        return;
+                    if (expanded == value) return;
+                    expanded = value;
 
-                    active = value;
-
-                    if (active)
-                    {
-                        this.ResizeTo(new Vector2(bar_width, 1), 100);
-                        text.FadeOut(100);
-                    }
-                    else
+                    if (expanded)
                     {
                         this.ResizeTo(new Vector2(bar_width + text.TextSize + 2, 1), 100);
                         text.FadeIn(100);
-                        text.Text = $@"{Label}: {NumberFormatter.PrintWithSiSuffix(this.value)}";
+                    }
+                    else
+                    {
+                        this.ResizeTo(new Vector2(bar_width, 1), 100);
+                        text.FadeOut(100);
                     }
                 }
             }
@@ -543,8 +573,6 @@ namespace osu.Framework.Graphics.Performance
                         Origin = Anchor.BottomRight,
                     }
                 };
-
-                Active = true;
             }
 
             protected override void Update()
@@ -560,6 +588,9 @@ namespace osu.Framework.Graphics.Performance
                     velocity = 0;
                 else
                     velocity += Time.Elapsed * acceleration;
+
+                if (expanded)
+                    text.Text = $@"{Label}: {NumberFormatter.PrintWithSiSuffix(value)}";
             }
         }
     }

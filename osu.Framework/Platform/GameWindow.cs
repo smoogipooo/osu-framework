@@ -2,6 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Configuration;
 using osu.Framework.Logging;
@@ -54,6 +55,11 @@ namespace osu.Framework.Platform
         public bool CursorInWindow { get; private set; }
 
         /// <summary>
+        /// Available resolutions for full-screen display.
+        /// </summary>
+        public virtual IEnumerable<DisplayResolution> AvailableResolutions => Enumerable.Empty<DisplayResolution>();
+
+        /// <summary>
         /// Creates a <see cref="GameWindow"/> with a given <see cref="IGameWindow"/> implementation.
         /// </summary>
         protected GameWindow([NotNull] IGameWindow implementation)
@@ -88,18 +94,12 @@ namespace osu.Framework.Platform
             if (GLSLVersion == null)
                 GLSLVersion = new Version();
 
-            //Set up OpenGL related characteristics
-            GL.Disable(EnableCap.DepthTest);
-            GL.Disable(EnableCap.StencilTest);
-            GL.Enable(EnableCap.Blend);
-            GL.Enable(EnableCap.ScissorTest);
-
             Logger.Log($@"GL Initialized
                         GL Version:                 {GL.GetString(StringName.Version)}
                         GL Renderer:                {GL.GetString(StringName.Renderer)}
                         GL Shader Language version: {GL.GetString(StringName.ShadingLanguageVersion)}
                         GL Vendor:                  {GL.GetString(StringName.Vendor)}
-                        GL Extensions:              {GL.GetString(StringName.Extensions)}", LoggingTarget.Runtime, LogLevel.Important);
+                        GL Extensions:              {GL.GetString(StringName.Extensions)}");
 
             Context.MakeCurrent(null);
         }
@@ -125,11 +125,11 @@ namespace osu.Framework.Platform
             {
                 cursorState = value;
 
-                Implementation.Cursor = (cursorState & CursorState.Hidden) > 0 ? MouseCursor.Empty : MouseCursor.Default;
+                Implementation.Cursor = cursorState.HasFlag(CursorState.Hidden) ? MouseCursor.Empty : MouseCursor.Default;
 
                 try
                 {
-                    Implementation.CursorGrabbed = (cursorState & CursorState.Confined) > 0;
+                    Implementation.CursorGrabbed = cursorState.HasFlag(CursorState.Confined);
                 }
                 catch
                 {

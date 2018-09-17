@@ -35,7 +35,10 @@ namespace osu.Framework.Graphics.Lines
             var localPos = ToLocalSpace(screenSpacePos);
             var pathWidthSquared = PathWidth * PathWidth;
 
-            return segments.Any(s => s.DistanceSquaredToPoint(localPos) <= pathWidthSquared);
+            foreach (var t in segments)
+                if (t.DistanceSquaredToPoint(localPos) <= pathWidthSquared)
+                    return true;
+            return false;
         }
 
         public Vector2 PositionInBoundingBox(Vector2 pos) => pos - new Vector2(minX, minY);
@@ -48,8 +51,8 @@ namespace osu.Framework.Graphics.Lines
             positions.Clear();
             resetBounds();
 
-            if ((RelativeSizeAxes & Axes.X) == 0) Width = 0;
-            if ((RelativeSizeAxes & Axes.Y) == 0) Height = 0;
+            if (!RelativeSizeAxes.HasFlag(Axes.X)) Width = 0;
+            if (!RelativeSizeAxes.HasFlag(Axes.Y)) Height = 0;
 
             segmentsCache.Invalidate();
             Invalidate(Invalidation.DrawNode);
@@ -79,8 +82,8 @@ namespace osu.Framework.Graphics.Lines
             if (pos.Y + PathWidth > maxY) maxY = pos.Y + PathWidth;
 
             RectangleF b = bounds;
-            if ((RelativeSizeAxes & Axes.X) == 0) Width = b.Width;
-            if ((RelativeSizeAxes & Axes.Y) == 0) Height = b.Height;
+            if (!RelativeSizeAxes.HasFlag(Axes.X)) Width = b.Width;
+            if (!RelativeSizeAxes.HasFlag(Axes.Y)) Height = b.Height;
         }
 
         private void resetBounds()
@@ -136,17 +139,12 @@ namespace osu.Framework.Graphics.Lines
 
         private readonly PathDrawNodeSharedData pathDrawNodeSharedData = new PathDrawNodeSharedData();
 
-        public bool CanDisposeTexture { get; protected set; }
-
         #region Disposal
 
         protected override void Dispose(bool isDisposing)
         {
-            if (CanDisposeTexture)
-            {
-                texture?.Dispose();
-                texture = null;
-            }
+            texture?.Dispose();
+            texture = null;
 
             base.Dispose(isDisposing);
         }
@@ -189,10 +187,9 @@ namespace osu.Framework.Graphics.Lines
                 if (value == texture)
                     return;
 
-                if (texture != null && CanDisposeTexture)
-                    texture.Dispose();
-
+                texture?.Dispose();
                 texture = value;
+
                 Invalidate(Invalidation.DrawNode);
             }
         }

@@ -18,7 +18,8 @@ namespace osu.Framework.Screens
         private readonly Container content;
         private Container childModeContainer;
 
-        protected Game Game;
+        [Resolved]
+        protected Game Game { get; private set; }
 
         protected override Container<Drawable> Content => content;
 
@@ -57,8 +58,6 @@ namespace osu.Framework.Screens
             base.Add(drawable);
         }
 
-        public override bool DisposeOnDeathRemoval => true;
-
         // in the case we don't have a parent screen, we still want to handle input as we are also responsible for
         // children inside childScreenContainer.
         // this means the root screen always received input.
@@ -94,12 +93,6 @@ namespace osu.Framework.Screens
         /// <param name="next">The new Screen</param>
         protected virtual void OnSuspending(Screen next)
         {
-        }
-
-        [BackgroundDependencyLoader]
-        private void load(Game game)
-        {
-            Game = game;
         }
 
         protected override void LoadComplete()

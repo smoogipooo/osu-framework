@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using osu.Framework.Allocation;
 using osu.Framework.Configuration;
@@ -33,13 +34,12 @@ namespace osu.Framework.Testing
             private Bindable<double> volume;
             private double volumeAtStartup;
 
-            private GameHost host;
+            [Resolved]
+            private GameHost host { get; set; }
 
             [BackgroundDependencyLoader]
-            private void load(GameHost host, FrameworkConfigManager config)
+            private void load(FrameworkConfigManager config)
             {
-                this.host = host;
-
                 volume = config.GetBindable<double>(FrameworkSetting.VolumeUniversal);
                 volumeAtStartup = volume.Value;
                 volume.Value = 0;
@@ -69,7 +69,7 @@ namespace osu.Framework.Testing
                 Trace.Assert(host != null, $"Ensure this runner has been loaded before calling {nameof(RunTestBlocking)}");
 
                 bool completed = false;
-                Exception exception = null;
+                ExceptionDispatchInfo exception = null;
 
                 void complete()
                 {
@@ -94,7 +94,7 @@ namespace osu.Framework.Testing
                         Scheduler.AddDelayed(complete, time_between_tests);
                     }, e =>
                     {
-                        exception = e;
+                        exception = ExceptionDispatchInfo.Capture(e);
                         complete();
                     });
                 });
@@ -102,8 +102,7 @@ namespace osu.Framework.Testing
                 while (!completed && host.ExecutionState == ExecutionState.Running)
                     Thread.Sleep(10);
 
-                if (exception != null)
-                    throw exception;
+                exception?.Throw();
             }
         }
     }

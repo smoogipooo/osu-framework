@@ -8,10 +8,11 @@ using OpenTK;
 using OpenTK.Graphics;
 using osu.Framework.Allocation;
 using osu.Framework.Configuration;
-using osu.Framework.Input;
 using osu.Framework.Timing;
 using OpenTK.Input;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Input.EventArgs;
+using osu.Framework.Input.States;
 
 namespace osu.Framework.Graphics.Visualisation
 {
@@ -201,7 +202,6 @@ namespace osu.Framework.Graphics.Visualisation
                     Padding = new MarginPadding { Left = target_box_width + 10 },
                     Child = new SpriteText
                     {
-                        AutoSizeAxes = Axes.Y,
                         RelativeSizeAxes = Axes.X,
                         TextSize = font_size,
                         Text = entry.Message

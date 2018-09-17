@@ -8,7 +8,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Cryptography;
@@ -33,7 +32,7 @@ namespace osu.Framework.Extensions
         /// <returns>The matched item, or the default value for the type if no item was matched.</returns>
         public static T Find<T>(this List<T> list, Predicate<T> match, int startIndex)
         {
-            if (!list.IsValidIndex(startIndex)) return default(T);
+            if (!list.IsValidIndex(startIndex)) return default;
 
             int val = list.FindIndex(startIndex, list.Count - startIndex - 1, match);
 
@@ -77,7 +76,7 @@ namespace osu.Framework.Extensions
         /// <returns></returns>
         public static TValue GetOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey lookup)
         {
-            return dictionary.TryGetValue(lookup, out TValue outVal) ? outVal : default(TValue);
+            return dictionary.TryGetValue(lookup, out TValue outVal) ? outVal : default;
         }
 
         public static bool IsValidIndex<T>(this List<T> list, int index)
@@ -193,16 +192,10 @@ namespace osu.Framework.Extensions
             => value.GetType().GetField(value.ToString())
                     .GetCustomAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
 
-        public static void ThrowIfFaulted(this Task task, Type expectedBaseType = null)
+        public static void ThrowIfFaulted(this Task task)
         {
             if (!task.IsFaulted) return;
-
-            Exception e = task.Exception;
-
-            while (e?.InnerException != null && e.GetType() != expectedBaseType)
-                e = e.InnerException;
-
-            ExceptionDispatchInfo.Capture(e).Throw();
+            throw task.Exception ?? new Exception("Task failed.");
         }
 
         /// <summary>

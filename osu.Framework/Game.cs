@@ -46,6 +46,8 @@ namespace osu.Framework
 
         protected override Container<Drawable> Content => content;
 
+        protected internal virtual UserInputManager CreateUserInputManager() => new UserInputManager();
+
         protected Game()
         {
             RelativeSizeAxes = Axes.Both;
@@ -88,8 +90,8 @@ namespace osu.Framework
 
         private DependencyContainer dependencies;
 
-        protected override IReadOnlyDependencyContainer CreateLocalDependencies(IReadOnlyDependencyContainer parent) =>
-            dependencies = new DependencyContainer(base.CreateLocalDependencies(parent));
+        protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent) =>
+            dependencies = new DependencyContainer(base.CreateChildDependencies(parent));
 
         [BackgroundDependencyLoader]
         private void load(FrameworkConfigManager config)
@@ -97,8 +99,8 @@ namespace osu.Framework
             Resources = new ResourceStore<byte[]>();
             Resources.AddStore(new NamespacedResourceStore<byte[]>(new DllResourceStore(@"osu.Framework.dll"), @"Resources"));
 
-            Textures = new TextureStore(new RawTextureLoaderStore(new NamespacedResourceStore<byte[]>(Resources, @"Textures")));
-            Textures.AddStore(new RawTextureLoaderStore(new OnlineStore()));
+            Textures = new TextureStore(new TextureLoaderStore(new NamespacedResourceStore<byte[]>(Resources, @"Textures")));
+            Textures.AddStore(new TextureLoaderStore(new OnlineStore()));
             dependencies.Cache(Textures);
 
             var tracks = new ResourceStore<byte[]>(Resources);
@@ -123,10 +125,7 @@ namespace osu.Framework
             Shaders = new ShaderManager(new NamespacedResourceStore<byte[]>(Resources, @"Shaders"));
             dependencies.Cache(Shaders);
 
-            Fonts = new FontStore(new GlyphStore(Resources, @"Fonts/OpenSans"))
-            {
-                ScaleAdjust = 100
-            };
+            Fonts = new FontStore(new GlyphStore(Resources, @"Fonts/OpenSans"));
             dependencies.Cache(Fonts);
         }
 
