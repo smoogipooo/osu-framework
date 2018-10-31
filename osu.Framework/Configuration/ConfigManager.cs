@@ -3,10 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Configuration.Tracking;
+using SixLabors.Primitives;
 
 namespace osu.Framework.Configuration
 {

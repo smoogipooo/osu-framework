@@ -3,13 +3,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using osu.Framework.Configuration;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
 using OpenTK;
 using OpenTK.Input;
+using SixLabors.Primitives;
 
 namespace osu.Framework.Input.Handlers.Mouse
 {

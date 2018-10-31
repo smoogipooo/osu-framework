@@ -2,7 +2,7 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
 using System;
-using System.Drawing;
+using SixLabors.Primitives;
 
 namespace osu.Framework.Configuration
 {

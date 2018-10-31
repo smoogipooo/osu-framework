@@ -3,7 +3,7 @@
 
 using NUnit.Framework;
 using osu.Framework.Configuration;
-using System.Drawing;
+using SixLabors.Primitives;
 
 namespace osu.Framework.Tests.Bindables
 {

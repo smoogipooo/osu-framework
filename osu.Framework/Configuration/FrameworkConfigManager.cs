@@ -1,12 +1,13 @@
 ﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using System.Drawing;
+
 using osu.Framework.Configuration.Tracking;
 using osu.Framework.Extensions;
 using osu.Framework.Input;
 using osu.Framework.Platform;
 using OpenTK;
+using SixLabors.Primitives;
 
 namespace osu.Framework.Configuration
 {

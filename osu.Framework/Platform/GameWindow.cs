@@ -12,8 +12,8 @@ using OpenTK.Graphics.ES30;
 using OpenTK.Platform;
 using OpenTK.Input;
 using System.ComponentModel;
-using System.Drawing;
 using JetBrains.Annotations;
+using SixLabors.Primitives;
 using Icon = OpenTK.Icon;
 
 namespace osu.Framework.Platform
@@ -24,7 +24,7 @@ namespace osu.Framework.Platform
         /// The <see cref="IGraphicsContext"/> associated with this <see cref="GameWindow"/>.
         /// </summary>
         [NotNull]
-        internal abstract IGraphicsContext Context { get; }
+        public abstract IGraphicsContext Context { get; }
 
         /// <summary>
         /// Return value decides whether we should intercept and cancel this exit (if possible).

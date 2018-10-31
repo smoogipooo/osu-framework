@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using osu.Framework.Configuration;
@@ -11,6 +10,7 @@ using osu.Framework.Extensions;
 using osu.Framework.Input;
 using OpenTK;
 using OpenTK.Graphics;
+using SixLabors.Primitives;
 
 namespace osu.Framework.Platform
 {
@@ -33,7 +33,7 @@ namespace osu.Framework.Platform
 
         public readonly Bindable<ConfineMouseMode> ConfineMouseMode = new Bindable<ConfineMouseMode>();
 
-        internal override IGraphicsContext Context => Implementation.Context;
+        public override IGraphicsContext Context => Implementation.Context;
 
         protected new OpenTK.GameWindow Implementation => (OpenTK.GameWindow)base.Implementation;
 

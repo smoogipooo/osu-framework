@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Reflection;
@@ -11,6 +10,7 @@ using osu.Framework.Configuration;
 using osu.Framework.Logging;
 using osu.Framework.Platform.MacOS.Native;
 using OpenTK;
+using SixLabors.Primitives;
 
 namespace osu.Framework.Platform.MacOS
 {

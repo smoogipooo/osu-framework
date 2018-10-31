@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -14,6 +13,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using OpenTK;
+using SixLabors.Primitives;
 
 // this is an abusive thing to do, but it increases the visibility of Extension Methods to virtually every file.
 

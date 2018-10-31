@@ -1,10 +1,10 @@
 ﻿// Copyright (c) 2007-2018 ppy Pty Ltd <contact@ppy.sh>.
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu-framework/master/LICENCE
 
-using System.Drawing;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
 using OpenTK;
+using SixLabors.Primitives;
 
 namespace osu.Framework.Input.Handlers.Mouse
 {

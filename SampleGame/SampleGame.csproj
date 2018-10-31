@@ -7,4 +7,9 @@
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\osu.Framework\osu.Framework.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="OpenTK">
+      <HintPath>/Users/smoogipoo/Repos/opentk/src/OpenTK/bin/Release/xamarinios10/OpenTK.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>
