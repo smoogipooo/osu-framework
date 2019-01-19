@@ -41,11 +41,6 @@ namespace osu.Framework.Graphics.Sprites
             if (pass == RenderPass.Front)
                 vertexDepth -= 0.0005f;
 
-            if (vertexDepth < 0)
-            {
-
-            }
-
             if (Texture?.Available != true)
                 return;
 

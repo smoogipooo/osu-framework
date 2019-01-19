@@ -140,6 +140,31 @@ namespace osu.Framework.Graphics.Primitives
             return (this as IConvexPolygon).Intersects(other);
         }
 
+        public void Shrink(float amount)
+        {
+            var centre = Centre;
+
+            TopLeft.X += TopLeft.X < centre.X ? amount : -amount;
+            TopLeft.Y += TopLeft.Y < centre.Y ? amount : -amount;
+
+            TopRight.X += TopRight.X < centre.X ? amount : -amount;
+            TopRight.Y += TopRight.Y < centre.Y ? amount : -amount;
+
+            BottomLeft.X += BottomLeft.X < centre.X ? amount : -amount;
+            BottomLeft.Y += BottomLeft.Y < centre.Y ? amount : -amount;
+
+            BottomRight.X += BottomRight.X < centre.X ? amount : -amount;
+            BottomRight.Y += BottomRight.Y < centre.Y ? amount : -amount;
+        }
+
+        public Quad IntersectWith(Quad other)
+        {
+            return new Quad(Vector2.ComponentMin(TopLeft, other.TopLeft),
+                Vector2.ComponentMin(TopRight, other.TopRight),
+                Vector2.ComponentMin(BottomLeft, other.BottomLeft),
+                Vector2.ComponentMin(BottomRight, other.BottomRight));
+        }
+
         public bool Equals(Quad other)
         {
             return

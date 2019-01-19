@@ -870,6 +870,7 @@ namespace osu.Framework.Graphics.Containers
                 ? (MaskingInfo?)null
                 : new MaskingInfo
                 {
+                    ScreenSpaceQuad = ScreenSpaceDrawQuad.AABB,
                     ScreenSpaceAABB = ScreenSpaceDrawQuad.AABB,
                     MaskingRect = DrawRectangle,
                     ToMaskingSpace = DrawInfo.MatrixInverse,

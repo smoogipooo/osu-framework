@@ -666,6 +666,8 @@ namespace osu.Framework.Graphics.OpenGL
 
     public struct MaskingInfo : IEquatable<MaskingInfo>
     {
+        public Quad ScreenSpaceQuad;
+
         public RectangleI ScreenSpaceAABB;
         public RectangleF MaskingRect;
 
