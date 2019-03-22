@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 
 namespace osu.Framework.Bindables
 {
@@ -23,6 +24,8 @@ namespace osu.Framework.Bindables
         /// </summary>
         /// <returns>A weakly bound copy of the specified bindable.</returns>
         IBindable GetBoundCopy();
+
+        IEnumerable<IBindable> GetBindings();
     }
 
     /// <summary>

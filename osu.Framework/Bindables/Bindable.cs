@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using osu.Framework.Caching;
@@ -194,6 +195,17 @@ namespace osu.Framework.Bindables
         }
 
         private void removeWeakReference(WeakReference<Bindable<T>> weakReference) => Bindings?.Remove(weakReference);
+
+        public IEnumerable<IBindable> GetBindings()
+        {
+            if (Bindings == null)
+                return Enumerable.Empty<IBindable>();
+
+            var list = new List<IBindable>();
+            Bindings.ForEachAlive(b => list.Add(b));
+
+            return list;
+        }
 
         /// <summary>
         /// Parse an object into this instance.

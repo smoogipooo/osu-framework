@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using osu.Framework.Caching;
 using osu.Framework.Lists;
 
@@ -496,6 +497,17 @@ namespace osu.Framework.Bindables
         }
 
         private void removeWeakReference(WeakReference<BindableList<T>> weakReference) => bindings?.Remove(weakReference);
+
+        public IEnumerable<IBindable> GetBindings()
+        {
+            if (bindings == null)
+                return Enumerable.Empty<IBindable>();
+
+            var list = new List<IBindable>();
+            bindings.ForEachAlive(b => list.Add(b));
+
+            return list;
+        }
 
         IBindable IBindable.GetBoundCopy() => GetBoundCopy();
 
