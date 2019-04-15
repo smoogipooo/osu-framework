@@ -37,6 +37,8 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         {
             base.Initialise();
 
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, LinearIndexData.EBO_ID);
+
             if (amountVertices > LinearIndexData.MaxAmountIndices)
             {
                 ushort[] indices = new ushort[amountVertices];
@@ -44,19 +46,10 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
                 for (ushort i = 0; i < amountVertices; i++)
                     indices[i] = i;
 
-                GLWrapper.BindBuffer(BufferTarget.ElementArrayBuffer, LinearIndexData.EBO_ID);
                 GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(amountVertices * sizeof(ushort)), indices, BufferUsageHint.StaticDraw);
 
                 LinearIndexData.MaxAmountIndices = amountVertices;
             }
-        }
-
-        public override void Bind(bool forRendering)
-        {
-            base.Bind(forRendering);
-
-            if (forRendering)
-                GLWrapper.BindBuffer(BufferTarget.ElementArrayBuffer, LinearIndexData.EBO_ID);
         }
 
         protected override PrimitiveType Type { get; }
