@@ -142,7 +142,11 @@ namespace osu.Framework.Platform
         /// <para>Note that this will use the default <see cref="osuTK.GameWindow"/> implementation, which is not compatible with every platform.</para>
         /// </summary>
         protected GameWindow(int width, int height)
-            : this(new osuTK.GameWindow(width, height, new GraphicsMode(GraphicsMode.Default.ColorFormat, GraphicsMode.Default.Depth, GraphicsMode.Default.Stencil, GraphicsMode.Default.Samples, GraphicsMode.Default.AccumulatorFormat, 3)))
+            : this(new osuTK.GameWindow(width, height,
+                new GraphicsMode(GraphicsMode.Default.ColorFormat, GraphicsMode.Default.Depth, GraphicsMode.Default.Stencil, GraphicsMode.Default.Samples, GraphicsMode.Default.AccumulatorFormat, 3),
+                string.Empty, GameWindowFlags.Default, DisplayDevice.Default,
+                3, 2, // Minimum for core profile
+                GraphicsContextFlags.ForwardCompatible))
         {
         }
 
