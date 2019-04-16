@@ -1,10 +1,12 @@
-attribute vec2 m_Position;
-attribute vec2 m_TexCoord;
-attribute float m_Time;
-attribute vec2 m_Direction;
+#include "sh_Utils.h"
 
-varying vec4 v_Colour;
-varying vec2 v_TexCoord;
+in vec2 m_Position;
+in vec2 m_TexCoord;
+in float m_Time;
+in vec2 m_Direction;
+
+out vec4 v_Colour;
+out vec2 v_TexCoord;
 
 uniform mat4 g_ProjMatrix;
 uniform float g_FadeClock;

@@ -1,27 +1,21 @@
-#ifdef GL_ES
-	precision mediump float;
-#endif
-
 #include "sh_Utils.h"
 
-varying vec2 v_MaskingPosition;
-varying vec4 v_Colour;
-varying vec2 v_TexCoord;
-varying vec4 v_TexRect;
-varying vec2 v_BlendRange;
+in vec2 v_MaskingPosition;
+in vec4 v_Colour;
+in vec2 v_TexCoord;
+in vec4 v_TexRect;
+in vec2 v_BlendRange;
+
+out vec4 f_Colour;
 
 uniform sampler2D m_Sampler;
 uniform float g_CornerRadius;
 uniform vec4 g_MaskingRect;
 uniform float g_BorderThickness;
 uniform vec4 g_BorderColour;
-
 uniform float g_MaskingBlendRange;
-
 uniform float g_AlphaExponent;
-
 uniform vec2 g_EdgeOffset;
-
 uniform bool g_DiscardInner;
 uniform float g_InnerCornerRadius;
 
@@ -67,7 +61,7 @@ void main(void)
 {
 	float dist = distanceFromRoundedRect(vec2(0.0), g_CornerRadius);
 	float alphaFactor = 1.0;
-	vec4 texel = texture2D(m_Sampler, v_TexCoord, -0.9);
+	vec4 texel = texture(m_Sampler, v_TexCoord, -0.9);
 
 	// Discard inner pixels
 	if (g_DiscardInner)
@@ -81,7 +75,7 @@ void main(void)
 		float innerBlendFactor = (g_InnerCornerRadius - g_MaskingBlendRange - innerDist) / v_BlendRange.x;
 		if (innerBlendFactor > 1.0)
 		{
-			gl_FragColor = vec4(0.0);
+			f_Colour = vec4(0.0);
 			return;
 		}
 
@@ -101,7 +95,7 @@ void main(void)
 
 	if (alphaFactor <= 0.0)
 	{
-		gl_FragColor = vec4(0.0);
+		f_Colour = vec4(0.0);
 		return;
 	}
 
@@ -112,11 +106,11 @@ void main(void)
 	float colourWeight = min(borderStart - dist, 1.0);
 	if (colourWeight <= 0.0)
 	{
-		gl_FragColor = toSRGB(vec4(g_BorderColour.rgb, g_BorderColour.a * alphaFactor));
+		f_Colour = toSRGB(vec4(g_BorderColour.rgb, g_BorderColour.a * alphaFactor));
 		return;
 	}
 
-	gl_FragColor = toSRGB(
+	f_Colour = toSRGB(
 		colourWeight * vec4(v_Colour.rgb, v_Colour.a * alphaFactor) * texel +
 		(1.0 - colourWeight) * g_BorderColour);
 }

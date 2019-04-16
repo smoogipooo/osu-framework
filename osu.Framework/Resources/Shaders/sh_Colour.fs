@@ -1,10 +1,10 @@
-#ifdef GL_ES
-    precision mediump float;
-#endif
+#include "sh_Utils.h"
 
-varying vec4 v_Colour;
+in vec4 v_Colour;
+
+out vec4 f_Colour;
 
 void main(void)
 {
-	gl_FragColor = v_Colour;
+	f_Colour = v_Colour;
 }

@@ -1,4 +1,10 @@
-﻿#define GAMMA 2.4
+﻿#ifdef GL_ES
+    precision mediump float;
+#endif
+
+#version 150 core
+
+#define GAMMA 2.4
 
 uniform bool g_GammaCorrection;
 

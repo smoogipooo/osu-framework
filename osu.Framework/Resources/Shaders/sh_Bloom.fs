@@ -1,9 +1,9 @@
-#ifdef GL_ES
-    precision mediump float;
-#endif
+#include "sh_Utils.h"
 
-varying vec4 v_Colour;
-varying vec2 v_TexCoord;
+in vec4 v_Colour;
+in vec2 v_TexCoord;
+
+out vec4 f_Colour;
 
 uniform sampler2D m_Sampler;
 
@@ -54,11 +54,11 @@ void main(void)
     offsets[11] = vec2(-0.791559, -0.597705);
 #endif
 
-    vec4 sum = pow(texture2D(m_Sampler, v_TexCoord), vec4(2.0));
+    vec4 sum = pow(texture(m_Sampler, v_TexCoord), vec4(2.0));
 
     //Accumulate the colour from 12 neighbouring pixels
     for (int i = 0; i < 12; i++)
-        sum += pow(texture2D(m_Sampler, v_TexCoord + (offsets[i] * mag)), vec4(2.0));
+        sum += pow(texture(m_Sampler, v_TexCoord + (offsets[i] * mag)), vec4(2.0));
 
     //Average the sum
     sum /= 13.0;
@@ -73,5 +73,5 @@ void main(void)
 
     sum.r += redtint;
 
-	gl_FragColor = v_Colour * sum;
+	f_Colour = v_Colour * sum;
 }
