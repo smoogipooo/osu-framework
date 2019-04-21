@@ -73,5 +73,36 @@ namespace osu.Framework.Graphics
         {
             result = (vec2.X - vec1.X) * (vec2.X - vec1.X) + (vec2.Y - vec1.Y) * (vec2.Y - vec1.Y);
         }
+
+        /// <summary>
+        /// Retrieves the rotation of a set of vertices.
+        /// </summary>
+        /// <param name="vertices">The vertices.</param>
+        /// <returns>Twice the area enclosed by the vertices. The vertices are in clockwise order if the value is positive.</returns>
+        public static float GetRotation(ReadOnlySpan<Vector2> vertices)
+        {
+            float rotation = 0;
+            for (int i = 0; i < vertices.Length - 1; ++i)
+            {
+                var vi = vertices[i];
+                var vj = vertices[i + 1];
+
+                rotation += (vj.X - vi.X) * (vj.Y + vi.Y);
+            }
+
+            rotation += (vertices[0].X - vertices[vertices.Length - 1].X) * (vertices[0].Y + vertices[vertices.Length - 1].Y);
+
+            return rotation;
+        }
+
+        /// <summary>
+        /// Sorts a set of vertices in clockwise order.
+        /// </summary>
+        /// <param name="vertices">The vertices to sort.</param>
+        public static void ClockwiseSort(Span<Vector2> vertices)
+        {
+            if (GetRotation(vertices) < 0)
+                vertices.Reverse();
+        }
     }
 }

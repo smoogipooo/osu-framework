@@ -2,6 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Lines;
 using osu.Framework.Graphics.Primitives;
 using osuTK;
 
@@ -120,14 +122,14 @@ namespace osu.Framework.Extensions.PolygonExtensions
             subjectVertices.CopyTo(buffer);
 
             // Make sure that the subject vertices are clockwise-sorted
-            ClockwiseSort(buffer.Slice(0, subjectVertices.Length));
+            Vector2Extensions.ClockwiseSort(buffer.Slice(0, subjectVertices.Length));
 
             // The edges of clip that the subject will be clipped against
             Span<Line> clipEdges = stackalloc Line[clipVertices.Length];
 
             // Joins consecutive vertices to form the clip edges
             // This is done via GetRotation() to avoid a secondary temporary storage
-            if (GetRotation(clipVertices) < 0)
+            if (Vector2Extensions.GetRotation(clipVertices) < 0)
             {
                 for (int i = clipVertices.Length - 1, c = 0; i > 0; i--, c++)
                     clipEdges[c] = new Line(clipVertices[i], clipVertices[i - 1]);
@@ -162,14 +164,14 @@ namespace osu.Framework.Extensions.PolygonExtensions
                 {
                     var endPoint = inputVertices[i];
 
-                    if (isInsideRightHalfPlane(ce, endPoint))
+                    if (ce.IsInRightHalfPlane(endPoint))
                     {
-                        if (!isInsideRightHalfPlane(ce, startPoint))
+                        if (!ce.IsInRightHalfPlane(startPoint))
                             buffer[outputCount++] = ce.At(ce.IntersectWith(new Line(startPoint, endPoint)).distance);
 
                         buffer[outputCount++] = endPoint;
                     }
-                    else if (isInsideRightHalfPlane(ce, startPoint))
+                    else if (ce.IsInRightHalfPlane(startPoint))
                         buffer[outputCount++] = ce.At(ce.IntersectWith(new Line(startPoint, endPoint)).distance);
 
                     startPoint = endPoint;
@@ -179,51 +181,6 @@ namespace osu.Framework.Extensions.PolygonExtensions
             }
 
             return buffer.Slice(0, inputCount);
-        }
-
-        /// <summary>
-        /// Determines whether a point is within the right half-plane of a line.
-        /// </summary>
-        /// <param name="line">The line.</param>
-        /// <param name="point">The point.</param>
-        /// <returns>Whether <paramref name="point"/> is in the right half-plane of <paramref name="line"/>.</returns>
-        private static bool isInsideRightHalfPlane(Line line, Vector2 point)
-        {
-            var diff1 = line.Direction;
-            var diff2 = point - line.StartPoint;
-
-            return diff1.X * diff2.Y - diff1.Y * diff2.X <= 0;
-        }
-
-        /// <summary>
-        /// Retrieves the rotation of a set of vertices.
-        /// </summary>
-        /// <param name="vertices">The vertices.</param>
-        /// <returns>Twice the area enclosed by the vertices. The vertices are in clockwise order if the value is positive.</returns>
-        public static float GetRotation(ReadOnlySpan<Vector2> vertices)
-        {
-            float rotation = 0;
-            for (int i = 0; i < vertices.Length - 1; ++i)
-            {
-                var vi = vertices[i];
-                var vj = vertices[i + 1];
-
-                rotation += (vj.X - vi.X) * (vj.Y + vi.Y);
-            }
-
-            rotation += (vertices[0].X - vertices[vertices.Length - 1].X) * (vertices[0].Y + vertices[vertices.Length - 1].Y);
-
-            return rotation;
-        }
-
-        /// <summary>
-        /// Sorts a set of vertices in clockwise order.
-        /// </summary>
-        /// <param name="vertices">The vertices to sort.</param>
-        public static void ClockwiseSort(Span<Vector2> vertices)
-        {
-            if (GetRotation(vertices) < 0)
-                vertices.Reverse();
         }
     }
 }
