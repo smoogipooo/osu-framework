@@ -97,14 +97,14 @@ namespace osu.Framework.Graphics.Clippers
                 {
                     var endPoint = inputVertices[i];
 
-                    if (ce.IsInRightHalfPlane(endPoint))
+                    if (ce.RightHalfPlaneContains(endPoint))
                     {
-                        if (!ce.IsInRightHalfPlane(startPoint))
+                        if (!ce.RightHalfPlaneContains(startPoint))
                             buffer[outputCount++] = ce.At(ce.IntersectWith(new Line(startPoint, endPoint)).distance);
 
                         buffer[outputCount++] = endPoint;
                     }
-                    else if (ce.IsInRightHalfPlane(startPoint))
+                    else if (ce.RightHalfPlaneContains(startPoint))
                         buffer[outputCount++] = ce.At(ce.IntersectWith(new Line(startPoint, endPoint)).distance);
 
                     startPoint = endPoint;

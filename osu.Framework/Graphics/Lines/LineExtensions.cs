@@ -14,7 +14,7 @@ namespace osu.Framework.Graphics.Lines
         /// <param name="line">The line.</param>
         /// <param name="point">The point.</param>
         /// <returns>Whether <paramref name="point"/> is in the right half-plane of <paramref name="line"/>.</returns>
-        public static bool IsInRightHalfPlane(this Line line, Vector2 point)
+        public static bool RightHalfPlaneContains(this Line line, Vector2 point)
         {
             var diff1 = line.Direction;
             var diff2 = point - line.StartPoint;
