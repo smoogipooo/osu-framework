@@ -89,9 +89,9 @@ namespace osu.Framework.Graphics.Containers
                 float shrinkage = Source.CornerRadius - Source.CornerRadius * cos_45 + blendRange + Source.borderThickness;
                 RectangleF shrunkDrawRectangle = Source.DrawRectangle.Shrink(shrinkage);
 
-                maskingInfo = !Source.Masking
-                    ? (MaskingInfo?)null
-                    : new MaskingInfo
+                if (Source.Masking)
+                {
+                    var info = new MaskingInfo
                     {
                         ScreenSpaceAABB = Source.ScreenSpaceDrawQuad.AABB,
                         MaskingRect = Source.DrawRectangle,
@@ -106,6 +106,14 @@ namespace osu.Framework.Graphics.Containers
                         BlendRange = blendRange,
                         AlphaExponent = 1,
                     };
+
+                    if (info.BorderThickness > 0)
+                        info.BorderColour *= DrawColourInfo.Colour.AverageColour;
+
+                    maskingInfo = info;
+                }
+                else
+                    maskingInfo = null;
 
                 edgeEffect = Source.EdgeEffect;
                 screenSpaceMaskingQuad = null;
@@ -207,13 +215,7 @@ namespace osu.Framework.Graphics.Containers
                 drawEdgeEffect();
 
                 if (maskingInfo != null)
-                {
-                    MaskingInfo info = maskingInfo.Value;
-                    if (info.BorderThickness > 0)
-                        info.BorderColour *= DrawColourInfo.Colour.AverageColour;
-
-                    GLWrapper.PushMaskingInfo(info);
-                }
+                    GLWrapper.PushMaskingInfo(maskingInfo.Value);
 
                 if (Children != null)
                     for (int i = 0; i < Children.Count; i++)
