@@ -10,7 +10,6 @@ using osu.Framework.Graphics.OpenGL.Textures;
 using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
-using osu.Framework.MathUtils.Clipping;
 using osu.Framework.Threading;
 using osuTK;
 
@@ -206,9 +205,7 @@ namespace osu.Framework.Graphics
                                       Vector2? inflationPercentage = null)
             where T : IConvexPolygon
         {
-            var maskingQuad = GLWrapper.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
-
-            var clipper = new ConvexPolygonClipper<Quad, T>(ref maskingQuad, ref polygon);
+            var clipper = GLWrapper.CreateMaskingClipper(ref polygon);
             Span<Vector2> buffer = stackalloc Vector2[clipper.GetClipBufferSize()];
             Span<Vector2> clippedRegion = clipper.Clip(buffer);
 
@@ -230,9 +227,7 @@ namespace osu.Framework.Graphics
                                       Vector2? inflationPercentage = null)
             where T : IConvexPolygon
         {
-            var maskingQuad = GLWrapper.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
-
-            var clipper = new ConvexPolygonClipper<Quad, T>(ref maskingQuad, ref polygon);
+            var clipper = GLWrapper.CreateMaskingClipper(ref polygon);
             Span<Vector2> buffer = stackalloc Vector2[clipper.GetClipBufferSize()];
             Span<Vector2> clippedRegion = clipper.Clip(buffer);
 
