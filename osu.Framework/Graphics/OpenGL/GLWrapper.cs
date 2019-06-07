@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.OpenGL.Textures;
@@ -430,7 +431,7 @@ namespace osu.Framework.Graphics.OpenGL
             GL.Scissor(scissorRect.X, scissorRect.Y, scissorRect.Width, scissorRect.Height);
         }
 
-        private static void setMaskingInfo(MaskingInfo maskingInfo, bool isPushing, bool overwritePreviousScissor)
+        private static void setMaskingInfo(MaskingInfo maskingInfo)
         {
             FlushCurrentBatch();
 
@@ -463,33 +464,6 @@ namespace osu.Framework.Graphics.OpenGL
             if (maskingInfo.Hollow)
                 GlobalPropertyManager.Set(GlobalProperty.InnerCornerRadius, maskingInfo.HollowCornerRadius);
 
-            RectangleI actualRect = maskingInfo.ScreenSpaceAABB;
-            actualRect.X += Viewport.X;
-            actualRect.Y += Viewport.Y;
-
-            // Ensure the rectangle only has positive width and height. (Required by OGL)
-            if (actualRect.Width < 0)
-            {
-                actualRect.X += actualRect.Width;
-                actualRect.Width = -actualRect.Width;
-            }
-
-            if (actualRect.Height < 0)
-            {
-                actualRect.Y += actualRect.Height;
-                actualRect.Height = -actualRect.Height;
-            }
-
-            if (isPushing)
-            {
-                scissor_rect_stack.Push(overwritePreviousScissor ? actualRect : RectangleI.Intersect(scissor_rect_stack.Peek(), actualRect));
-            }
-            else
-            {
-                Trace.Assert(scissor_rect_stack.Count > 1);
-                scissor_rect_stack.Pop();
-            }
-
             UpdateScissorToCurrentViewportAndOrtho();
         }
 
@@ -501,22 +475,25 @@ namespace osu.Framework.Graphics.OpenGL
         public static bool IsMaskingActive => masking_stack.Count > 1;
 
         /// <summary>
-        /// Applies a new scissor rectangle.
+        /// Applies a new masking info.
         /// </summary>
         /// <param name="maskingInfo">The masking info.</param>
-        /// <param name="overwritePreviousScissor">Whether or not to shrink an existing scissor rectangle.</param>
-        public static void PushMaskingInfo(MaskingInfo maskingInfo, bool overwritePreviousScissor = false)
+        /// <param name="overrideExistingScissor">Whether the current scissor rectangle should be overridden.
+        /// If false, the new scissor rectangle will be the result of intersecting the current one with the given scissor rectangle.</param>
+        public static void PushMaskingInfo(MaskingInfo maskingInfo, bool overrideExistingScissor = false)
         {
             masking_stack.Push(maskingInfo);
             if (CurrentMaskingInfo.Equals(maskingInfo))
                 return;
 
             CurrentMaskingInfo = maskingInfo;
-            setMaskingInfo(CurrentMaskingInfo, true, overwritePreviousScissor);
+
+            setMaskingInfo(CurrentMaskingInfo);
+            pushScissor(CurrentMaskingInfo.ScreenSpaceAABB, overrideExistingScissor);
         }
 
         /// <summary>
-        /// Applies the last scissor rectangle.
+        /// Applies the last masking info.
         /// </summary>
         public static void PopMaskingInfo()
         {
@@ -529,7 +506,59 @@ namespace osu.Framework.Graphics.OpenGL
                 return;
 
             CurrentMaskingInfo = maskingInfo;
-            setMaskingInfo(CurrentMaskingInfo, false, true);
+
+            setMaskingInfo(CurrentMaskingInfo);
+            popScissor();
+        }
+
+        /// <summary>
+        /// Applies a new scissor rectangle.
+        /// </summary>
+        /// <param name="scissor">The scissor rectangle to push.</param>
+        /// <param name="overrideExisting">Whether the current scissor rectangle should be overridden.
+        /// If false, the new scissor rectangle will be the result of intersecting the current one with the given scissor rectangle.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void pushScissor(RectangleI scissor, bool overrideExisting = false)
+        {
+            FlushCurrentBatch();
+
+            scissor.X += Viewport.X;
+            scissor.Y += Viewport.Y;
+
+            // Ensure the rectangle only has positive width and height. (Required by OGL)
+            if (scissor.Width < 0)
+            {
+                scissor.X += scissor.Width;
+                scissor.Width = -scissor.Width;
+            }
+
+            if (scissor.Height < 0)
+            {
+                scissor.Y += scissor.Height;
+                scissor.Height = -scissor.Height;
+            }
+
+            if (!overrideExisting)
+                scissor.IntersectWith(scissor_rect_stack.Peek());
+
+            scissor_rect_stack.Push(scissor);
+
+            UpdateScissorToCurrentViewportAndOrtho();
+        }
+
+        /// <summary>
+        /// Applies the last scissor rectangle.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void popScissor()
+        {
+            Trace.Assert(scissor_rect_stack.Count > 1);
+
+            FlushCurrentBatch();
+
+            scissor_rect_stack.Pop();
+
+            UpdateScissorToCurrentViewportAndOrtho();
         }
 
         /// <summary>
