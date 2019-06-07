@@ -36,6 +36,8 @@ namespace osu.Framework.Graphics.OpenGL
         public static Matrix4 ProjectionMatrix { get; private set; }
         public static DepthInfo CurrentDepthInfo { get; private set; }
 
+        private static ConservativeMaskingInfo currentConservativeMaskingInfo;
+
         private static MaskingInfo currentMaskingInfo;
 
         public static MaskingInfo CurrentMaskingInfo => currentMaskingInfo;
@@ -128,6 +130,7 @@ namespace osu.Framework.Graphics.OpenGL
             scissor_rect_stack.Clear();
             frame_buffer_stack.Clear();
             depth_stack.Clear();
+            conservative_masking_stack.Clear();
 
             BindFrameBuffer(DefaultFrameBuffer);
 
@@ -145,6 +148,8 @@ namespace osu.Framework.Graphics.OpenGL
                 BlendRange = 1,
                 AlphaExponent = 1,
             }, true);
+
+            PushConservativeMaskingInfo(new ConservativeMaskingInfo(new RectangleI(0, 0, (int)size.X, (int)size.Y), Quad.FromRectangle(new RectangleI(0, 0, (int)size.X, (int)size.Y))));
 
             PushDepthInfo(DepthInfo.Default);
             Clear(ClearInfo.Default);
@@ -409,6 +414,7 @@ namespace osu.Framework.Graphics.OpenGL
         }
 
         private static readonly Stack<MaskingInfo> masking_stack = new Stack<MaskingInfo>();
+        private static readonly Stack<ConservativeMaskingInfo> conservative_masking_stack = new Stack<ConservativeMaskingInfo>();
         private static readonly Stack<RectangleI> scissor_rect_stack = new Stack<RectangleI>();
         private static readonly Stack<int> frame_buffer_stack = new Stack<int>();
         private static readonly Stack<DepthInfo> depth_stack = new Stack<DepthInfo>();
@@ -484,9 +490,9 @@ namespace osu.Framework.Graphics.OpenGL
         /// <returns>The <see cref="ConvexPolygonClipper{TClip,TSubject}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ConvexPolygonClipper<Quad, TPolygon> CreateMaskingClipper<TPolygon>(ref TPolygon polygon) where TPolygon : IConvexPolygon
-            => new ConvexPolygonClipper<Quad, TPolygon>(ref currentMaskingInfo.ConservativeScreenSpaceQuad, ref polygon);
+            => new ConvexPolygonClipper<Quad, TPolygon>(ref currentConservativeMaskingInfo.ConservativeScreenSpaceQuad, ref polygon);
 
-        public static bool IsMaskingActive => masking_stack.Count > 1;
+        public static bool IsMaskingActive => masking_stack.Count > 1 || conservative_masking_stack.Count > 1;
 
         /// <summary>
         /// Applies a new masking info.
@@ -522,6 +528,32 @@ namespace osu.Framework.Graphics.OpenGL
             currentMaskingInfo = maskingInfo;
 
             setMaskingInfo(currentMaskingInfo);
+            popScissor();
+        }
+
+        public static void PushConservativeMaskingInfo(ConservativeMaskingInfo maskingInfo)
+        {
+            conservative_masking_stack.Push(maskingInfo);
+            if (currentConservativeMaskingInfo.Equals(maskingInfo))
+                return;
+
+            currentConservativeMaskingInfo = maskingInfo;
+
+            pushScissor(maskingInfo.ScreenSpaceAABB);
+        }
+
+        public static void PopConservativeMaskingInfo()
+        {
+            Trace.Assert(conservative_masking_stack.Count > 1);
+
+            conservative_masking_stack.Pop();
+            ConservativeMaskingInfo maskingInfo = conservative_masking_stack.Peek();
+
+            if (currentConservativeMaskingInfo.Equals(maskingInfo))
+                return;
+
+            currentConservativeMaskingInfo = maskingInfo;
+
             popScissor();
         }
 
@@ -752,6 +784,30 @@ namespace osu.Framework.Graphics.OpenGL
                 case IUniformWithValue<Matrix4> m4:
                     GL.UniformMatrix4(uniform.Location, false, ref m4.GetValueByRef());
                     break;
+            }
+        }
+    }
+
+    public struct ConservativeMaskingInfo : IEquatable<ConservativeMaskingInfo>
+    {
+        public RectangleI ScreenSpaceAABB;
+        public Quad ConservativeScreenSpaceQuad;
+
+        public ConservativeMaskingInfo(RectangleI screenSpaceAABB, Quad conservativeScreenSpaceQuad)
+        {
+            ScreenSpaceAABB = screenSpaceAABB;
+            ConservativeScreenSpaceQuad = conservativeScreenSpaceQuad;
+        }
+
+        public bool Equals(ConservativeMaskingInfo other) => ScreenSpaceAABB.Equals(other.ScreenSpaceAABB) && ConservativeScreenSpaceQuad.Equals(other.ConservativeScreenSpaceQuad);
+
+        public override bool Equals(object obj) => obj is ConservativeMaskingInfo other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (ScreenSpaceAABB.GetHashCode() * 397) ^ ConservativeScreenSpaceQuad.GetHashCode();
             }
         }
     }

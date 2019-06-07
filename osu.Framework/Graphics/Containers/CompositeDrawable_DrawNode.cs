@@ -251,7 +251,7 @@ namespace osu.Framework.Graphics.Containers
                         vertexAction = triangleBatch.AddAction;
 
                     if (maskingInfo != null)
-                        GLWrapper.PushMaskingInfo(maskingInfo.Value);
+                        GLWrapper.PushConservativeMaskingInfo(new ConservativeMaskingInfo(maskingInfo.Value.ScreenSpaceAABB, maskingInfo.Value.ConservativeScreenSpaceQuad));
                 }
 
                 // We still need to invoke this method recursively for all children so their depth value is updated
@@ -265,7 +265,7 @@ namespace osu.Framework.Graphics.Containers
                 if (canIncrement)
                 {
                     if (maskingInfo != null)
-                        GLWrapper.PopMaskingInfo();
+                        GLWrapper.PopConservativeMaskingInfo();
                 }
             }
 
