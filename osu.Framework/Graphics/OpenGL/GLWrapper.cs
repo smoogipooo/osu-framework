@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.OpenGL.Textures;
@@ -17,6 +18,7 @@ using osu.Framework.Statistics;
 using osu.Framework.MathUtils;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Colour;
+using osu.Framework.MathUtils.Clipping;
 using osu.Framework.Platform;
 
 namespace osu.Framework.Graphics.OpenGL
@@ -29,11 +31,14 @@ namespace osu.Framework.Graphics.OpenGL
         /// </summary>
         public const int MAX_DRAW_NODES = 3;
 
-        public static MaskingInfo CurrentMaskingInfo { get; private set; }
         public static RectangleI Viewport { get; private set; }
         public static RectangleF Ortho { get; private set; }
         public static Matrix4 ProjectionMatrix { get; private set; }
         public static DepthInfo CurrentDepthInfo { get; private set; }
+
+        private static MaskingInfo currentMaskingInfo;
+
+        public static MaskingInfo CurrentMaskingInfo => currentMaskingInfo;
 
         public static bool UsingBackbuffer => frame_buffer_stack.Peek() == DefaultFrameBuffer;
 
@@ -498,6 +503,16 @@ namespace osu.Framework.Graphics.OpenGL
             lastActiveBatch?.Draw();
         }
 
+        /// <summary>
+        /// Creates a <see cref="ConvexPolygonClipper{TClip,TSubject}"/> with the current masking info as the clipping polygon.
+        /// </summary>
+        /// <param name="polygon">The polygon that will be clipped.</param>
+        /// <typeparam name="TPolygon">The type of polygon that will be clipped.</typeparam>
+        /// <returns>The <see cref="ConvexPolygonClipper{TClip,TSubject}"/>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ConvexPolygonClipper<Quad, TPolygon> CreateMaskingClipper<TPolygon>(ref TPolygon polygon) where TPolygon : IConvexPolygon
+            => new ConvexPolygonClipper<Quad, TPolygon>(ref currentMaskingInfo.ConservativeScreenSpaceQuad, ref polygon);
+
         public static bool IsMaskingActive => masking_stack.Count > 1;
 
         /// <summary>
@@ -508,11 +523,11 @@ namespace osu.Framework.Graphics.OpenGL
         public static void PushMaskingInfo(MaskingInfo maskingInfo, bool overwritePreviousScissor = false)
         {
             masking_stack.Push(maskingInfo);
-            if (CurrentMaskingInfo.Equals(maskingInfo))
+            if (currentMaskingInfo.Equals(maskingInfo))
                 return;
 
-            CurrentMaskingInfo = maskingInfo;
-            setMaskingInfo(CurrentMaskingInfo, true, overwritePreviousScissor);
+            currentMaskingInfo = maskingInfo;
+            setMaskingInfo(currentMaskingInfo, true, overwritePreviousScissor);
         }
 
         /// <summary>
@@ -525,11 +540,11 @@ namespace osu.Framework.Graphics.OpenGL
             masking_stack.Pop();
             MaskingInfo maskingInfo = masking_stack.Peek();
 
-            if (CurrentMaskingInfo.Equals(maskingInfo))
+            if (currentMaskingInfo.Equals(maskingInfo))
                 return;
 
-            CurrentMaskingInfo = maskingInfo;
-            setMaskingInfo(CurrentMaskingInfo, false, true);
+            currentMaskingInfo = maskingInfo;
+            setMaskingInfo(currentMaskingInfo, false, true);
         }
 
         /// <summary>
