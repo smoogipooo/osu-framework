@@ -12,9 +12,9 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
     public abstract class VertexBuffer<T> : IDisposable
         where T : struct, IEquatable<T>, IVertex
     {
-        protected static readonly int STRIDE = VertexUtils<T>.STRIDE;
+        protected static readonly int STRIDE = VertexUtils<VertexWithDepth<T>>.STRIDE;
 
-        public readonly T[] Vertices;
+        private readonly VertexWithDepth<T>[] vertices;
 
         private readonly BufferUsageHint usage;
 
@@ -25,8 +25,20 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         {
             this.usage = usage;
 
-            Vertices = new T[amountVertices];
+            vertices = new VertexWithDepth<T>[amountVertices];
         }
+
+        public T this[int vertexIndex]
+        {
+            get => vertices[vertexIndex].Vertex;
+            set
+            {
+                vertices[vertexIndex].Vertex = value;
+                vertices[vertexIndex].BackbufferDrawDepth = GLWrapper.BackbufferDrawDepth;
+            }
+        }
+
+        public int Length => vertices.Length;
 
         /// <summary>
         /// Initialises this <see cref="VertexBuffer{T}"/>. Guaranteed to be run on the draw thread.
@@ -38,9 +50,9 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             GL.GenBuffers(1, out vboId);
 
             if (GLWrapper.BindBuffer(BufferTarget.ArrayBuffer, vboId))
-                VertexUtils<T>.Bind();
+                VertexUtils<VertexWithDepth<T>>.Bind();
 
-            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(Vertices.Length * STRIDE), IntPtr.Zero, usage);
+            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(vertices.Length * STRIDE), IntPtr.Zero, usage);
         }
 
         ~VertexBuffer()
@@ -82,7 +94,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             }
 
             if (GLWrapper.BindBuffer(BufferTarget.ArrayBuffer, vboId))
-                VertexUtils<T>.Bind();
+                VertexUtils<VertexWithDepth<T>>.Bind();
         }
 
         public virtual void Unbind()
@@ -97,7 +109,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
 
         public void Draw()
         {
-            DrawRange(0, Vertices.Length);
+            DrawRange(0, vertices.Length);
         }
 
         public void DrawRange(int startIndex, int endIndex)
@@ -112,7 +124,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
 
         public void Update()
         {
-            UpdateRange(0, Vertices.Length);
+            UpdateRange(0, vertices.Length);
         }
 
         public void UpdateRange(int startIndex, int endIndex)
@@ -120,7 +132,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             Bind(false);
 
             int amountVertices = endIndex - startIndex;
-            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(startIndex * STRIDE), (IntPtr)(amountVertices * STRIDE), ref Vertices[startIndex]);
+            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(startIndex * STRIDE), (IntPtr)(amountVertices * STRIDE), ref vertices[startIndex]);
 
             Unbind();
 

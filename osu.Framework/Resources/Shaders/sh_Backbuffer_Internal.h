@@ -5,11 +5,8 @@
 // Must only be used if a depth value is provided by the vertex definition.
 // #define BACKBUFFER_USE_VERTEX_DEPTH
 
-#ifdef BACKBUFFER_USE_VERTEX_DEPTH
-    attribute float m_BackbufferDrawDepth;
-#else
-    uniform float g_BackbufferDrawDepth;
-#endif
+attribute float m_BackbufferDrawDepth;
+uniform float g_BackbufferDrawDepth;
 
 // Whether the backbuffer is currently being drawn to
 uniform bool g_BackbufferDraw;

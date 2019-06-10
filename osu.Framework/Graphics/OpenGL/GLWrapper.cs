@@ -42,6 +42,8 @@ namespace osu.Framework.Graphics.OpenGL
 
         private static bool isEmbedded;
 
+        public static float BackbufferDrawDepth { get; private set; }
+
         /// <summary>
         /// Check whether we have an initialised and non-disposed GL context.
         /// </summary>
@@ -579,6 +581,12 @@ namespace osu.Framework.Graphics.OpenGL
                 GL.Disable(EnableCap.DepthTest);
 
             GL.DepthMask(depthInfo.WriteDepth);
+        }
+
+        internal static void SetDrawDepth(float depth)
+        {
+            BackbufferDrawDepth = depth;
+            GlobalPropertyManager.Set(GlobalProperty.BackbufferDrawDepth, depth);
         }
 
         /// <summary>
