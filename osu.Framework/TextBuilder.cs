@@ -134,7 +134,7 @@ namespace osu.Framework
             if (lastGlyph != null)
                 currentPos.X -= glyph.GetKerning(lastGlyph.Value);
 
-            currentRowHeight = Characters.Max(c => getGlyphHeight(c.Glyph));
+            currentRowHeight = Characters.Count == 0 ? 0 : Characters.Max(c => getGlyphHeight(c.Glyph));
         }
 
         /// <summary>
