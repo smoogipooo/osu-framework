@@ -48,17 +48,22 @@ namespace osu.Framework.IO.Stores
         /// <returns>Whether or not a <see cref="CharacterGlyph"/> was able to be retrieved.</returns>
         public bool TryGetCharacter(string fontName, char charName, out CharacterGlyph glyph)
         {
-            var texture = namespacedTextureCache.GetOrAdd((fontName, charName), cachedTextureLookup);
-
-            if (texture == null)
-            {
-                glyph = default;
+            if (!tryGetCharacterGlyph(fontName, charName, out glyph))
                 return false;
+
+            glyph.Texture = namespacedTextureCache.GetOrAdd((fontName, charName), cachedTextureLookup);
+
+            if (glyph.IsWhiteSpace)
+            {
+                glyph.Width = glyph.XAdvance;
+                glyph.Height = 0;
+            }
+            else
+            {
+                glyph.Width = glyph.Texture.Width;
+                glyph.Height = glyph.Texture.Height;
             }
 
-            Trace.Assert(tryGetCharacterGlyph(fontName, charName, out glyph));
-
-            glyph.Texture = texture;
             glyph.ApplyScaleAdjust(1 / ScaleAdjust);
 
             return true;
@@ -253,9 +258,9 @@ namespace osu.Framework.IO.Stores
             /// </summary>
             public float XAdvance { get; set; }
 
-            public float Width => Texture.DisplayWidth;
+            public float Width { get; set; }
 
-            public float Height => Texture.DisplayHeight;
+            public float Height { get; set; }
 
             private readonly GlyphStore containingStore;
             private readonly char character;
@@ -271,6 +276,8 @@ namespace osu.Framework.IO.Stores
                 XOffset = xOffset;
                 YOffset = yOffset;
                 XAdvance = xAdvance;
+                Width = 0;
+                Height = 0;
 
                 scaleAdjust = 1;
             }
@@ -284,6 +291,8 @@ namespace osu.Framework.IO.Stores
                 XOffset *= scaleAdjust;
                 YOffset *= scaleAdjust;
                 XAdvance *= scaleAdjust;
+                Width *= scaleAdjust;
+                Height *= scaleAdjust;
 
                 this.scaleAdjust *= scaleAdjust;
             }
