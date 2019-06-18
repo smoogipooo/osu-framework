@@ -4,12 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Caching;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.IO.Stores;
@@ -439,11 +439,7 @@ namespace osu.Framework.Graphics.Sprites
             Debug.Assert(!isComputingCharacters, "Cyclic invocation of computeCharacters()!");
             isComputingCharacters = true;
 
-            Vector2 currentPos = new Vector2(Padding.Left, Padding.Top);
             float maxWidth = float.PositiveInfinity;
-            float currentRowHeight = 0;
-
-            char? previous = null;
 
             try
             {
@@ -453,207 +449,29 @@ namespace osu.Framework.Graphics.Sprites
                 if (!requiresAutoSizedWidth)
                     maxWidth = ApplyRelativeAxes(RelativeSizeAxes, new Vector2(base.Width, base.Height), FillMode).X - Padding.Right;
 
-                // Calculate period texture info outside the loop so that it isn't done per-character
+                var builder = new TextBuilder(Font.Size, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, maxWidth);
 
-                if (truncate)
-                {
-                    Debug.Assert(!AllowMultiline);
+                foreach (var c in displayedText)
+                    builder.AddCharacter(getCharacter(c));
 
-                    int displayCount = getTruncationLength();
-
-                    for (int i = 0; i < displayCount; i++)
-                        addCharacter(displayedText[i]);
-
-                    if (displayedText.Length != displayCount)
-                        foreach (var character in EllipsisString)
-                            addCharacter(character);
-                }
-                else
-                {
-                    foreach (var character in displayedText)
-                        addCharacter(character);
-                }
-
-                // When we added the last character, we also added the spacing, but we should remove it to get the correct size
-                currentPos.X -= spacing.X;
-
-                // The last row needs to be included in the height
-                currentPos.Y += currentRowHeight;
+                charactersBacking.AddRange(builder.Characters);
             }
             finally
             {
                 if (requiresAutoSizedWidth)
-                    base.Width = currentPos.X + Padding.Right;
+                    base.Width = charactersBacking.Count == 0 ? Padding.Right : charactersBacking.Max(c => c.DrawRectangle.Right) + Padding.Right;
                 if (requiresAutoSizedHeight)
-                    base.Height = currentPos.Y + Padding.Bottom;
+                    base.Height = charactersBacking.Count == 0 ? Padding.Bottom : charactersBacking.Max(c => c.DrawRectangle.Bottom) + Padding.Bottom;
 
                 isComputingCharacters = false;
                 charactersCache.Validate();
             }
-
-            int getTruncationLength()
-            {
-                float trackingPos = Padding.Left;
-
-                float ellipsisLength = 0;
-
-                char? lastChar = null;
-
-                // Calculate the length of our Ellipsis
-                foreach (var c in EllipsisString)
-                {
-                    ellipsisLength += getCursorAdvanceForCharacter(c, lastChar, out _);
-                    lastChar = c;
-                }
-
-                lastChar = null;
-
-                float availableWidth = maxWidth -= ellipsisLength;
-
-                int index = 0;
-                int lastNonSpaceIndex = 0;
-
-                foreach (var character in displayedText)
-                {
-                    var characterAdvance = getCursorAdvanceForCharacter(character, lastChar, out var isSpace);
-
-                    lastChar = character;
-
-                    if (trackingPos + characterAdvance >= availableWidth)
-                        return lastNonSpaceIndex;
-
-                    trackingPos += characterAdvance;
-
-                    index++;
-
-                    if (!isSpace)
-                        lastNonSpaceIndex = index;
-                }
-
-                return index;
-            }
-
-            void addCharacter(char character)
-            {
-                // don't apply any adjustments for width, as we need the raw size in order to not stretch the draw rectangle for drawing the texture.
-                Vector2 scaledTextureSize = getCharacterSize(character, false, out var glyph, out bool isSpace);
-
-                // The height of the glyph with YOffset applied
-                // The height of a space is forced to be 0 so the Y offset doesn't get accounted for incorrectly
-                var glyphHeight = isSpace ? 0 : scaledTextureSize.Y + Font.Size * glyph.YOffset;
-
-                // Scaled glyph size to be used for positioning.
-                Vector2 glyphSize = new Vector2(
-                    useFixedWidthForCharacter(character) ? constantWidth * Font.Size : scaledTextureSize.X,
-                    UseFullGlyphHeight ? Font.Size : glyphHeight);
-
-                // Move the position by the amount specified for the combination.
-                // This purposely gets reset if this character belongs to a new line, so this offset must be applied before checking for the line position.
-                if (!useFixedWidthForCharacter(character) && previous != null)
-                {
-                    currentPos.X += glyph.GetKerningPair(previous.Value) * Font.Size;
-                }
-
-                var totalPositionOffset = isSpace || useFixedWidthForCharacter(character) ? glyphSize.X : glyph.XAdvance * Font.Size;
-
-                previous = character;
-
-                // Check if we need to go onto the next line
-                if (AllowMultiline)
-                {
-                    Debug.Assert(!Truncate);
-
-                    if (currentPos.X + totalPositionOffset >= maxWidth)
-                    {
-                        currentPos.X = Padding.Left;
-                        currentPos.Y += currentRowHeight + Spacing.Y;
-                        currentRowHeight = 0;
-                    }
-                }
-
-                // The height of the row depends on whether we want to use the full glyph height or not
-                // In the case of using full glyph height, this will be the height component of Font.Size
-                currentRowHeight = Math.Max(currentRowHeight, glyphSize.Y);
-
-                if (!isSpace)
-                {
-                    // If we have fixed width, we'll need to centre the texture to the glyph size
-                    float xOffset = useFixedWidthForCharacter(character) ? (glyphSize.X - scaledTextureSize.X) / 2 : Font.Size * glyph.XOffset;
-                    float yOffset = Font.Size * glyph.YOffset;
-
-                    charactersBacking.Add(new CharacterPart
-                    {
-                        Texture = glyph.Texture,
-                        DrawRectangle = new RectangleF(new Vector2(currentPos.X + xOffset, currentPos.Y + yOffset), scaledTextureSize),
-                    });
-                }
-
-                currentPos.X += totalPositionOffset + Spacing.X;
-            }
-        }
-
-        /// <summary>
-        /// Get the size (and texture) for a specific character. Post-multiplied by <see cref="FontUsage.Size"/>, but not forced to fixed width.
-        /// </summary>
-        /// <param name="character">The character to look up.</param>
-        /// <param name="applyWidthAdjustments">Whether or not fixed width spacing and xOffset should be taken into account in the calculated size</param>
-        /// <param name="glyph">A struct containing the texture and its associated spacing information for the specified character.</param>
-        /// <param name="isSpace">Whether or not the character glyph returned is a space</param>
-        /// <returns>The size of the character texture.</returns>
-        private Vector2 getCharacterSize(char character, bool applyWidthAdjustments, out FontStore.CharacterGlyph glyph, out bool isSpace)
-        {
-            float width;
-            float height;
-
-            glyph = getCharacter(character);
-
-            isSpace = char.IsWhiteSpace(character) || glyph.Texture == null;
-
-            if (isSpace)
-            {
-                float size = useFixedWidthForCharacter(character) ? constantWidth : spaceWidth;
-
-                if (character == 0x3000)
-                {
-                    // Double-width space
-                    size *= 2;
-                }
-
-                width = size;
-                height = size;
-            }
-            else
-            {
-                if (applyWidthAdjustments)
-                {
-                    // Use the glyph defined character width unless constant width.
-                    width = useFixedWidthForCharacter(character) ? constantWidth : glyph.XAdvance;
-                }
-                else
-                {
-                    width = glyph.Width;
-                }
-
-                height = glyph.Height;
-            }
-
-            return Font.Size * new Vector2(width, height);
         }
 
         private bool useFixedWidthForCharacter(char character) => Font.FixedWidth && UseFixedWidthForCharacter(character);
 
         private Cached screenSpaceCharactersCache = new Cached();
         private readonly List<ScreenSpaceCharacterPart> screenSpaceCharactersBacking = new List<ScreenSpaceCharacterPart>();
-
-        private float getCursorAdvanceForCharacter(char character, char? previous, out bool isSpace)
-        {
-            float glyphWidth = getCharacterSize(character, true, out var glyph, out isSpace).X;
-
-            if (previous != null && !isSpace && !useFixedWidthForCharacter(character))
-                glyphWidth += glyph.GetKerningPair(previous.Value) * Font.Size;
-
-            return glyphWidth + Spacing.X;
-        }
 
         /// <summary>
         /// The characters in screen space. These are ready to be drawn.

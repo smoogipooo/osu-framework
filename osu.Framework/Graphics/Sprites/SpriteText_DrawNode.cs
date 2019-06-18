@@ -7,6 +7,7 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
+using osu.Framework.IO.Stores;
 using osuTK;
 using osuTK.Graphics;
 
@@ -81,8 +82,10 @@ namespace osu.Framework.Graphics.Sprites
         /// <summary>
         /// A character of a <see cref="SpriteText"/> provided with local space coordinates.
         /// </summary>
-        internal struct CharacterPart
+        public struct CharacterPart
         {
+            public FontStore.CharacterGlyph Glyph;
+
             /// <summary>
             /// The local-space rectangle for the character to be drawn in.
             /// </summary>

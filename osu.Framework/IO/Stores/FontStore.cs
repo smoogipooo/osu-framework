@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using osu.Framework.Logging;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using JetBrains.Annotations;
 
 namespace osu.Framework.IO.Stores
 {
@@ -254,40 +253,26 @@ namespace osu.Framework.IO.Stores
             /// </summary>
             public float XAdvance { get; set; }
 
-            /// <summary>
-            /// The scale-adjusted width of the texture associated with this character.
-            /// </summary>
             public float Width => Texture.DisplayWidth;
 
-            /// <summary>
-            /// The scale-adjusted height of the texture associated with this character.
-            /// </summary>
             public float Height => Texture.DisplayHeight;
 
-            /// <summary>
-            /// Gets the kerning value for the previous character along with the one for this glyph, adjusted for the scale of the <see cref="FontStore"/>.
-            /// <remarks>The kerning value is a unique spacing adjustment specified for each character pair by the font.</remarks>
-            /// </summary>
-            /// <param name="previous">The character previous to this one.</param>
-            /// <returns>The scale-adjusted kerning value for the character pair</returns>
-            public float GetKerningPair(char previous) => containingStore.GetKerningValue(previous, character) * scaleAdjust;
+            private readonly GlyphStore containingStore;
+            private readonly char character;
 
             private float scaleAdjust;
 
-            private readonly GlyphStore containingStore;
-
-            private readonly char character;
-
-            public CharacterGlyph(char character, [CanBeNull] Texture texture = null, float xOffset = 0, float yOffset = 0, float xAdvance = 0, GlyphStore containingStore = null)
+            public CharacterGlyph(char character, float xOffset, float yOffset, float xAdvance, GlyphStore containingStore)
             {
-                Texture = texture;
+                this.containingStore = containingStore;
+                this.character = character;
+
+                Texture = null;
                 XOffset = xOffset;
                 YOffset = yOffset;
                 XAdvance = xAdvance;
 
                 scaleAdjust = 1;
-                this.containingStore = containingStore;
-                this.character = character;
             }
 
             /// <summary>
@@ -299,8 +284,13 @@ namespace osu.Framework.IO.Stores
                 XOffset *= scaleAdjust;
                 YOffset *= scaleAdjust;
                 XAdvance *= scaleAdjust;
-                this.scaleAdjust = scaleAdjust;
+
+                this.scaleAdjust *= scaleAdjust;
             }
+
+            public float GetKerning(CharacterGlyph lastGlyph) => containingStore.GetKerning(lastGlyph.character, character) * scaleAdjust;
+
+            public bool IsWhiteSpace => Texture == null || char.IsWhiteSpace(character);
         }
     }
 }
