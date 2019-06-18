@@ -101,7 +101,12 @@ namespace osu.Framework
 
             // Check for multiline/truncation
             if (!bypassAreaChecks)
+            {
                 ensureAreaAvailable(glyph);
+
+                if (!canAddCharacters)
+                    return;
+            }
 
             // Add the character
             if (!glyph.IsWhiteSpace)
