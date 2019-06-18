@@ -451,6 +451,11 @@ namespace osu.Framework.Graphics.Sprites
 
                 var builder = new TextBuilder(Font.Size, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, maxWidth);
 
+                if (AllowMultiline)
+                    builder.SetMultiline();
+                if (Truncate)
+                    builder.SetEllipsis(ellipsisString.Select(getCharacter).ToArray());
+
                 foreach (var c in displayedText)
                     builder.AddCharacter(getCharacter(c));
 
