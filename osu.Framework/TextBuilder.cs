@@ -109,16 +109,13 @@ namespace osu.Framework
             }
 
             // Add the character
-            if (!glyph.IsWhiteSpace)
+            Characters.Add(new SpriteText.CharacterPart
             {
-                Characters.Add(new SpriteText.CharacterPart
-                {
-                    Glyph = glyph,
-                    Texture = glyph.Texture,
-                    DrawRectangle = new RectangleF(new Vector2(currentPos.X + glyph.XOffset, currentPos.Y + glyph.YOffset),
-                        new Vector2(glyph.Width * fontSize, glyph.Height * fontSize)),
-                });
-            }
+                Glyph = glyph,
+                Texture = glyph.Texture,
+                DrawRectangle = new RectangleF(new Vector2(currentPos.X + glyph.XOffset, currentPos.Y + glyph.YOffset),
+                    new Vector2(glyph.Width * fontSize, glyph.Height * fontSize)),
+            });
 
             // Move the current position
             currentPos.X += glyph.XAdvance;
