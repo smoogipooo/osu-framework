@@ -90,6 +90,8 @@ namespace osu.Framework.Graphics.Sprites
             /// The local-space rectangle for the character to be drawn in.
             /// </summary>
             public RectangleF DrawRectangle;
+
+            public bool OnNewLine;
         }
 
         /// <summary>

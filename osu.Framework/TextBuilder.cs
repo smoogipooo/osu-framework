@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.IO.Stores;
@@ -29,6 +28,7 @@ namespace osu.Framework
 
         private Vector2 currentPos;
         private float currentLineHeight;
+        private bool currentNewLine = true;
 
         /// <summary>
         /// Creates a new <see cref="TextBuilder"/>.
@@ -66,18 +66,17 @@ namespace osu.Framework
             // Kerning is not applied if the user provided a custom width
             float kerning = lastGlyph == null ? 0 : glyph.GetKerning(lastGlyph.Value);
 
-            // Test if there's enough space for the character to be added
-            // Derived text builders may implement custom functionality if not, such as truncation or multi-lining
+            // Check if there is enough space for the character, let subclasses decide whether to continue adding the character if not
             if (!HasAvailableSpace(kerning + glyph.XAdvance))
             {
                 OnWidthExceeded();
 
-                // Exceeding the width may disallow the character to continue being added
                 if (!CanAddCharacters)
                     return;
             }
 
             // Kerning is not just a draw-time offset - it affects the position of all further drawn characters, so it must be added to the position
+            // Note that this is added after it is guaranteed that the character will be added, to not leave the current position in a bad state
             currentPos.X += kerning;
 
             // Add the character
@@ -86,11 +85,13 @@ namespace osu.Framework
                 Glyph = glyph,
                 DrawRectangle = new RectangleF(new Vector2(currentPos.X + glyph.XOffset, currentPos.Y + glyph.YOffset),
                     new Vector2(glyph.Width, glyph.Height)),
+                OnNewLine = currentNewLine,
             });
 
             // Move the current position
             currentPos.X += glyph.XAdvance;
             currentLineHeight = Math.Max(currentLineHeight, getGlyphHeight(glyph));
+            currentNewLine = false;
 
             // Calculate the text size
             TextSize = Vector2.ComponentMax(TextSize, currentPos + new Vector2(0, currentLineHeight));
@@ -104,6 +105,7 @@ namespace osu.Framework
 
             // Immediately after moving to a new line, the line is empty
             currentLineHeight = 0;
+            currentNewLine = true;
         }
 
         public void RemoveLastCharacter()
@@ -111,14 +113,44 @@ namespace osu.Framework
             if (Characters.Count == 0)
                 return;
 
-            FontStore.CharacterGlyph glyph = Characters[Characters.Count - 1].Glyph;
+            SpriteText.CharacterPart currentCharacter = Characters[Characters.Count - 1];
+            SpriteText.CharacterPart? lastCharacter = Characters.Count == 1 ? null : (SpriteText.CharacterPart?)Characters[Characters.Count - 2];
+
             Characters.RemoveAt(Characters.Count - 1);
 
-            if (lastGlyph != null)
-                currentPos.X -= glyph.GetKerning(lastGlyph.Value);
+            if (currentCharacter.OnNewLine)
+            {
+                // Move up to the previous line
+                currentPos.Y -= currentLineHeight + spacing.Y;
+                currentPos.X = 0;
 
-            currentPos.X -= glyph.XAdvance;
-            currentLineHeight = Characters.Count == 0 ? 0 : Characters.Max(c => getGlyphHeight(c.Glyph));
+                // Calculate the cursor position to right of the last glyph in the previous line
+                if (lastCharacter != null)
+                {
+                    // The original cursor position can be retrieved by subtracting the draw offset from the draw position
+                    currentPos.X = lastCharacter.Value.DrawRectangle.Left - lastCharacter.Value.Glyph.XOffset + lastCharacter.Value.Glyph.XAdvance;
+                }
+            }
+            else
+            {
+                // Move back within the currently line by reversing the operations done in AddCharacter()
+                currentPos.X -= currentCharacter.Glyph.XAdvance;
+
+                if (lastCharacter != null)
+                    currentPos.X -= currentCharacter.Glyph.GetKerning(lastCharacter.Value.Glyph);
+            }
+
+            // Determine the height of the current line
+            currentLineHeight = 0;
+
+            // Note: This is a very fast O(n^2) for removing all characters within a line
+            for (int i = Characters.Count - 1; i >= 0; i--)
+            {
+                currentLineHeight = Math.Max(currentLineHeight, getGlyphHeight(Characters[i].Glyph));
+
+                if (Characters[i].OnNewLine)
+                    break;
+            }
         }
 
         protected virtual void OnWidthExceeded()
