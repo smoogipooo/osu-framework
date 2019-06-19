@@ -505,7 +505,7 @@ namespace osu.Framework.Graphics.Sprites
                 screenSpaceCharactersBacking.Add(new ScreenSpaceCharacterPart
                 {
                     DrawQuad = ToScreenSpace(character.DrawRectangle),
-                    Texture = character.Texture
+                    Texture = character.Glyph.Texture
                 });
             }
 

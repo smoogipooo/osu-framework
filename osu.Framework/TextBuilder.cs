@@ -92,7 +92,6 @@ namespace osu.Framework
             Characters.Add(new SpriteText.CharacterPart
             {
                 Glyph = glyph,
-                Texture = glyph.Texture,
                 DrawRectangle = new RectangleF(new Vector2(currentPos.X + glyph.XOffset, currentPos.Y + glyph.YOffset),
                     new Vector2(glyph.Width, glyph.Height)),
             });

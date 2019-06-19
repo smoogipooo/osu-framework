@@ -90,11 +90,6 @@ namespace osu.Framework.Graphics.Sprites
             /// The local-space rectangle for the character to be drawn in.
             /// </summary>
             public RectangleF DrawRectangle;
-
-            /// <summary>
-            /// The texture to draw the character with.
-            /// </summary>
-            public Texture Texture;
         }
 
         /// <summary>
