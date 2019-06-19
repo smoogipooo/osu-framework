@@ -26,8 +26,9 @@ namespace osu.Framework
         }
 
         private bool widthExceededOnce;
+        private bool addingEllipsis;
 
-        protected override bool CanAddCharacters => base.CanAddCharacters && !widthExceededOnce;
+        protected override bool CanAddCharacters => base.CanAddCharacters && (!widthExceededOnce || addingEllipsis);
 
         protected override void OnWidthExceeded()
         {
@@ -35,6 +36,7 @@ namespace osu.Framework
                 return;
 
             widthExceededOnce = true;
+            addingEllipsis = true;
 
             // Remove characters by backtracking until both of the following conditions are met:
             // 1. The ellipsis glyphs can be added without exceeding the text bounds
@@ -52,6 +54,8 @@ namespace osu.Framework
             // Add the ellipsis characters
             foreach (var g in ellipsisGlyphs)
                 AddCharacter(g.Glyph, g.WidthOverride);
+
+            addingEllipsis = false;
         }
 
         private readonly struct EllipsisGlyph
