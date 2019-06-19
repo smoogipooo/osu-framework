@@ -36,8 +36,6 @@ namespace osu.Framework.Graphics.Sprites
 
         private ILocalisedBindableString localisedText;
 
-        private float spaceWidth;
-
         public IShader TextureShader { get; private set; }
         public IShader RoundedTextureShader { get; private set; }
 
@@ -63,8 +61,6 @@ namespace osu.Framework.Graphics.Sprites
 
                 invalidate(true);
             }, true);
-
-            spaceWidth = getCharacter('.').Texture?.DisplayWidth * 2 ?? 1;
 
             TextureShader = shaders.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE);
             RoundedTextureShader = shaders.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE_ROUNDED);
@@ -457,7 +453,7 @@ namespace osu.Framework.Graphics.Sprites
                     builder.SetEllipsis(ellipsisString.Select(getCharacter).ToArray());
 
                 foreach (var c in displayedText)
-                    builder.AddCharacter(getCharacter(c));
+                    builder.AddCharacter(getCharacter(c), useFixedWidthForCharacter(c) ? (float?)constantWidth : null);
 
                 charactersBacking.AddRange(builder.Characters);
             }

@@ -86,17 +86,26 @@ namespace osu.Framework
         /// Adds a character to this <see cref="TextBuilder"/>.
         /// </summary>
         /// <param name="glyph">The glyph of the character to add.</param>
-        public void AddCharacter(FontStore.CharacterGlyph glyph) => addCharacter(glyph, false);
+        public void AddCharacter(FontStore.CharacterGlyph glyph, float? widthOverride = null) => addCharacter(glyph, widthOverride, false);
 
-        private void addCharacter(FontStore.CharacterGlyph glyph, bool bypassAreaChecks)
+        private void addCharacter(FontStore.CharacterGlyph glyph, float? widthOverride, bool bypassAreaChecks)
         {
             if (!canAddCharacters)
                 return;
 
+            // If the user provided a custom width, transform the glyph such that it is positioned in the centre of the provided width
+            if (widthOverride != null)
+            {
+                glyph.XAdvance = widthOverride.Value;
+                glyph.XOffset = (widthOverride.Value - glyph.Width) / 2;
+            }
+
+            // Apply the font size scale
             glyph.ApplyScaleAdjust(fontSize);
 
             // Add the kerning. This is _not_ considered a draw-time offset - it affects the position of all further drawn characters.
-            if (lastGlyph != null)
+            // Not applied if the user provided a custom width override.
+            if (widthOverride == null && lastGlyph != null)
                 currentPos.X += glyph.GetKerning(lastGlyph.Value);
 
             // Check for multiline/truncation
@@ -200,7 +209,7 @@ namespace osu.Framework
 
             // Add the ellipsis characters
             foreach (var g in ellipsisGlyphs)
-                addCharacter(g, true);
+                addCharacter(g, null, true);
 
             // Stop the addition of more characters after the ellipsis
             canAddCharacters = false;

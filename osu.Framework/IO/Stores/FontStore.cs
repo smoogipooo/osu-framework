@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using osu.Framework.Logging;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace osu.Framework.IO.Stores
 {
