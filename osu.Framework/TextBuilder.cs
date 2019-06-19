@@ -55,7 +55,7 @@ namespace osu.Framework
         /// Adds a character to this <see cref="TextBuilder"/>.
         /// </summary>
         /// <param name="glyph">The glyph of the character to add.</param>
-        public void AddCharacter(FontStore.CharacterGlyph glyph, float? widthOverride = null)
+        public void AddCharacter(FontStore.CharacterGlyph glyph)
         {
             if (!CanAddCharacters)
                 return;
@@ -63,16 +63,8 @@ namespace osu.Framework
             // Apply the font size scale
             glyph.ApplyScaleAdjust(fontSize);
 
-            if (widthOverride != null)
-            {
-                widthOverride *= fontSize;
-
-                glyph.XAdvance = widthOverride.Value;
-                glyph.XOffset = (widthOverride.Value - glyph.Width) / 2;
-            }
-
             // Kerning is not applied if the user provided a custom width
-            float kerning = lastGlyph == null || widthOverride != null ? 0 : glyph.GetKerning(lastGlyph.Value);
+            float kerning = lastGlyph == null ? 0 : glyph.GetKerning(lastGlyph.Value);
 
             // Test if there's enough space for the character to be added
             // Derived text builders may implement custom functionality if not, such as truncation or multi-lining

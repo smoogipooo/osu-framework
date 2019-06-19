@@ -10,19 +10,19 @@ namespace osu.Framework
     public class TruncatingTextBuilder : TextBuilder
     {
         private readonly TextBuilder ellipsisBuilder;
-        private readonly List<EllipsisGlyph> ellipsisGlyphs;
+        private readonly List<FontStore.CharacterGlyph> ellipsisGlyphs;
 
         public TruncatingTextBuilder(float fontSize, float maxWidth, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
             : base(fontSize, maxWidth, useFullGlyphHeight, startOffset, spacing)
         {
             ellipsisBuilder = new TextBuilder(fontSize, float.MaxValue, useFullGlyphHeight, startOffset, spacing);
-            ellipsisGlyphs = new List<EllipsisGlyph>();
+            ellipsisGlyphs = new List<FontStore.CharacterGlyph>();
         }
 
-        public void AddEllipsisCharacter(FontStore.CharacterGlyph glyph, float? widthOverride)
+        public void AddEllipsisCharacter(FontStore.CharacterGlyph glyph)
         {
-            ellipsisBuilder.AddCharacter(glyph, widthOverride);
-            ellipsisGlyphs.Add(new EllipsisGlyph(glyph, widthOverride));
+            ellipsisBuilder.AddCharacter(glyph);
+            ellipsisGlyphs.Add(glyph);
         }
 
         private bool widthExceededOnce;
@@ -53,21 +53,9 @@ namespace osu.Framework
 
             // Add the ellipsis characters
             foreach (var g in ellipsisGlyphs)
-                AddCharacter(g.Glyph, g.WidthOverride);
+                AddCharacter(g);
 
             addingEllipsis = false;
-        }
-
-        private readonly struct EllipsisGlyph
-        {
-            public readonly FontStore.CharacterGlyph Glyph;
-            public readonly float? WidthOverride;
-
-            public EllipsisGlyph(FontStore.CharacterGlyph glyph, float? widthOverride)
-            {
-                Glyph = glyph;
-                WidthOverride = widthOverride;
-            }
         }
     }
 }

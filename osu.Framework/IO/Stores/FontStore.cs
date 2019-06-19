@@ -265,6 +265,7 @@ namespace osu.Framework.IO.Stores
 
             private readonly GlyphStore containingStore;
             private readonly char character;
+            private bool widthOverridden;
 
             public CharacterGlyph(char character, float xOffset, float yOffset, float xAdvance, GlyphStore containingStore)
             {
@@ -279,6 +280,7 @@ namespace osu.Framework.IO.Stores
                 Height = 0;
 
                 ScaleAdjust = 1;
+                widthOverridden = false;
             }
 
             /// <summary>
@@ -295,7 +297,16 @@ namespace osu.Framework.IO.Stores
                 ScaleAdjust *= scaleAdjust;
             }
 
-            public float GetKerning(CharacterGlyph lastGlyph) => containingStore.GetKerning(lastGlyph.character, character) * ScaleAdjust;
+            public void ApplyWidthOverride(float widthOverride)
+            {
+                widthOverridden = true;
+
+                // Reposition such that the texture is centred within the provided width
+                XAdvance = widthOverride;
+                XOffset = (widthOverride - Width) / 2;
+            }
+
+            public float GetKerning(CharacterGlyph lastGlyph) => widthOverridden ? 0 : containingStore.GetKerning(lastGlyph.character, character) * ScaleAdjust;
 
             public bool IsWhiteSpace => Texture == null || char.IsWhiteSpace(character);
         }

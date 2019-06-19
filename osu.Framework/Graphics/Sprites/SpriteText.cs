@@ -452,7 +452,7 @@ namespace osu.Framework.Graphics.Sprites
                     var truncatingTextBuilder = new TruncatingTextBuilder(Font.Size, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
 
                     foreach (var c in ellipsisString)
-                        truncatingTextBuilder.AddEllipsisCharacter(getCharacter(c), useFixedWidthForCharacter(c) ? (float?)constantWidth : null);
+                        truncatingTextBuilder.AddEllipsisCharacter(getCharacter(c));
 
                     textBuilder = truncatingTextBuilder;
                 }
@@ -460,7 +460,7 @@ namespace osu.Framework.Graphics.Sprites
                     textBuilder = new TextBuilder(Font.Size, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
 
                 foreach (var c in displayedText)
-                    textBuilder.AddCharacter(getCharacter(c), useFixedWidthForCharacter(c) ? (float?)constantWidth : null);
+                    textBuilder.AddCharacter(getCharacter(c));
 
                 charactersBacking.AddRange(textBuilder.Characters);
             }
@@ -517,7 +517,7 @@ namespace osu.Framework.Graphics.Sprites
         /// <summary>
         /// The width to be used for characters with fixed-width spacing.
         /// </summary>
-        private float constantWidth => constantWidthCache.IsValid ? constantWidthCache.Value : constantWidthCache.Value = getCharacter('m').Width;
+        private float constantWidth => constantWidthCache.IsValid ? constantWidthCache.Value : constantWidthCache.Value = getCharacter('m', false).Width;
 
         private Cached<Vector2> shadowOffsetCache;
 
@@ -566,7 +566,17 @@ namespace osu.Framework.Graphics.Sprites
 
         #endregion
 
-        private FontStore.CharacterGlyph getCharacter(char c) => TryGetCharacter(c, out var glyph) ? glyph : GetFallbackCharacter(c);
+        private FontStore.CharacterGlyph getCharacter(char c, bool applyFixedWithIfRequired = true)
+        {
+            FontStore.CharacterGlyph glyph;
+            if (!TryGetCharacter(c, out glyph))
+                glyph = GetFallbackCharacter(c);
+
+            if (applyFixedWithIfRequired && useFixedWidthForCharacter(c))
+                glyph.ApplyWidthOverride(constantWidth);
+
+            return glyph;
+        }
 
         /// <summary>
         /// Gets the texture and its associated spacing information for the specified character.
