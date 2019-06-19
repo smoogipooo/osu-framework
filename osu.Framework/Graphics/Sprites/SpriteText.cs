@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Caching;
@@ -436,6 +435,7 @@ namespace osu.Framework.Graphics.Sprites
             isComputingCharacters = true;
 
             float maxWidth = float.PositiveInfinity;
+            TextBuilder textBuilder = null;
 
             try
             {
@@ -444,8 +444,6 @@ namespace osu.Framework.Graphics.Sprites
 
                 if (!requiresAutoSizedWidth)
                     maxWidth = ApplyRelativeAxes(RelativeSizeAxes, new Vector2(base.Width, base.Height), FillMode).X - Padding.Right;
-
-                TextBuilder textBuilder;
 
                 if (AllowMultiline)
                     textBuilder = new MultilineTextBuilder(Font.Size, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
@@ -469,9 +467,9 @@ namespace osu.Framework.Graphics.Sprites
             finally
             {
                 if (requiresAutoSizedWidth)
-                    base.Width = charactersBacking.Count == 0 ? Padding.Right : charactersBacking.Max(c => c.DrawRectangle.Right) + Padding.Right;
+                    base.Width = (textBuilder?.TextSize.X ?? 0) + Padding.Right;
                 if (requiresAutoSizedHeight)
-                    base.Height = charactersBacking.Count == 0 ? Padding.Bottom : charactersBacking.Max(c => c.DrawRectangle.Bottom) + Padding.Bottom;
+                    base.Height = (textBuilder?.TextSize.Y ?? 0) + Padding.Bottom;
 
                 isComputingCharacters = false;
                 charactersCache.Validate();

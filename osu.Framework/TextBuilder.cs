@@ -16,8 +16,9 @@ namespace osu.Framework
     /// </summary>
     public class TextBuilder
     {
-        public readonly List<SpriteText.CharacterPart> Characters = new List<SpriteText.CharacterPart>();
+        public Vector2 TextSize { get; private set; }
 
+        public readonly List<SpriteText.CharacterPart> Characters = new List<SpriteText.CharacterPart>();
         private FontStore.CharacterGlyph? lastGlyph => Characters.Count == 0 ? null : (FontStore.CharacterGlyph?)Characters[Characters.Count - 1].Glyph;
 
         private readonly float fontSize;
@@ -27,8 +28,6 @@ namespace osu.Framework
         private readonly float maxWidth;
 
         private Vector2 currentPos;
-        internal Vector2 CurrentPos => currentPos;
-
         private float currentLineHeight;
 
         /// <summary>
@@ -101,6 +100,9 @@ namespace osu.Framework
             // Move the current position
             currentPos.X += glyph.XAdvance;
             currentLineHeight = Math.Max(currentLineHeight, getGlyphHeight(glyph));
+
+            // Calculate the text size
+            TextSize = Vector2.ComponentMax(TextSize, currentPos + new Vector2(0, currentLineHeight));
         }
 
         public void AddNewLine()

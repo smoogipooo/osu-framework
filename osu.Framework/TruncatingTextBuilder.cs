@@ -49,7 +49,7 @@ namespace osu.Framework
 
                 if (Characters.Count == 0)
                     break;
-            } while (Characters[Characters.Count - 1].Glyph.IsWhiteSpace || !HasAvailableSpace(ellipsisBuilder.CurrentPos.X));
+            } while (Characters[Characters.Count - 1].Glyph.IsWhiteSpace || !HasAvailableSpace(ellipsisBuilder.TextSize.X));
 
             // Add the ellipsis characters
             foreach (var g in ellipsisGlyphs)
