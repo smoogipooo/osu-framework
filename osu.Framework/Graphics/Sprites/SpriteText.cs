@@ -445,17 +445,26 @@ namespace osu.Framework.Graphics.Sprites
                 if (!requiresAutoSizedWidth)
                     maxWidth = ApplyRelativeAxes(RelativeSizeAxes, new Vector2(base.Width, base.Height), FillMode).X - Padding.Right;
 
-                var builder = new TextBuilder(Font.Size, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, maxWidth);
+                TextBuilder textBuilder;
 
                 if (AllowMultiline)
-                    builder.SetMultiline();
-                if (Truncate)
-                    builder.SetEllipsis(ellipsisString.Select(getCharacter).ToArray());
+                    textBuilder = new MultilineTextBuilder(Font.Size, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
+                else if (Truncate)
+                {
+                    var truncatingTextBuilder = new TruncatingTextBuilder(Font.Size, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
+
+                    foreach (var c in ellipsisString)
+                        truncatingTextBuilder.AddEllipsisCharacter(getCharacter(c), useFixedWidthForCharacter(c) ? (float?)constantWidth : null);
+
+                    textBuilder = truncatingTextBuilder;
+                }
+                else
+                    textBuilder = new TextBuilder(Font.Size, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
 
                 foreach (var c in displayedText)
-                    builder.AddCharacter(getCharacter(c), useFixedWidthForCharacter(c) ? (float?)constantWidth : null);
+                    textBuilder.AddCharacter(getCharacter(c), useFixedWidthForCharacter(c) ? (float?)constantWidth : null);
 
-                charactersBacking.AddRange(builder.Characters);
+                charactersBacking.AddRange(textBuilder.Characters);
             }
             finally
             {

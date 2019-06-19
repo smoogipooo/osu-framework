@@ -261,10 +261,10 @@ namespace osu.Framework.IO.Stores
 
             public float Height { get; set; }
 
+            public float ScaleAdjust { get; private set; }
+
             private readonly GlyphStore containingStore;
             private readonly char character;
-
-            private float scaleAdjust;
 
             public CharacterGlyph(char character, float xOffset, float yOffset, float xAdvance, GlyphStore containingStore)
             {
@@ -278,7 +278,7 @@ namespace osu.Framework.IO.Stores
                 Width = 0;
                 Height = 0;
 
-                scaleAdjust = 1;
+                ScaleAdjust = 1;
             }
 
             /// <summary>
@@ -292,11 +292,10 @@ namespace osu.Framework.IO.Stores
                 XAdvance *= scaleAdjust;
                 Width *= scaleAdjust;
                 Height *= scaleAdjust;
-
-                this.scaleAdjust *= scaleAdjust;
+                ScaleAdjust *= scaleAdjust;
             }
 
-            public float GetKerning(CharacterGlyph lastGlyph) => containingStore.GetKerning(lastGlyph.character, character) * scaleAdjust;
+            public float GetKerning(CharacterGlyph lastGlyph) => containingStore.GetKerning(lastGlyph.character, character) * ScaleAdjust;
 
             public bool IsWhiteSpace => Texture == null || char.IsWhiteSpace(character);
         }
