@@ -221,7 +221,7 @@ namespace osu.Framework
             if (glyph.IsWhiteSpace)
                 return 0;
 
-            return glyph.Height;
+            return glyph.YOffset + glyph.Height;
         }
     }
 }
