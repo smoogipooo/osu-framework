@@ -1,7 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System.Collections.Generic;
+using osu.Framework.Caching;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.IO.Stores;
 using osuTK;
 
@@ -9,20 +10,20 @@ namespace osu.Framework.Text
 {
     public class TruncatingTextBuilder : TextBuilder
     {
-        private readonly TextBuilder ellipsisBuilder;
-        private readonly List<FontStore.CharacterGlyph> ellipsisGlyphs;
+        public string EllipsisString;
 
-        public TruncatingTextBuilder(float fontSize, float maxWidth, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
-            : base(fontSize, maxWidth, useFullGlyphHeight, startOffset, spacing)
-        {
-            ellipsisBuilder = new TextBuilder(fontSize, float.MaxValue, useFullGlyphHeight, startOffset, spacing);
-            ellipsisGlyphs = new List<FontStore.CharacterGlyph>();
-        }
+        private readonly FontStore store;
+        private readonly FontUsage font;
+        private readonly bool useFullGlyphHeight;
+        private readonly Vector2 spacing;
 
-        public void AddEllipsisCharacter(FontStore.CharacterGlyph glyph)
+        public TruncatingTextBuilder(FontStore store, FontUsage font, float maxWidth, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
+            : base(store, font, maxWidth, useFullGlyphHeight, startOffset, spacing)
         {
-            ellipsisBuilder.AddCharacter(glyph);
-            ellipsisGlyphs.Add(glyph);
+            this.store = store;
+            this.font = font;
+            this.useFullGlyphHeight = useFullGlyphHeight;
+            this.spacing = spacing;
         }
 
         private bool widthExceededOnce;
@@ -36,6 +37,10 @@ namespace osu.Framework.Text
                 return;
 
             widthExceededOnce = true;
+
+            if (string.IsNullOrEmpty(EllipsisString))
+                return;
+
             addingEllipsis = true;
 
             // Remove characters by backtracking until both of the following conditions are met:
@@ -49,13 +54,29 @@ namespace osu.Framework.Text
 
                 if (Characters.Count == 0)
                     break;
-            } while (Characters[Characters.Count - 1].Glyph.IsWhiteSpace || !HasAvailableSpace(ellipsisBuilder.TextSize.X));
+            } while (Characters[Characters.Count - 1].Glyph.IsWhiteSpace || !HasAvailableSpace(getEllipsisSize().X));
 
-            // Add the ellipsis characters
-            foreach (var g in ellipsisGlyphs)
-                AddCharacter(g);
+            AddText(EllipsisString);
 
             addingEllipsis = false;
+        }
+
+        private Cached<Vector2> ellipsisSizeCache;
+
+        private Vector2 getEllipsisSize()
+        {
+            if (ellipsisSizeCache.IsValid)
+                return ellipsisSizeCache.Value;
+
+            var builder = new TextBuilder(store, font, float.MaxValue, useFullGlyphHeight, Vector2.Zero, spacing)
+            {
+                NeverFixedWidthCharacters = NeverFixedWidthCharacters,
+                FallbackCharacter = FallbackCharacter
+            };
+
+            builder.AddText(EllipsisString);
+
+            return ellipsisSizeCache.Value = builder.TextSize;
         }
     }
 }

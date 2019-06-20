@@ -17,6 +17,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.IO.Stores;
 using osu.Framework.Localisation;
 using osu.Framework.Testing;
+using osu.Framework.Text;
 using osuTK;
 using osuTK.Graphics;
 
@@ -238,7 +239,14 @@ namespace osu.Framework.Tests.Visual.Sprites
                 Font = new FontUsage(fixedWidth: true);
             }
 
-            protected override bool UseFixedWidthForCharacter(char c) => c != ' ';
+            protected override TextBuilder CreateTextBuilder(FontStore store)
+            {
+                var builder = base.CreateTextBuilder(store);
+
+                builder.NeverFixedWidthCharacters = new[] { ' ' };
+
+                return builder;
+            }
         }
 
         private class LocalisableTestContainer : Container

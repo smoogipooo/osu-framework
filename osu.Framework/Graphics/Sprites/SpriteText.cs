@@ -67,7 +67,9 @@ namespace osu.Framework.Graphics.Sprites
 
             // Pre-cache the characters in the texture store
             foreach (var character in displayedText)
-                getCharacter(character);
+            {
+                var unused = store.Get(font.FontName, character) ?? store.Get(null, character);
+            }
         }
 
         private LocalisedString text = string.Empty;
@@ -435,7 +437,6 @@ namespace osu.Framework.Graphics.Sprites
             Debug.Assert(!isComputingCharacters, "Cyclic invocation of computeCharacters()!");
             isComputingCharacters = true;
 
-            float maxWidth = float.PositiveInfinity;
             TextBuilder textBuilder = null;
 
             try
@@ -443,25 +444,8 @@ namespace osu.Framework.Graphics.Sprites
                 if (string.IsNullOrEmpty(displayedText))
                     return;
 
-                if (!requiresAutoSizedWidth)
-                    maxWidth = ApplyRelativeAxes(RelativeSizeAxes, new Vector2(base.Width, base.Height), FillMode).X - Padding.Right;
-
-                if (AllowMultiline)
-                    textBuilder = new MultilineTextBuilder(Font.Size, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
-                else if (Truncate)
-                {
-                    var truncatingTextBuilder = new TruncatingTextBuilder(Font.Size, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
-
-                    foreach (var c in ellipsisString)
-                        truncatingTextBuilder.AddEllipsisCharacter(getCharacter(c));
-
-                    textBuilder = truncatingTextBuilder;
-                }
-                else
-                    textBuilder = new TextBuilder(Font.Size, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
-
-                foreach (var c in displayedText)
-                    textBuilder.AddCharacter(getCharacter(c));
+                textBuilder = CreateTextBuilder(store);
+                textBuilder.AddText(displayedText);
 
                 charactersBacking.AddRange(textBuilder.Characters);
             }
@@ -476,8 +460,6 @@ namespace osu.Framework.Graphics.Sprites
                 charactersCache.Validate();
             }
         }
-
-        private bool useFixedWidthForCharacter(char character) => Font.FixedWidth && UseFixedWidthForCharacter(character);
 
         private Cached screenSpaceCharactersCache = new Cached();
         private readonly List<ScreenSpaceCharacterPart> screenSpaceCharactersBacking = new List<ScreenSpaceCharacterPart>();
@@ -512,13 +494,6 @@ namespace osu.Framework.Graphics.Sprites
 
             screenSpaceCharactersCache.Validate();
         }
-
-        private Cached<float> constantWidthCache;
-
-        /// <summary>
-        /// The width to be used for characters with fixed-width spacing.
-        /// </summary>
-        private float constantWidth => constantWidthCache.IsValid ? constantWidthCache.Value : constantWidthCache.Value = getCharacter('m', false).Width;
 
         private Cached<Vector2> shadowOffsetCache;
 
@@ -567,54 +542,17 @@ namespace osu.Framework.Graphics.Sprites
 
         #endregion
 
-        private FontStore.CharacterGlyph getCharacter(char c, bool applyFixedWithIfRequired = true)
+        protected virtual TextBuilder CreateTextBuilder(FontStore store)
         {
-            FontStore.CharacterGlyph glyph = TryGetCharacter(c) ?? GetFallbackCharacter(c);
+            float maxWidth = requiresAutoSizedWidth ? float.PositiveInfinity : ApplyRelativeAxes(RelativeSizeAxes, new Vector2(base.Width, base.Height), FillMode).X - Padding.Right;
 
-            if (applyFixedWithIfRequired && useFixedWidthForCharacter(c))
-                glyph.ApplyWidthOverride(constantWidth);
+            if (AllowMultiline)
+                return new MultilineTextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
 
-            return glyph;
-        }
+            if (Truncate)
+                return new TruncatingTextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing) { EllipsisString = ellipsisString };
 
-        /// <summary>
-        /// Gets the texture and its associated spacing information for the specified character.
-        /// </summary>
-        /// <param name="c">The character to lookup.</param>
-        /// <returns>Whether or not the lookup was successful.</returns>
-        protected virtual FontStore.CharacterGlyph TryGetCharacter(char c)
-        {
-            if (store == null)
-                return null;
-
-            return store.Get(Font.FontName, c) ?? store.Get(null, c);
-        }
-
-        /// <summary>
-        /// Gets a <see cref="FontStore.CharacterGlyph"/> that represents a character which doesn't exist in the current font.
-        /// </summary>
-        /// <param name="c">The character which doesn't exist in the current font.</param>
-        /// <returns>The texture for the given character and its associated spacing information.</returns>
-        protected virtual FontStore.CharacterGlyph GetFallbackCharacter(char c) => TryGetCharacter('?');
-
-        /// <summary>
-        /// Whether the visual representation of a character should use fixed width when <see cref="FontUsage.FixedWidth"/> is true.
-        /// By default, this includes the following characters, commonly used in numerical formatting: '.' ',' ':' and ' '
-        /// </summary>
-        /// <param name="c">The character.</param>
-        /// <returns>Whether the visual representation of <paramref name="c"/> should use a fixed width.</returns>
-        protected virtual bool UseFixedWidthForCharacter(char c)
-        {
-            switch (c)
-            {
-                case '.':
-                case ',':
-                case ':':
-                case ' ':
-                    return false;
-            }
-
-            return true;
+            return new TextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
         }
 
         public override string ToString() => $@"""{displayedText}"" " + base.ToString();

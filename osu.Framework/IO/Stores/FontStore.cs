@@ -206,17 +206,7 @@ namespace osu.Framework.IO.Stores
             /// <summary>
             /// The texture for this character.
             /// </summary>
-            public Texture Texture
-            {
-                get => texture;
-                internal set
-                {
-                    texture = value;
-
-                    width = texture?.Width ?? 0;
-                    height = texture?.Height ?? 0;
-                }
-            }
+            public Texture Texture { get; internal set; }
 
             public float XOffset => xOffset * scaleAdjust;
 
@@ -224,35 +214,31 @@ namespace osu.Framework.IO.Stores
 
             public float XAdvance => xAdvance * scaleAdjust;
 
-            public float Width => IsWhiteSpace ? XAdvance : width * scaleAdjust;
+            public float Width => IsWhiteSpace ? XAdvance : (width ?? Texture?.Width ?? 0) * scaleAdjust;
 
-            public float Height => IsWhiteSpace ? 0 : height * scaleAdjust;
+            public float Height => IsWhiteSpace ? 0 : (height ?? Texture?.Height ?? 0) * scaleAdjust;
 
-            private readonly float yOffset;
-            private Texture texture;
-            private float width;
-            private float height;
-            private float xOffset;
-            private float xAdvance;
-            private float scaleAdjust;
+            public readonly char Character;
 
             private readonly GlyphStore containingStore;
-            private readonly char character;
-            private bool widthOverridden;
+            private readonly float yOffset;
+            private readonly float xOffset;
+            private readonly float xAdvance;
+            private readonly float? width;
+            private readonly float? height;
 
-            public CharacterGlyph(char character, float xOffset, float yOffset, float xAdvance, GlyphStore containingStore)
+            private float scaleAdjust = 1;
+
+            public CharacterGlyph(char character, float xOffset, float yOffset, float xAdvance, GlyphStore containingStore, float? width = null, float? height = null)
             {
-                this.character = character;
                 this.xOffset = xOffset;
                 this.yOffset = yOffset;
                 this.xAdvance = xAdvance;
                 this.containingStore = containingStore;
+                this.width = width;
+                this.height = height;
 
-                texture = null;
-                width = 0;
-                height = 0;
-                scaleAdjust = 1;
-                widthOverridden = false;
+                Character = character;
             }
 
             /// <summary>
@@ -262,31 +248,26 @@ namespace osu.Framework.IO.Stores
             public void ApplyScaleAdjust(float scaleAdjust) => this.scaleAdjust *= scaleAdjust;
 
             /// <summary>
-            /// Overrides the width of this <see cref="CharacterGlyph"/>, adjusting <see cref="XOffset"/> to reposition the texture in the centre of the new width.
-            /// Useful for displaying this <see cref="CharacterGlyph"/> in as part of a fake fixed-width font.
-            /// </summary>
-            /// <remarks>
-            /// This only adjusts the <see cref="XAdvance"/> of the <see cref="CharacterGlyph"/>.
-            /// </remarks>
-            /// <param name="widthOverride">The new width.</param>
-            public void ApplyWidthOverride(float widthOverride)
-            {
-                widthOverridden = true;
-
-                xAdvance = widthOverride / scaleAdjust;
-                xOffset = (widthOverride - Width) / 2 / scaleAdjust;
-            }
-
-            /// <summary>
             /// Retrieves the kerning between this <see cref="CharacterGlyph"/> and the one prior to it.
             /// </summary>
             /// <param name="lastGlyph">The <see cref="CharacterGlyph"/> prior to this one.</param>
-            public float GetKerning(CharacterGlyph lastGlyph) => widthOverridden ? 0 : containingStore.GetKerning(lastGlyph.character, character) * scaleAdjust;
+            public virtual float GetKerning(CharacterGlyph lastGlyph) => containingStore.GetKerning(lastGlyph.Character, Character) * scaleAdjust;
 
             /// <summary>
             /// Whether this <see cref="CharacterGlyph"/> represents a whitespace.
             /// </summary>
-            public bool IsWhiteSpace => Texture == null || char.IsWhiteSpace(character);
+            public bool IsWhiteSpace => Texture == null || char.IsWhiteSpace(Character);
+        }
+
+        public sealed class FixedWidthCharacterGlyph : CharacterGlyph
+        {
+            public FixedWidthCharacterGlyph(CharacterGlyph glyph, float width)
+                : base(glyph.Character, (width - glyph.Width) / 2, glyph.YOffset, width, null, glyph.Width, glyph.Height)
+            {
+                Texture = glyph.Texture;
+            }
+
+            public override float GetKerning(CharacterGlyph lastGlyph) => 0;
         }
     }
 }
