@@ -118,6 +118,16 @@ namespace osu.Framework
 
             Characters.RemoveAt(Characters.Count - 1);
 
+            currentLineHeight = 0;
+
+            // Note: This is a very fast O(n^2) for removing all characters within a line
+            for (int i = Characters.Count - 1; i >= 0; i--)
+            {
+                currentLineHeight = Math.Max(currentLineHeight, getGlyphHeight(Characters[i].Glyph));
+
+                if (Characters[i].OnNewLine)
+                    break;
+            }
             if (currentCharacter.OnNewLine)
             {
                 // Move up to the previous line
@@ -138,18 +148,6 @@ namespace osu.Framework
 
                 if (lastCharacter != null)
                     currentPos.X -= currentCharacter.Glyph.GetKerning(lastCharacter.Value.Glyph);
-            }
-
-            // Determine the height of the current line
-            currentLineHeight = 0;
-
-            // Note: This is a very fast O(n^2) for removing all characters within a line
-            for (int i = Characters.Count - 1; i >= 0; i--)
-            {
-                currentLineHeight = Math.Max(currentLineHeight, getGlyphHeight(Characters[i].Glyph));
-
-                if (Characters[i].OnNewLine)
-                    break;
             }
         }
 
