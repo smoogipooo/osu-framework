@@ -51,18 +51,6 @@ namespace osu.Framework.IO.Stores
                 return false;
 
             glyph.Texture = namespacedTextureCache.GetOrAdd((fontName, charName), cachedTextureLookup);
-
-            if (glyph.IsWhiteSpace)
-            {
-                glyph.Width = glyph.XAdvance;
-                glyph.Height = 0;
-            }
-            else
-            {
-                glyph.Width = glyph.Texture.Width;
-                glyph.Height = glyph.Texture.Height;
-            }
-
             glyph.ApplyScaleAdjust(1 / ScaleAdjust);
 
             return true;
@@ -240,28 +228,35 @@ namespace osu.Framework.IO.Stores
             /// <summary>
             /// The texture for this character.
             /// </summary>
-            public Texture Texture { get; set; }
+            public Texture Texture
+            {
+                get => texture;
+                internal set
+                {
+                    texture = value;
 
-            /// <summary>
-            /// The amount of space that should be given to the left of the character texture.
-            /// </summary>
-            public float XOffset { get; set; }
+                    width = texture?.Width ?? 0;
+                    height = texture?.Height ?? 0;
+                }
+            }
 
-            /// <summary>
-            /// The amount of space that should be given to the top of the character texture.
-            /// </summary>
-            public float YOffset { get; set; }
+            public float XOffset => xOffset * scaleAdjust;
 
-            /// <summary>
-            /// The amount of space to advance the cursor by after drawing the texture.
-            /// </summary>
-            public float XAdvance { get; set; }
+            public float YOffset => yOffset * scaleAdjust;
 
-            public float Width { get; set; }
+            public float XAdvance => xAdvance * scaleAdjust;
 
-            public float Height { get; set; }
+            public float Width => IsWhiteSpace ? XAdvance : width * scaleAdjust;
 
-            public float ScaleAdjust { get; private set; }
+            public float Height => IsWhiteSpace ? 0 : height * scaleAdjust;
+
+            private readonly float yOffset;
+            private Texture texture;
+            private float width;
+            private float height;
+            private float xOffset;
+            private float xAdvance;
+            private float scaleAdjust;
 
             private readonly GlyphStore containingStore;
             private readonly char character;
@@ -269,45 +264,50 @@ namespace osu.Framework.IO.Stores
 
             public CharacterGlyph(char character, float xOffset, float yOffset, float xAdvance, GlyphStore containingStore)
             {
-                this.containingStore = containingStore;
                 this.character = character;
+                this.xOffset = xOffset;
+                this.yOffset = yOffset;
+                this.xAdvance = xAdvance;
+                this.containingStore = containingStore;
 
-                Texture = null;
-                XOffset = xOffset;
-                YOffset = yOffset;
-                XAdvance = xAdvance;
-                Width = 0;
-                Height = 0;
-
-                ScaleAdjust = 1;
+                texture = null;
+                width = 0;
+                height = 0;
+                scaleAdjust = 1;
                 widthOverridden = false;
             }
 
             /// <summary>
             /// Apply a scale adjust to metrics of this glyph.
             /// </summary>
-            /// <param name="scaleAdjust">The adjustment to multiply all metrics by.</param>
-            public void ApplyScaleAdjust(float scaleAdjust)
-            {
-                XOffset *= scaleAdjust;
-                YOffset *= scaleAdjust;
-                XAdvance *= scaleAdjust;
-                Width *= scaleAdjust;
-                Height *= scaleAdjust;
-                ScaleAdjust *= scaleAdjust;
-            }
+            /// <param name="scaleAdjust">The adjustment to apply. This will be multiplied into any existing adjustment.</param>
+            public void ApplyScaleAdjust(float scaleAdjust) => this.scaleAdjust *= scaleAdjust;
 
+            /// <summary>
+            /// Overrides the width of this <see cref="CharacterGlyph"/>, adjusting <see cref="XOffset"/> to reposition the texture in the centre of the new width.
+            /// Useful for displaying this <see cref="CharacterGlyph"/> in as part of a fake fixed-width font.
+            /// </summary>
+            /// <remarks>
+            /// This only adjusts the <see cref="XAdvance"/> of the <see cref="CharacterGlyph"/>.
+            /// </remarks>
+            /// <param name="widthOverride">The new width.</param>
             public void ApplyWidthOverride(float widthOverride)
             {
                 widthOverridden = true;
 
-                // Reposition such that the texture is centred within the provided width
-                XAdvance = widthOverride;
-                XOffset = (widthOverride - Width) / 2;
+                xAdvance = widthOverride / scaleAdjust;
+                xOffset = (widthOverride - Width) / 2 / scaleAdjust;
             }
 
-            public float GetKerning(CharacterGlyph lastGlyph) => widthOverridden ? 0 : containingStore.GetKerning(lastGlyph.character, character) * ScaleAdjust;
+            /// <summary>
+            /// Retrieves the kerning between this <see cref="CharacterGlyph"/> and the one prior to it.
+            /// </summary>
+            /// <param name="lastGlyph">The <see cref="CharacterGlyph"/> prior to this one.</param>
+            public float GetKerning(CharacterGlyph lastGlyph) => widthOverridden ? 0 : containingStore.GetKerning(lastGlyph.character, character) * scaleAdjust;
 
+            /// <summary>
+            /// Whether this <see cref="CharacterGlyph"/> represents a whitespace.
+            /// </summary>
             public bool IsWhiteSpace => Texture == null || char.IsWhiteSpace(character);
         }
     }
