@@ -25,7 +25,7 @@ namespace osu.Framework
         /// </summary>
         public readonly List<SpriteText.CharacterPart> Characters = new List<SpriteText.CharacterPart>();
 
-        private FontStore.CharacterGlyph? lastGlyph => Characters.Count == 0 ? null : (FontStore.CharacterGlyph?)Characters[Characters.Count - 1].Glyph;
+        private FontStore.CharacterGlyph lastGlyph => Characters.Count == 0 ? null : Characters[Characters.Count - 1].Glyph;
 
         private readonly float fontSize;
         private readonly bool useFullGlyphHeight;
@@ -79,7 +79,7 @@ namespace osu.Framework
             // 3. Advance the current position by glyph's XAdvance.
 
             // Kerning is not applied if the user provided a custom width
-            float kerning = lastGlyph == null ? 0 : glyph.GetKerning(lastGlyph.Value);
+            float kerning = lastGlyph == null ? 0 : glyph.GetKerning(lastGlyph);
 
             // Check if there is enough space for the character and let subclasses decide whether to continue adding the character if not
             if (!HasAvailableSpace(kerning + glyph.XAdvance))

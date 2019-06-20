@@ -37,7 +37,7 @@ namespace osu.Framework.Tests.Visual.Sprites
             textDrawables.Add(Cell(1, 2).Child = new ColorBackedContainer("m"));
             textDrawables.Add(Cell(1, 3).Child = new ColorBackedContainer("e"));
 
-            fontStore.TryGetCharacter("", 'm', out var glyph);
+            var glyph = fontStore.Get("", 'm');
             textDrawables.Add(Cell(2, 0).Child = new ColorBackedContainer("Thequickbrownfoxjumpsoverthelazydog", 250));
             textDrawables.Add(Cell(2, 3).Child = new ColorBackedContainer("The quick brown fox jumps over the lazy dog.", 250));
             textDrawables.Add(Cell(2, 6).Child = new ColorBackedContainer("iimmss", glyph.XAdvance * font_size));

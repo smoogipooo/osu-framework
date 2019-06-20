@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 
 namespace osu.Framework.IO.Stores
 {
-    public class FontStore : TextureStore
+    public class FontStore : TextureStore, IGlyphLookupStore
     {
         private readonly List<GlyphStore> glyphStores = new List<GlyphStore>();
 
@@ -38,23 +38,22 @@ namespace osu.Framework.IO.Stores
             };
         }
 
-        /// <summary>
-        /// Attempts to retrieve the texture of a character from a specified font and its associated spacing information.
-        /// </summary>
-        /// <param name="charName">The character to look up.</param>
-        /// <param name="fontName">The font look for the character in.</param>
-        /// <param name="glyph">The glyph retrieved, if it exists.</param>
-        /// <returns>Whether or not a <see cref="CharacterGlyph"/> was able to be retrieved.</returns>
-        public bool TryGetCharacter(string fontName, char charName, out CharacterGlyph glyph)
+        public CharacterGlyph Get(string fontName, char character)
         {
-            if (!tryGetCharacterGlyph(fontName, charName, out glyph))
-                return false;
+            var glyphStore = getGlyphStore(fontName, character);
 
-            glyph.Texture = namespacedTextureCache.GetOrAdd((fontName, charName), cachedTextureLookup);
+            if (glyphStore == null)
+                return null;
+
+            var glyph = glyphStore.GetCharacterInfo(character);
+
+            glyph.Texture = namespacedTextureCache.GetOrAdd((fontName, character), cachedTextureLookup);
             glyph.ApplyScaleAdjust(1 / ScaleAdjust);
 
-            return true;
+            return glyph;
         }
+
+        public Task<CharacterGlyph> GetAsync(string fontName, char character) => Task.Run(() => Get(fontName, character));
 
         /// <summary>
         /// Retrieves the base height of a font containing a particular character.
@@ -78,27 +77,6 @@ namespace osu.Framework.IO.Stores
             var glyphStore = getGlyphStore(fontName);
 
             return glyphStore?.GetBaseHeight() / ScaleAdjust;
-        }
-
-        /// <summary>
-        /// Retrieves the character information from this <see cref="FontStore"/>.
-        /// </summary>
-        /// <param name="charName">The character to look up.</param>
-        /// <param name="fontName">The font look in for the character.</param>
-        /// <param name="glyph">The found glyph.</param>
-        /// <returns>Whether a matching <see cref="CharacterGlyph"/> was found. If a font name is not provided, gets the glyph from the first font store that supports it.</returns>
-        private bool tryGetCharacterGlyph(string fontName, char charName, out CharacterGlyph glyph)
-        {
-            var glyphStore = getGlyphStore(fontName, charName);
-
-            if (glyphStore == null)
-            {
-                glyph = default;
-                return false;
-            }
-
-            glyph = glyphStore.GetCharacterInfo(charName);
-            return true;
         }
 
         private string getTextureName(string fontName, char charName) => string.IsNullOrEmpty(fontName) ? charName.ToString() : $"{fontName}/{charName}";
@@ -223,7 +201,7 @@ namespace osu.Framework.IO.Stores
         /// <summary>
         /// Contains the texture and associated spacing information for a character.
         /// </summary>
-        public struct CharacterGlyph
+        public class CharacterGlyph
         {
             /// <summary>
             /// The texture for this character.

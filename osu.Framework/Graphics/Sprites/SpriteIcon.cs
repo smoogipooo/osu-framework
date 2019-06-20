@@ -73,7 +73,9 @@ namespace osu.Framework.Graphics.Sprites
 
             if (Equals(loadableIcon, loadedIcon)) return;
 
-            if (store.TryGetCharacter(loadableIcon.FontName, Icon.Icon, out var glyph))
+            var glyph = store.Get(loadableIcon.FontName, Icon.Icon);
+
+            if (glyph != null)
             {
                 spriteMain.Texture = glyph.Texture;
                 spriteShadow.Texture = glyph.Texture;

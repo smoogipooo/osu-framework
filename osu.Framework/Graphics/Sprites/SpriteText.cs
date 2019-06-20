@@ -568,9 +568,7 @@ namespace osu.Framework.Graphics.Sprites
 
         private FontStore.CharacterGlyph getCharacter(char c, bool applyFixedWithIfRequired = true)
         {
-            FontStore.CharacterGlyph glyph;
-            if (!TryGetCharacter(c, out glyph))
-                glyph = GetFallbackCharacter(c);
+            FontStore.CharacterGlyph glyph = TryGetCharacter(c) ?? GetFallbackCharacter(c);
 
             if (applyFixedWithIfRequired && useFixedWidthForCharacter(c))
                 glyph.ApplyWidthOverride(constantWidth);
@@ -582,17 +580,13 @@ namespace osu.Framework.Graphics.Sprites
         /// Gets the texture and its associated spacing information for the specified character.
         /// </summary>
         /// <param name="c">The character to lookup.</param>
-        /// <param name="glyph">The <see cref="FontStore.CharacterGlyph"/> for the character, if found.</param>
         /// <returns>Whether or not the lookup was successful.</returns>
-        protected virtual bool TryGetCharacter(char c, out FontStore.CharacterGlyph glyph)
+        protected virtual FontStore.CharacterGlyph TryGetCharacter(char c)
         {
             if (store == null)
-            {
-                glyph = default;
-                return false;
-            }
+                return null;
 
-            return store.TryGetCharacter(Font.FontName, c, out glyph) || store.TryGetCharacter(null, c, out glyph);
+            return store.Get(Font.FontName, c) ?? store.Get(null, c);
         }
 
         /// <summary>
@@ -600,11 +594,7 @@ namespace osu.Framework.Graphics.Sprites
         /// </summary>
         /// <param name="c">The character which doesn't exist in the current font.</param>
         /// <returns>The texture for the given character and its associated spacing information.</returns>
-        protected virtual FontStore.CharacterGlyph GetFallbackCharacter(char c)
-        {
-            TryGetCharacter('?', out var glyph);
-            return glyph;
-        }
+        protected virtual FontStore.CharacterGlyph GetFallbackCharacter(char c) => TryGetCharacter('?');
 
         /// <summary>
         /// Whether the visual representation of a character should use fixed width when <see cref="FontUsage.FixedWidth"/> is true.
