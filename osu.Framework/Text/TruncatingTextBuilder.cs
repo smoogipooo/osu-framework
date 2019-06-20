@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using osu.Framework.IO.Stores;
 using osuTK;
 
-namespace osu.Framework
+namespace osu.Framework.Text
 {
     public class TruncatingTextBuilder : TextBuilder
     {

@@ -8,7 +8,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.IO.Stores;
 using osuTK;
 
-namespace osu.Framework
+namespace osu.Framework.Text
 {
     /// <summary>
     /// A text builder for <see cref="SpriteText"/> and other text-based display components.

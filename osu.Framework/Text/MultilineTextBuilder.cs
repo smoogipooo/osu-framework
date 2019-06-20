@@ -3,7 +3,7 @@
 
 using osuTK;
 
-namespace osu.Framework
+namespace osu.Framework.Text
 {
     public class MultilineTextBuilder : TextBuilder
     {
