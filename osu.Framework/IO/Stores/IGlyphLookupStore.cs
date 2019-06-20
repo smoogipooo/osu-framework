@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Threading.Tasks;
+using osu.Framework.Text;
 
 namespace osu.Framework.IO.Stores
 {
@@ -13,7 +14,7 @@ namespace osu.Framework.IO.Stores
         /// <param name="fontName">The name of the font.</param>
         /// <param name="character">The character to retrieve.</param>
         /// <returns>The character glyph.</returns>
-        FontStore.CharacterGlyph Get(string fontName, char character);
+        CharacterGlyph Get(string fontName, char character);
 
         /// <summary>
         /// Retrieves a glyph from the store asynchronously.
@@ -21,6 +22,6 @@ namespace osu.Framework.IO.Stores
         /// <param name="fontName">The name of the font.</param>
         /// <param name="character">The character to retrieve.</param>
         /// <returns>The character glyph.</returns>
-        Task<FontStore.CharacterGlyph> GetAsync(string fontName, char character);
+        Task<CharacterGlyph> GetAsync(string fontName, char character);
     }
 }

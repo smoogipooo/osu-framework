@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Logging;
+using osu.Framework.Text;
 using SharpFNT;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
@@ -69,10 +70,10 @@ namespace osu.Framework.IO.Stores
         /// </summary>
         /// <param name="c">The character to retrieve the information for.</param>
         /// <returns>The information for the specified character, without the texture.</returns>
-        public FontStore.CharacterGlyph GetCharacterInfo(char c)
+        public CharacterGlyph GetCharacterInfo(char c)
         {
             var character = Font.GetCharacter(c);
-            return new FontStore.CharacterGlyph(c, character.XOffset, character.YOffset, character.XAdvance, this);
+            return new CharacterGlyph(c, character.XOffset, character.YOffset, character.XAdvance, this);
         }
 
         public int GetKerning(char left, char right) => Font.GetKerningAmount(left, right);

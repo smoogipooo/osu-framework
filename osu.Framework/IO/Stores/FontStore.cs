@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using osu.Framework.Logging;
 using System.Collections.Concurrent;
+using osu.Framework.Text;
 
 namespace osu.Framework.IO.Stores
 {
@@ -196,78 +197,6 @@ namespace osu.Framework.IO.Stores
         {
             base.Dispose(disposing);
             glyphStores.ForEach(g => g.Dispose());
-        }
-
-        /// <summary>
-        /// Contains the texture and associated spacing information for a character.
-        /// </summary>
-        public class CharacterGlyph
-        {
-            /// <summary>
-            /// The texture for this character.
-            /// </summary>
-            public Texture Texture { get; internal set; }
-
-            public float XOffset => xOffset * scaleAdjust;
-
-            public float YOffset => yOffset * scaleAdjust;
-
-            public float XAdvance => xAdvance * scaleAdjust;
-
-            public float Width => IsWhiteSpace ? XAdvance : (width ?? Texture?.Width ?? 0) * scaleAdjust;
-
-            public float Height => IsWhiteSpace ? 0 : (height ?? Texture?.Height ?? 0) * scaleAdjust;
-
-            public readonly char Character;
-
-            private readonly GlyphStore containingStore;
-            private readonly float yOffset;
-            private readonly float xOffset;
-            private readonly float xAdvance;
-            private readonly float? width;
-            private readonly float? height;
-
-            private float scaleAdjust = 1;
-
-            public CharacterGlyph(char character, float xOffset, float yOffset, float xAdvance, GlyphStore containingStore, float? width = null, float? height = null)
-            {
-                this.xOffset = xOffset;
-                this.yOffset = yOffset;
-                this.xAdvance = xAdvance;
-                this.containingStore = containingStore;
-                this.width = width;
-                this.height = height;
-
-                Character = character;
-            }
-
-            /// <summary>
-            /// Apply a scale adjust to metrics of this glyph.
-            /// </summary>
-            /// <param name="scaleAdjust">The adjustment to apply. This will be multiplied into any existing adjustment.</param>
-            public void ApplyScaleAdjust(float scaleAdjust) => this.scaleAdjust *= scaleAdjust;
-
-            /// <summary>
-            /// Retrieves the kerning between this <see cref="CharacterGlyph"/> and the one prior to it.
-            /// </summary>
-            /// <param name="lastGlyph">The <see cref="CharacterGlyph"/> prior to this one.</param>
-            public virtual float GetKerning(CharacterGlyph lastGlyph) => containingStore.GetKerning(lastGlyph.Character, Character) * scaleAdjust;
-
-            /// <summary>
-            /// Whether this <see cref="CharacterGlyph"/> represents a whitespace.
-            /// </summary>
-            public bool IsWhiteSpace => Texture == null || char.IsWhiteSpace(Character);
-        }
-
-        public sealed class FixedWidthCharacterGlyph : CharacterGlyph
-        {
-            public FixedWidthCharacterGlyph(CharacterGlyph glyph, float width)
-                : base(glyph.Character, (width - glyph.Width) / 2, glyph.YOffset, width, null, glyph.Width, glyph.Height)
-            {
-                Texture = glyph.Texture;
-            }
-
-            public override float GetKerning(CharacterGlyph lastGlyph) => 0;
         }
     }
 }

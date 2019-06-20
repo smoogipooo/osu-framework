@@ -402,12 +402,12 @@ namespace osu.Framework.Graphics.Sprites
         #region Characters
 
         private Cached charactersCache = new Cached();
-        private readonly List<CharacterPart> charactersBacking = new List<CharacterPart>();
+        private readonly List<CharacterInfo> charactersBacking = new List<CharacterInfo>();
 
         /// <summary>
         /// The characters in local space.
         /// </summary>
-        private List<CharacterPart> characters
+        private List<CharacterInfo> characters
         {
             get
             {
