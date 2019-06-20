@@ -10,14 +10,17 @@ namespace osu.Framework.Text
 {
     public class TruncatingTextBuilder : TextBuilder
     {
+        /// <summary>
+        /// The string to be displayed if the text exceeds the allowable text area.
+        /// </summary>
         public string EllipsisString;
 
-        private readonly FontStore store;
+        private readonly IGlyphLookupStore store;
         private readonly FontUsage font;
         private readonly bool useFullGlyphHeight;
         private readonly Vector2 spacing;
 
-        public TruncatingTextBuilder(FontStore store, FontUsage font, float maxWidth, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
+        public TruncatingTextBuilder(IGlyphLookupStore store, FontUsage font, float maxWidth, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
             : base(store, font, maxWidth, useFullGlyphHeight, startOffset, spacing)
         {
             this.store = store;

@@ -9,7 +9,7 @@ namespace osu.Framework.Text
 {
     public class MultilineTextBuilder : TextBuilder
     {
-        public MultilineTextBuilder(FontStore store, FontUsage font, float maxWidth, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
+        public MultilineTextBuilder(IGlyphLookupStore store, FontUsage font, float maxWidth, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
             : base(store, font, maxWidth, useFullGlyphHeight, startOffset, spacing)
         {
         }

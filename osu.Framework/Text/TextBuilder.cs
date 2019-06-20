@@ -17,7 +17,7 @@ namespace osu.Framework.Text
     public class TextBuilder
     {
         /// <summary>
-        /// The size of the text area.
+        /// The final size of the text area.
         /// </summary>
         public Vector2 TextSize { get; private set; }
 
@@ -26,13 +26,19 @@ namespace osu.Framework.Text
         /// </summary>
         public readonly List<SpriteText.CharacterPart> Characters = new List<SpriteText.CharacterPart>();
 
-        public virtual char[] NeverFixedWidthCharacters { get; set; } = { '.', ',', ':', ' ' };
+        /// <summary>
+        /// The characters for which fixed width should never be applied.
+        /// </summary>
+        public char[] NeverFixedWidthCharacters = { '.', ',', ':', ' ' };
 
-        public virtual char FallbackCharacter { get; set; } = '?';
+        /// <summary>
+        /// The character to use if a glyph lookup fails.
+        /// </summary>
+        public char FallbackCharacter = '?';
 
         private FontStore.CharacterGlyph lastGlyph => Characters.Count == 0 ? null : Characters[Characters.Count - 1].Glyph;
 
-        private readonly FontStore store;
+        private readonly IGlyphLookupStore store;
         private readonly FontUsage font;
         private readonly bool useFullGlyphHeight;
         private readonly Vector2 startOffset;
@@ -46,11 +52,13 @@ namespace osu.Framework.Text
         /// <summary>
         /// Creates a new <see cref="TextBuilder"/>.
         /// </summary>
+        /// <param name="store">The store from which glyphs are to be retrieved from.</param>
+        /// <param name="font">The font to use for glyph lookups from <paramref name="store"/>.</param>
         /// <param name="useFullGlyphHeight">True to use the provided <see cref="font"/> size as the height for each line. False if the height of each individual glyph should be used.</param>
         /// <param name="startOffset">The offset at which characters should begin being added at.</param>
         /// <param name="spacing">The spacing between characters.</param>
         /// <param name="maxWidth">The maximum width of the resulting text bounds.</param>
-        public TextBuilder(FontStore store, FontUsage font, float maxWidth = float.MaxValue, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
+        public TextBuilder(IGlyphLookupStore store, FontUsage font, float maxWidth = float.MaxValue, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
         {
             this.store = store;
             this.font = font;
