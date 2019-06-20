@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.IO.Stores;
 
@@ -17,16 +16,34 @@ namespace osu.Framework.Text
         /// </summary>
         public Texture Texture { get; internal set; }
 
+        /// <summary>
+        /// How much the current x-position should be moved for drawing. This should not adjust the cursor position.
+        /// </summary>
         public float XOffset => xOffset * scaleAdjust;
 
+        /// <summary>
+        /// How much the current y-position should be moved for drawing. This should not adjust the cursor position.
+        /// </summary>
         public float YOffset => yOffset * scaleAdjust;
 
+        /// <summary>
+        /// How much the current x-position should be moved after drawing a character.
+        /// </summary>
         public float XAdvance => xAdvance * scaleAdjust;
 
+        /// <summary>
+        /// The width of the area that should be drawn.
+        /// </summary>
         public float Width => IsWhiteSpace ? XAdvance : (width ?? Texture?.Width ?? 0) * scaleAdjust;
 
+        /// <summary>
+        /// The height of the area that should be drawn.
+        /// </summary>
         public float Height => IsWhiteSpace ? 0 : (height ?? Texture?.Height ?? 0) * scaleAdjust;
 
+        /// <summary>
+        /// The character represented by this glyph.
+        /// </summary>
         public readonly char Character;
 
         private readonly GlyphStore containingStore;
@@ -65,6 +82,6 @@ namespace osu.Framework.Text
         /// <summary>
         /// Whether this <see cref="CharacterGlyph"/> represents a whitespace.
         /// </summary>
-        public bool IsWhiteSpace => Texture == null || Char.IsWhiteSpace(Character);
+        public bool IsWhiteSpace => Texture == null || char.IsWhiteSpace(Character);
     }
 }
