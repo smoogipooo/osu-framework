@@ -82,25 +82,15 @@ namespace osu.Framework.Text
         public void AddText(string text)
         {
             foreach (var c in text)
-                AddCharacter(c);
-        }
+            {
+                var glyph = getGlyph(c);
 
-        /// <summary>
-        /// Adds a single character to this <see cref="TextBuilder"/>.
-        /// </summary>
-        /// <param name="character">The character to add.</param>
-        /// <returns>The added glyph.</returns>
-        public CharacterGlyph AddCharacter(char character)
-        {
-            var glyph = getGlyph(character);
-
-            // Array.IndexOf is used to avoid LINQ
-            if (font.FixedWidth && Array.IndexOf(NeverFixedWidthCharacters, character) == -1)
-                addCharacter(glyph = new FixedWidthCharacterGlyph(glyph, getConstantWidth()));
-            else
-                addCharacter(glyph);
-
-            return glyph;
+                // Array.IndexOf is used to avoid LINQ
+                if (font.FixedWidth && Array.IndexOf(NeverFixedWidthCharacters, c) == -1)
+                    addCharacter(new FixedWidthCharacterGlyph(glyph, getConstantWidth()));
+                else
+                    addCharacter(glyph);
+            }
         }
 
         /// <summary>
