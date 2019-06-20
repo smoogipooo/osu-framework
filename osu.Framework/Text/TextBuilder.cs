@@ -174,7 +174,7 @@ namespace osu.Framework.Text
                 return;
 
             CharacterInfo currentCharacter = Characters[Characters.Count - 1];
-            CharacterInfo? lastCharacter = Characters.Count == 1 ? null : (CharacterInfo?)Characters[Characters.Count - 2];
+            CharacterInfo lastCharacter = Characters.Count == 1 ? null : Characters[Characters.Count - 2];
 
             Characters.RemoveAt(Characters.Count - 1);
 
@@ -206,7 +206,7 @@ namespace osu.Framework.Text
                 {
                     // The character's draw rectangle is the only marker that keeps a constant state for the position, but it has the glyph's XOffset added into it
                     // So the post-kerned position can be retrieved by taking the XOffset away, and the post-XAdvanced position is retrieved by adding the XAdvance back in
-                    currentPos.X = lastCharacter.Value.DrawRectangle.Left - lastCharacter.Value.Glyph.XOffset + lastCharacter.Value.Glyph.XAdvance;
+                    currentPos.X = lastCharacter.DrawRectangle.Left - lastCharacter.Glyph.XOffset + lastCharacter.Glyph.XAdvance;
                 }
             }
             else
@@ -215,7 +215,7 @@ namespace osu.Framework.Text
                 currentPos.X -= currentCharacter.Glyph.XAdvance;
 
                 if (lastCharacter != null)
-                    currentPos.X -= currentCharacter.Glyph.GetKerning(lastCharacter.Value.Glyph);
+                    currentPos.X -= currentCharacter.Glyph.GetKerning(lastCharacter.Glyph);
             }
         }
 
