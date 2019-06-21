@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using osu.Framework.Logging;
 using System.Collections.Concurrent;
 using osu.Framework.Text;
+using osuTK.Graphics.OpenGL;
 
 namespace osu.Framework.IO.Stores
 {
@@ -41,11 +42,24 @@ namespace osu.Framework.IO.Stores
 
         public ICharacterGlyph Get(string fontName, char character)
         {
-            var glyphStore = getGlyphStore(fontName, character);
+            foreach (var store in glyphStores)
+            {
+                if (store.ContainsTexture(getTextureName(fontName, character)))
+                {
+                    return store.GetCharacterInfo(character)
+                                .WithTexture(namespacedTextureCache.GetOrAdd((fontName, character), cachedTextureLookup))
+                                .WithScaleAdjust(1 / ScaleAdjust);
+                }
+            }
 
-            return glyphStore?.GetCharacterInfo(character)
-                             .WithTexture(namespacedTextureCache.GetOrAdd((fontName, character), cachedTextureLookup))
-                             .WithScaleAdjust(1 / ScaleAdjust);
+            foreach (var store in nestedFontStores)
+            {
+                var glyph = store.Get(fontName, character);
+                if (glyph != null)
+                    return glyph;
+            }
+
+            return null;
         }
 
         public Task<ICharacterGlyph> GetAsync(string fontName, char character) => Task.Run(() => Get(fontName, character));
@@ -53,13 +67,24 @@ namespace osu.Framework.IO.Stores
         /// <summary>
         /// Retrieves the base height of a font containing a particular character.
         /// </summary>
-        /// <param name="c">The charcter to search for.</param>
+        /// <param name="c">The character to search for.</param>
         /// <returns>The base height of the font.</returns>
         public float? GetBaseHeight(char c)
         {
-            var glyphStore = getGlyphStore(string.Empty, c);
+            foreach (var store in glyphStores)
+            {
+                if (store.ContainsTexture(getTextureName(null, c)))
+                    return store.GetBaseHeight() / ScaleAdjust;
+            }
 
-            return glyphStore?.GetBaseHeight() / ScaleAdjust;
+            foreach (var store in nestedFontStores)
+            {
+                var bh = store.GetBaseHeight(c);
+                if (bh != null)
+                    return bh;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -69,44 +94,23 @@ namespace osu.Framework.IO.Stores
         /// <returns>The base height of the font.</returns>
         public float? GetBaseHeight(string fontName)
         {
-            var glyphStore = getGlyphStore(fontName);
-
-            return glyphStore?.GetBaseHeight() / ScaleAdjust;
-        }
-
-        private string getTextureName(string fontName, char charName) => string.IsNullOrEmpty(fontName) ? charName.ToString() : $"{fontName}/{charName}";
-
-        /// <summary>
-        /// Retrieves a <see cref="GlyphStore"/> from this <see cref="FontStore"/> that matches a font and character.
-        /// </summary>
-        /// <param name="fontName">The font to look up the <see cref="GlyphStore"/> for.</param>
-        /// <param name="charName">A character to look up in the <see cref="GlyphStore"/>.</param>
-        /// <returns>The first available <see cref="GlyphStore"/> matches the name and contains the specified character. Null if not available.</returns>
-        private GlyphStore getGlyphStore(string fontName, char? charName = null)
-        {
             foreach (var store in glyphStores)
             {
-                if (charName == null)
-                {
-                    if (store.FontName == fontName)
-                        return store;
-                }
-                else
-                {
-                    if (store.ContainsTexture(getTextureName(fontName, charName.Value)))
-                        return store;
-                }
+                if (store.FontName == fontName)
+                    return store.GetBaseHeight();
             }
 
             foreach (var store in nestedFontStores)
             {
-                var nestedStore = store.getGlyphStore(fontName, charName);
-                if (nestedStore != null)
-                    return nestedStore;
+                var bh = store.GetBaseHeight(fontName);
+                if (bh != null)
+                    return bh;
             }
 
             return null;
         }
+
+        private string getTextureName(string fontName, char charName) => string.IsNullOrEmpty(fontName) ? charName.ToString() : $"{fontName}/{charName}";
 
         protected override IEnumerable<string> GetFilenames(string name)
         {
