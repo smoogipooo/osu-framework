@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using JetBrains.Annotations;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.IO.Stores;
 
@@ -18,12 +19,12 @@ namespace osu.Framework.Text
 
         private readonly GlyphStore containingStore;
 
-        public CharacterGlyph(char character, float xOffset, float yOffset, float xAdvance, GlyphStore containingStore)
+        public CharacterGlyph(char character, float xOffset, float yOffset, float xAdvance, [CanBeNull] GlyphStore containingStore)
             : this(null, character, xOffset, yOffset, xAdvance, containingStore)
         {
         }
 
-        public CharacterGlyph(Texture texture, char character, float xOffset, float yOffset, float xAdvance, GlyphStore containingStore)
+        public CharacterGlyph(Texture texture, char character, float xOffset, float yOffset, float xAdvance, [CanBeNull] GlyphStore containingStore)
         {
             this.containingStore = containingStore;
 
@@ -34,7 +35,7 @@ namespace osu.Framework.Text
             XAdvance = xAdvance;
         }
 
-        public float GetKerning(ICharacterGlyph lastGlyph) => containingStore.GetKerning(lastGlyph.Character, Character);
+        public float GetKerning(ICharacterGlyph lastGlyph) => containingStore?.GetKerning(lastGlyph.Character, Character) ?? 0;
 
         public CharacterGlyph WithTexture(Texture texture) => new CharacterGlyph(texture, Character, XOffset, YOffset, XAdvance, containingStore);
     }
