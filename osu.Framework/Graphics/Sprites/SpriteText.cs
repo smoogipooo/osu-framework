@@ -96,6 +96,8 @@ namespace osu.Framework.Graphics.Sprites
 
         private readonly Bindable<string> current = new Bindable<string>(string.Empty);
 
+        private Bindable<string> currentBound;
+
         public Bindable<string> Current
         {
             get => current;
@@ -104,8 +106,8 @@ namespace osu.Framework.Graphics.Sprites
                 if (value == null)
                     throw new ArgumentNullException(nameof(value));
 
-                current.UnbindBindings();
-                current.BindTo(value);
+                if (currentBound != null) current.UnbindFrom(currentBound);
+                current.BindTo(currentBound = value);
             }
         }
 
