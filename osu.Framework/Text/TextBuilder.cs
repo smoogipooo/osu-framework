@@ -145,8 +145,14 @@ namespace osu.Framework.Text
         /// <summary>
         /// Adds a new line to this <see cref="TextBuilder"/>.
         /// </summary>
+        /// <remarks>
+        /// A height equal to that of the font size will be assumed if the current line is empty, regardless of <see cref="useFontSizeAsHeight"/>.
+        /// </remarks>
         public void AddNewLine()
         {
+            if (currentNewLine)
+                currentLineHeight = font.Size;
+
             // Reset + vertically offset the current position
             currentPos.X = startOffset.X;
             currentPos.Y += currentLineHeight + spacing.Y;
