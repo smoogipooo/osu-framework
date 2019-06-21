@@ -219,13 +219,12 @@ namespace osu.Framework.Text
 
             for (int i = 0; i < Characters.Count; i++)
             {
-                // As above, only the draw rectangle is kept in a constant state, so we can retrieve the post-kerned position for each character
-                // by removing the offsets from the rectangle and the post-XAdvanced position by adding the XAdvance to the result
+                // As above for the X and Y positions
                 TextSize = Vector2.ComponentMax(
                     TextSize,
                     new Vector2(
                         Characters[i].DrawRectangle.Left - Characters[i].Glyph.XOffset + Characters[i].Glyph.XAdvance,
-                        Characters[i].DrawRectangle.Top - Characters[i].Glyph.YOffset)
+                        Characters[i].DrawRectangle.Top - Characters[i].Glyph.YOffset + currentLineHeight)
                 );
             }
         }
