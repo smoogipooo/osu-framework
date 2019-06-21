@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using osu.Framework.Logging;
 using System.Collections.Concurrent;
 using osu.Framework.Text;
-using osuTK.Graphics.OpenGL;
 
 namespace osu.Framework.IO.Stores
 {

@@ -11,22 +11,24 @@ namespace osu.Framework.Text
     public readonly struct ScaleAdjustedCharacterGlyph : ICharacterGlyph
     {
         public Texture Texture => glyph.Texture;
-        public float XOffset => glyph.XOffset * scaleAdjustment;
-        public float YOffset => glyph.YOffset * scaleAdjustment;
-        public float XAdvance => glyph.XAdvance * scaleAdjustment;
-        public float Width => glyph.Width * scaleAdjustment;
-        public float Height => glyph.Height * scaleAdjustment;
+        public float XOffset => glyph.XOffset * ScaleAdjustment;
+        public float YOffset => glyph.YOffset * ScaleAdjustment;
+        public float XAdvance => glyph.XAdvance * ScaleAdjustment;
+        public float Width => glyph.Width * ScaleAdjustment;
+        public float Height => glyph.Height * ScaleAdjustment;
         public char Character => glyph.Character;
 
+        public readonly float ScaleAdjustment;
+
         private readonly ICharacterGlyph glyph;
-        private readonly float scaleAdjustment;
 
         public ScaleAdjustedCharacterGlyph(ICharacterGlyph glyph, float scaleAdjustment)
         {
             this.glyph = glyph;
-            this.scaleAdjustment = scaleAdjustment;
+
+            ScaleAdjustment = scaleAdjustment;
         }
 
-        public float GetKerning(ICharacterGlyph lastGlyph) => glyph.GetKerning(lastGlyph) * scaleAdjustment;
+        public float GetKerning(ICharacterGlyph lastGlyph) => glyph.GetKerning(lastGlyph) * ScaleAdjustment;
     }
 }
