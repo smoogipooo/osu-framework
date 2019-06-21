@@ -544,7 +544,7 @@ namespace osu.Framework.Graphics.Sprites
 
         #endregion
 
-        protected virtual TextBuilder CreateTextBuilder(FontStore store)
+        protected virtual TextBuilder CreateTextBuilder(IGlyphLookupStore store)
         {
             float maxWidth = requiresAutoSizedWidth ? float.PositiveInfinity : ApplyRelativeAxes(RelativeSizeAxes, new Vector2(base.Width, base.Height), FillMode).X - Padding.Right;
 

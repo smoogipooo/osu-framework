@@ -96,7 +96,7 @@ namespace osu.Framework.Graphics.Performance
                 Font = new FontUsage(fixedWidth: true);
             }
 
-            protected override TextBuilder CreateTextBuilder(FontStore store)
+            protected override TextBuilder CreateTextBuilder(IGlyphLookupStore store)
             {
                 var builder = base.CreateTextBuilder(store);
 
