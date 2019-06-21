@@ -111,7 +111,7 @@ namespace osu.Framework.Text
             // 3. Advance the current position by glyph's XAdvance.
 
             // Kerning is not applied if the user provided a custom width
-            float kerning = lastGlyph == null ? 0 : glyph.GetKerning(lastGlyph);
+            float kerning = currentNewLine || lastGlyph == null ? 0 : glyph.GetKerning(lastGlyph);
 
             // Check if there is enough space for the character and let subclasses decide whether to continue adding the character if not
             if (!HasAvailableSpace(kerning + glyph.XAdvance))
