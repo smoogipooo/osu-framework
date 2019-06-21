@@ -17,15 +17,15 @@ namespace osu.Framework.Text
 
         private readonly IGlyphLookupStore store;
         private readonly FontUsage font;
-        private readonly bool useFullGlyphHeight;
+        private readonly bool useFontSizeAsHeight;
         private readonly Vector2 spacing;
 
-        public TruncatingTextBuilder(IGlyphLookupStore store, FontUsage font, float maxWidth, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
-            : base(store, font, maxWidth, useFullGlyphHeight, startOffset, spacing)
+        public TruncatingTextBuilder(IGlyphLookupStore store, FontUsage font, float maxWidth, bool useFontSizeAsHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
+            : base(store, font, maxWidth, useFontSizeAsHeight, startOffset, spacing)
         {
             this.store = store;
             this.font = font;
-            this.useFullGlyphHeight = useFullGlyphHeight;
+            this.useFontSizeAsHeight = useFontSizeAsHeight;
             this.spacing = spacing;
         }
 
@@ -57,7 +57,7 @@ namespace osu.Framework.Text
 
                 if (Characters.Count == 0)
                     break;
-            } while (Characters[Characters.Count - 1].Glyph.IsWhiteSpace || !HasAvailableSpace(getEllipsisSize().X));
+            } while (Characters[Characters.Count - 1].Glyph.IsWhiteSpace() || !HasAvailableSpace(getEllipsisSize().X));
 
             AddText(EllipsisString);
 
@@ -71,7 +71,7 @@ namespace osu.Framework.Text
             if (ellipsisSizeCache.IsValid)
                 return ellipsisSizeCache.Value;
 
-            var builder = new TextBuilder(store, font, float.MaxValue, useFullGlyphHeight, Vector2.Zero, spacing)
+            var builder = new TextBuilder(store, font, float.MaxValue, useFontSizeAsHeight, Vector2.Zero, spacing)
             {
                 NeverFixedWidthCharacters = NeverFixedWidthCharacters,
                 FallbackCharacter = FallbackCharacter

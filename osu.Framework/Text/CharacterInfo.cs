@@ -13,7 +13,7 @@ namespace osu.Framework.Text
         /// <summary>
         /// The glyph which this character represents.
         /// </summary>
-        public CharacterGlyph Glyph;
+        public ICharacterGlyph Glyph;
 
         /// <summary>
         /// The rectangle for the character to be drawn in.

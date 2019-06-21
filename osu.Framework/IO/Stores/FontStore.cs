@@ -39,22 +39,16 @@ namespace osu.Framework.IO.Stores
             };
         }
 
-        public CharacterGlyph Get(string fontName, char character)
+        public ICharacterGlyph Get(string fontName, char character)
         {
             var glyphStore = getGlyphStore(fontName, character);
 
-            if (glyphStore == null)
-                return null;
-
-            var glyph = glyphStore.GetCharacterInfo(character);
-
-            glyph.Texture = namespacedTextureCache.GetOrAdd((fontName, character), cachedTextureLookup);
-            glyph.ApplyScaleAdjust(1 / ScaleAdjust);
-
-            return glyph;
+            return glyphStore?.GetCharacterInfo(character)
+                             .WithTexture(namespacedTextureCache.GetOrAdd((fontName, character), cachedTextureLookup))
+                             .WithScaleAdjust(1 / ScaleAdjust);
         }
 
-        public Task<CharacterGlyph> GetAsync(string fontName, char character) => Task.Run(() => Get(fontName, character));
+        public Task<ICharacterGlyph> GetAsync(string fontName, char character) => Task.Run(() => Get(fontName, character));
 
         /// <summary>
         /// Retrieves the base height of a font containing a particular character.

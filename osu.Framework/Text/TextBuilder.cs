@@ -36,11 +36,11 @@ namespace osu.Framework.Text
         /// </summary>
         public char FallbackCharacter = '?';
 
-        private CharacterGlyph lastGlyph => Characters.Count == 0 ? null : Characters[Characters.Count - 1].Glyph;
+        private ICharacterGlyph lastGlyph => Characters.Count == 0 ? null : Characters[Characters.Count - 1].Glyph;
 
         private readonly IGlyphLookupStore store;
         private readonly FontUsage font;
-        private readonly bool useFullGlyphHeight;
+        private readonly bool useFontSizeAsHeight;
         private readonly Vector2 startOffset;
         private readonly Vector2 spacing;
         private readonly float maxWidth;
@@ -54,15 +54,15 @@ namespace osu.Framework.Text
         /// </summary>
         /// <param name="store">The store from which glyphs are to be retrieved from.</param>
         /// <param name="font">The font to use for glyph lookups from <paramref name="store"/>.</param>
-        /// <param name="useFullGlyphHeight">True to use the provided <see cref="font"/> size as the height for each line. False if the height of each individual glyph should be used.</param>
+        /// <param name="useFontSizeAsHeight">True to use the provided <see cref="font"/> size as the height for each line. False if the height of each individual glyph should be used.</param>
         /// <param name="startOffset">The offset at which characters should begin being added at.</param>
         /// <param name="spacing">The spacing between characters.</param>
         /// <param name="maxWidth">The maximum width of the resulting text bounds.</param>
-        public TextBuilder(IGlyphLookupStore store, FontUsage font, float maxWidth = float.MaxValue, bool useFullGlyphHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
+        public TextBuilder(IGlyphLookupStore store, FontUsage font, float maxWidth = float.MaxValue, bool useFontSizeAsHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
         {
             this.store = store;
             this.font = font;
-            this.useFullGlyphHeight = useFullGlyphHeight;
+            this.useFontSizeAsHeight = useFontSizeAsHeight;
             this.startOffset = startOffset;
             this.spacing = spacing;
             this.maxWidth = maxWidth;
@@ -87,7 +87,7 @@ namespace osu.Framework.Text
 
                 // Array.IndexOf is used to avoid LINQ
                 if (font.FixedWidth && Array.IndexOf(NeverFixedWidthCharacters, c) == -1)
-                    addCharacter(new FixedWidthCharacterGlyph(glyph, getConstantWidth()));
+                    addCharacter(glyph.WithFixedWidth(getConstantWidth()));
                 else
                     addCharacter(glyph);
             }
@@ -97,12 +97,12 @@ namespace osu.Framework.Text
         /// Adds a character to this <see cref="TextBuilder"/>.
         /// </summary>
         /// <param name="glyph">The glyph of the character to add.</param>
-        private void addCharacter(CharacterGlyph glyph)
+        private void addCharacter(ICharacterGlyph glyph)
         {
             if (!CanAddCharacters)
                 return;
 
-            glyph.ApplyScaleAdjust(font.Size);
+            glyph = glyph.WithScaleAdjust(font.Size);
 
             // For each character that is added:
             // 1. Add the kerning to the current position if required.
@@ -230,14 +230,14 @@ namespace osu.Framework.Text
         /// </summary>
         /// <param name="glyph">The glyph to retrieve the height of.</param>
         /// <returns>The height of the glyph.</returns>
-        private float getGlyphHeight(CharacterGlyph glyph)
+        private float getGlyphHeight(ICharacterGlyph glyph)
         {
-            if (useFullGlyphHeight)
+            if (useFontSizeAsHeight)
                 return font.Size;
 
             // Space characters typically have heights that exceed the height of all other characters in the font
             // Thus, the height is forced to 0 such that only non-whitespace character heights are considered
-            if (glyph.IsWhiteSpace)
+            if (glyph.IsWhiteSpace())
                 return 0;
 
             return glyph.YOffset + glyph.Height;
@@ -245,11 +245,11 @@ namespace osu.Framework.Text
 
         private Cached<float> constantWidthCache;
 
-        private float getConstantWidth() => constantWidthCache.IsValid ? constantWidthCache.Value : constantWidthCache.Value = getGlyph('m').Width;
+        private float getConstantWidth() => constantWidthCache.IsValid ? constantWidthCache.Value : constantWidthCache.Value = getGlyph('m')?.Width ?? 0;
 
-        private CharacterGlyph getGlyph(char character) => store.Get(font.FontName, character)
-                                                           ?? store.Get(null, character)
-                                                           ?? store.Get(font.FontName, FallbackCharacter)
-                                                           ?? store.Get(null, FallbackCharacter);
+        private ICharacterGlyph getGlyph(char character) => store.Get(font.FontName, character)
+                                                            ?? store.Get(null, character)
+                                                            ?? store.Get(font.FontName, FallbackCharacter)
+                                                            ?? store.Get(null, FallbackCharacter);
     }
 }

@@ -1,16 +1,33 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Framework.Graphics.Textures;
+
 namespace osu.Framework.Text
 {
-    public sealed class FixedWidthCharacterGlyph : CharacterGlyph
+    /// <summary>
+    /// An <see cref="ICharacterGlyph"/> with a fixed width.
+    /// </summary>
+    public readonly struct FixedWidthCharacterGlyph : ICharacterGlyph
     {
-        public FixedWidthCharacterGlyph(CharacterGlyph glyph, float width)
-            : base(glyph.Character, (width - glyph.Width) / 2, glyph.YOffset, width, null, glyph.Width, glyph.Height)
+        public Texture Texture => glyph.Texture;
+        public float XOffset { get; }
+        public float YOffset => glyph.YOffset;
+        public float XAdvance { get; }
+        public float Width => glyph.Width;
+        public float Height => glyph.Height;
+        public char Character => glyph.Character;
+
+        private readonly ICharacterGlyph glyph;
+
+        public FixedWidthCharacterGlyph(ICharacterGlyph glyph, float width)
         {
-            Texture = glyph.Texture;
+            this.glyph = glyph;
+
+            XOffset = (width - glyph.Width) / 2;
+            XAdvance = width;
         }
 
-        public override float GetKerning(CharacterGlyph lastGlyph) => 0;
+        public float GetKerning(ICharacterGlyph lastGlyph) => 0;
     }
 }

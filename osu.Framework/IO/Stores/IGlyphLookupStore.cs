@@ -14,7 +14,7 @@ namespace osu.Framework.IO.Stores
         /// <param name="fontName">The name of the font.</param>
         /// <param name="character">The character to retrieve.</param>
         /// <returns>The character glyph.</returns>
-        CharacterGlyph Get(string fontName, char character);
+        ICharacterGlyph Get(string fontName, char character);
 
         /// <summary>
         /// Retrieves a glyph from the store asynchronously.
@@ -22,6 +22,6 @@ namespace osu.Framework.IO.Stores
         /// <param name="fontName">The name of the font.</param>
         /// <param name="character">The character to retrieve.</param>
         /// <returns>The character glyph.</returns>
-        Task<CharacterGlyph> GetAsync(string fontName, char character);
+        Task<ICharacterGlyph> GetAsync(string fontName, char character);
     }
 }
