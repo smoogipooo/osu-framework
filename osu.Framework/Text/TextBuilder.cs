@@ -85,6 +85,9 @@ namespace osu.Framework.Text
             {
                 var glyph = getGlyph(c);
 
+                if (glyph == null)
+                    continue;
+
                 // Array.IndexOf is used to avoid LINQ
                 if (font.FixedWidth && Array.IndexOf(NeverFixedWidthCharacters, c) == -1)
                     addCharacter(glyph.WithFixedWidth(getConstantWidth()));
