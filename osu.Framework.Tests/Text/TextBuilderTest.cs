@@ -352,6 +352,28 @@ namespace osu.Framework.Tests.Text
         }
 
         /// <summary>
+        /// Tests that the custom user-provided spacing is added for a new character/line.
+        /// </summary>
+        [Test]
+        public void TestSpacingAdded()
+        {
+            var font = new FontUsage("test");
+            var builder = new TextBuilder(new TestStore(
+                (font, new TestGlyph('a', 1, 2, 3, 4, 5, 0))
+            ), font, spacing: new Vector2(7, 8));
+
+            builder.AddText("a");
+            builder.AddText("a");
+            builder.AddNewLine();
+            builder.AddText("a");
+
+            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo(font.Size));
+            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(3 * font.Size + 7 + font.Size));
+            Assert.That(builder.Characters[2].DrawRectangle.Left, Is.EqualTo(font.Size));
+            Assert.That(builder.Characters[2].DrawRectangle.Top, Is.EqualTo(font.Size + 8 + 2 * font.Size));
+        }
+
+        /// <summary>
         /// Tests that glyph lookup falls back to using the same character with no font name.
         /// </summary>
         [Test]
