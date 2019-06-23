@@ -223,6 +223,18 @@ namespace osu.Framework.MathUtils
             return val1 + t * (val2 - val1);
         }
 
+        public static Vector3 ValueAt(double time, Vector3 val1, Vector3 val2, double startTime, double endTime, Easing easing = Easing.None)
+        {
+            float current = (float)(time - startTime);
+            float duration = (float)(endTime - startTime);
+
+            if (duration == 0 || current == 0)
+                return val1;
+
+            float t = (float)ApplyEasing(easing, current / duration);
+            return val1 + t * (val2 - val1);
+        }
+
         public static RectangleF ValueAt(double time, RectangleF val1, RectangleF val2, double startTime, double endTime, Easing easing = Easing.None)
         {
             float current = (float)(time - startTime);

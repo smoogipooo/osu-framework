@@ -33,6 +33,14 @@ namespace osu.Framework.MathUtils
         public static bool IsFinite(Vector2 toCheck) => IsFinite(toCheck.X) && IsFinite(toCheck.Y);
 
         /// <summary>
+        /// Returns whether the three coordinates of a <see cref="Vector3"/> are not infinite or NaN.
+        /// <para>For further information, see <seealso cref="IsFinite(float)"/>.</para>
+        /// </summary>
+        /// <param name="toCheck">The <see cref="Vector3"/> to check.</param>
+        /// <returns>False if X or Y or Z are Infinity or NaN, true otherwise. </returns>
+        public static bool IsFinite(Vector3 toCheck) => IsFinite(toCheck.X) && IsFinite(toCheck.Y) && IsFinite(toCheck.Z);
+
+        /// <summary>
         /// Returns whether the components of a <see cref="MarginPadding"/> are not infinite or NaN.
         /// <para>For further information, see <seealso cref="IsFinite(float)"/>.</para>
         /// </summary>
