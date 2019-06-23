@@ -113,7 +113,7 @@ namespace osu.Framework.Text
             //    The offset is not applied to the current position, it is only a value to be used at draw-time.
             // 3. Advance the current position by glyph's XAdvance.
 
-            // Kerning is not applied if the user provided a custom width
+            // Spacing + kerning are only applied for non-first characters on each line
             float kerning = currentNewLine || lastGlyph == null ? 0 : glyph.GetKerning(lastGlyph) + spacing.X;
 
             // Check if there is enough space for the character and let subclasses decide whether to continue adding the character if not
