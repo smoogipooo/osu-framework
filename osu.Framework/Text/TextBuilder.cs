@@ -114,7 +114,7 @@ namespace osu.Framework.Text
             // 3. Advance the current position by glyph's XAdvance.
 
             // Spacing + kerning are only applied for non-first characters on each line
-            float kerning = currentNewLine || lastGlyph == null ? 0 : glyph.GetKerning(lastGlyph) + spacing.X;
+            float kerning = currentNewLine ? 0 : glyph.GetKerning(lastGlyph) + spacing.X;
 
             // Check if there is enough space for the character and let subclasses decide whether to continue adding the character if not
             if (!HasAvailableSpace(kerning + glyph.XAdvance))
@@ -230,6 +230,9 @@ namespace osu.Framework.Text
                         Characters[i].DrawRectangle.Top - Characters[i].Glyph.YOffset + currentLineHeight)
                 );
             }
+
+            if (Characters.Count == 0)
+                currentNewLine = true;
         }
 
         /// <summary>
