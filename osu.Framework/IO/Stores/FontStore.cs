@@ -17,37 +17,27 @@ namespace osu.Framework.IO.Stores
 
         private readonly List<FontStore> nestedFontStores = new List<FontStore>();
 
-        private readonly Func<(string, char), Texture> cachedTextureLookup;
-
-        /// <summary>
-        /// A local cache to avoid string allocation overhead. Can be changed to (string,char)=>string if this ever becomes an issue,
-        /// but as long as we directly inherit <see cref="TextureStore"/> this is a slight optimisation.
-        /// </summary>
-        private readonly ConcurrentDictionary<(string, char), Texture> namespacedTextureCache = new ConcurrentDictionary<(string, char), Texture>();
+        private readonly ConcurrentDictionary<(string, char), ICharacterGlyph> namespacedGlyphCache = new ConcurrentDictionary<(string, char), ICharacterGlyph>();
 
         public FontStore(IResourceStore<TextureUpload> store = null, float scaleAdjust = 100)
             : base(store, scaleAdjust: scaleAdjust)
         {
-            cachedTextureLookup = t =>
-            {
-                var tex = Get(getTextureName(t.Item1, t.Item2));
-
-                if (tex == null)
-                    Logger.Log($"Glyph texture lookup for {getTextureName(t.Item1, t.Item2)} was unsuccessful.");
-
-                return tex;
-            };
         }
 
         public ICharacterGlyph Get(string fontName, char character)
         {
+            var key = (fontName, character);
+
+            if (namespacedGlyphCache.TryGetValue(key, out var existing))
+                return existing;
+
             foreach (var store in glyphStores)
             {
                 if (store.ContainsTexture(getTextureName(fontName, character)))
                 {
-                    return store.GetCharacterInfo(character)
-                                .WithTexture(namespacedTextureCache.GetOrAdd((fontName, character), cachedTextureLookup))
-                                .WithScaleAdjust(1 / ScaleAdjust);
+                    return namespacedGlyphCache[key] = store.GetCharacterInfo(character)
+                                                            .WithTexture(Get(getTextureName(fontName, character)))
+                                                            .WithScaleAdjust(1 / ScaleAdjust);
                 }
             }
 
@@ -55,10 +45,10 @@ namespace osu.Framework.IO.Stores
             {
                 var glyph = store.Get(fontName, character);
                 if (glyph != null)
-                    return glyph;
+                    return namespacedGlyphCache[key] = glyph;
             }
 
-            return null;
+            return namespacedGlyphCache[key] = null;
         }
 
         public Task<ICharacterGlyph> GetAsync(string fontName, char character) => Task.Run(() => Get(fontName, character));
