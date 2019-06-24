@@ -13,8 +13,8 @@ namespace osu.Framework.Text
         public float XOffset { get; }
         public float YOffset { get; }
         public float XAdvance { get; }
-        public float Width => Texture?.Width ?? 0;
-        public float Height => Texture?.Height ?? 0;
+        public float Width { get; }
+        public float Height { get; }
         public char Character { get; }
 
         private readonly GlyphStore containingStore;
@@ -33,6 +33,8 @@ namespace osu.Framework.Text
             XOffset = xOffset;
             YOffset = yOffset;
             XAdvance = xAdvance;
+            Width = texture?.Width ?? 0;
+            Height = texture?.Height ?? 0;
         }
 
         public float GetKerning(ICharacterGlyph lastGlyph) => containingStore?.GetKerning(lastGlyph.Character, Character) ?? 0;
