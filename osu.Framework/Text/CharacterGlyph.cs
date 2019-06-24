@@ -7,15 +7,24 @@ using osu.Framework.IO.Stores;
 
 namespace osu.Framework.Text
 {
-    public readonly struct CharacterGlyph : ICharacterGlyph
+    public class CharacterGlyph : ICharacterGlyph
     {
-        public Texture Texture { get; }
-        public float XOffset { get; }
-        public float YOffset { get; }
-        public float XAdvance { get; }
-        public float Width { get; }
-        public float Height { get; }
+        public Texture Texture { get; internal set; }
         public char Character { get; }
+
+        internal float ScaleAdjustment = 1;
+
+        public float XOffset => xOffset * ScaleAdjustment;
+        public float YOffset => yOffset * ScaleAdjustment;
+        public float XAdvance => xAdvance * ScaleAdjustment;
+        public float Width => width * ScaleAdjustment;
+        public float Height => height * ScaleAdjustment;
+
+        private readonly float xOffset;
+        private readonly float yOffset;
+        private readonly float xAdvance;
+        private readonly float width;
+        private readonly float height;
 
         private readonly GlyphStore containingStore;
 
@@ -27,18 +36,17 @@ namespace osu.Framework.Text
         public CharacterGlyph(Texture texture, char character, float xOffset, float yOffset, float xAdvance, [CanBeNull] GlyphStore containingStore)
         {
             this.containingStore = containingStore;
+            this.xOffset = xOffset;
+            this.yOffset = yOffset;
+            this.xAdvance = xAdvance;
+            width = texture?.Width ?? 0;
+            height = texture?.Height ?? 0;
 
             Texture = texture;
             Character = character;
-            XOffset = xOffset;
-            YOffset = yOffset;
-            XAdvance = xAdvance;
-            Width = texture?.Width ?? 0;
-            Height = texture?.Height ?? 0;
         }
 
-        public float GetKerning(ICharacterGlyph lastGlyph) => containingStore?.GetKerning(lastGlyph.Character, Character) ?? 0;
-
-        public CharacterGlyph WithTexture(Texture texture) => new CharacterGlyph(texture, Character, XOffset, YOffset, XAdvance, containingStore);
+        public float GetKerning(ICharacterGlyph lastGlyph)
+            => lastGlyph == null || containingStore == null ? 0 : containingStore.GetKerning(lastGlyph.Character, Character) * ScaleAdjustment;
     }
 }

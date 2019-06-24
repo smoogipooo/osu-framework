@@ -35,9 +35,12 @@ namespace osu.Framework.IO.Stores
             {
                 if (store.ContainsTexture(getTextureName(fontName, character)))
                 {
-                    return namespacedGlyphCache[key] = store.GetCharacterInfo(character)
-                                                            .WithTexture(Get(getTextureName(fontName, character)))
-                                                            .WithScaleAdjust(1 / ScaleAdjust);
+                    var glyph = store.GetCharacterInfo(character);
+
+                    glyph.Texture = Get(getTextureName(fontName, character));
+                    glyph.ScaleAdjustment = 1 / ScaleAdjust;
+
+                    return namespacedGlyphCache[key] = glyph;
                 }
             }
 

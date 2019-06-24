@@ -404,12 +404,12 @@ namespace osu.Framework.Graphics.Sprites
         #region Characters
 
         private Cached charactersCache = new Cached();
-        private readonly List<CharacterInfo> charactersBacking = new List<CharacterInfo>();
+        private readonly List<TextBuilder.TextBuilderGlyph> charactersBacking = new List<TextBuilder.TextBuilderGlyph>();
 
         /// <summary>
         /// The characters in local space.
         /// </summary>
-        private List<CharacterInfo> characters
+        private List<TextBuilder.TextBuilderGlyph> characters
         {
             get
             {
@@ -490,7 +490,7 @@ namespace osu.Framework.Graphics.Sprites
                 screenSpaceCharactersBacking.Add(new ScreenSpaceCharacterPart
                 {
                     DrawQuad = ToScreenSpace(character.DrawRectangle),
-                    Texture = character.Glyph.Texture
+                    Texture = character.Texture
                 });
             }
 

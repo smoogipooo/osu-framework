@@ -390,7 +390,7 @@ namespace osu.Framework.Tests.Text
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[0].Glyph.Character, Is.EqualTo('a'));
+            Assert.That(builder.Characters[0].Character, Is.EqualTo('a'));
         }
 
         /// <summary>
@@ -410,8 +410,8 @@ namespace osu.Framework.Tests.Text
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[0].Glyph.Character, Is.EqualTo('?'));
-            Assert.That(builder.Characters[0].Glyph.XOffset, Is.EqualTo(0));
+            Assert.That(builder.Characters[0].Character, Is.EqualTo('?'));
+            Assert.That(builder.Characters[0].XOffset, Is.EqualTo(0));
         }
 
         /// <summary>
@@ -431,8 +431,8 @@ namespace osu.Framework.Tests.Text
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[0].Glyph.Character, Is.EqualTo('?'));
-            Assert.That(builder.Characters[0].Glyph.XOffset, Is.EqualTo(font.Size));
+            Assert.That(builder.Characters[0].Character, Is.EqualTo('?'));
+            Assert.That(builder.Characters[0].XOffset, Is.EqualTo(font.Size));
         }
 
         /// <summary>

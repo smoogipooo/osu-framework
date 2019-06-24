@@ -57,7 +57,7 @@ namespace osu.Framework.Text
 
                 if (Characters.Count == 0)
                     break;
-            } while (Characters[Characters.Count - 1].Glyph.IsWhiteSpace() || !HasAvailableSpace(getEllipsisSize().X));
+            } while (Characters[Characters.Count - 1].IsWhiteSpace() || !HasAvailableSpace(getEllipsisSize().X));
 
             AddText(EllipsisString);
 

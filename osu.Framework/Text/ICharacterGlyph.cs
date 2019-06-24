@@ -60,23 +60,5 @@ namespace osu.Framework.Text
         public static bool IsWhiteSpace<T>(this T glyph)
             where T : ICharacterGlyph
             => glyph.Texture == null || char.IsWhiteSpace(glyph.Character);
-
-        /// <summary>
-        /// Constructs a new <see cref="ScaleAdjustedCharacterGlyph"/> from this <see cref="ICharacterGlyph"/> with a specified scale adjustment
-        /// </summary>
-        /// <param name="glyph">The glyph.</param>
-        /// <param name="scaleAdjustment">The scale adjustment that should be applied.</param>
-        public static ScaleAdjustedCharacterGlyph WithScaleAdjust<T>(this T glyph, float scaleAdjustment)
-            where T : ICharacterGlyph
-            => new ScaleAdjustedCharacterGlyph(glyph, scaleAdjustment);
-
-        /// <summary>
-        /// Constructs a new <see cref="FixedWidthCharacterGlyph"/> from this <see cref="ICharacterGlyph"/> with a fixed width.
-        /// </summary>
-        /// <param name="glyph">The glyph.</param>
-        /// <param name="width">The width that should be applied.</param>
-        public static FixedWidthCharacterGlyph WithFixedWidth<T>(this T glyph, float width)
-            where T : ICharacterGlyph
-            => new FixedWidthCharacterGlyph(glyph, width);
     }
 }
