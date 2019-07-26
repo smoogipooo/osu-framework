@@ -274,10 +274,7 @@ namespace osu.Framework.Graphics.Containers
         public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
         {
             if ((invalidation & Invalidation.DrawNode) > 0)
-            {
                 ++updateVersion;
-                FrameStatistics.Increment(StatisticsCounterType.BCRedraws);
-            }
 
             // We actually only care about Invalidation.MiscGeometry | Invalidation.DrawInfo, but must match the blanket invalidation logic in Drawable.Invalidate
             if ((invalidation & (Invalidation.Presence | Invalidation.RequiredParentSizeToFit | Invalidation.DrawInfo)) > 0)
