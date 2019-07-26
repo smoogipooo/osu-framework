@@ -268,17 +268,20 @@ namespace osu.Framework.Graphics.Containers
 
         protected override RectangleF ComputeChildMaskingBounds(RectangleF maskingBounds) => ScreenSpaceDrawQuad.AABBFloat; // Make sure children never get masked away
 
-        private Vector2 lastScreenSpaceSize;
-        private Cached screenSpaceSizeBacking = new Cached();
+        private Vector2 lastDrawSize;
+        private Cached drawSizeBacking = new Cached();
 
         public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
         {
             if ((invalidation & Invalidation.DrawNode) > 0)
+            {
                 ++updateVersion;
+                FrameStatistics.Increment(StatisticsCounterType.BCRedraws);
+            }
 
             // We actually only care about Invalidation.MiscGeometry | Invalidation.DrawInfo, but must match the blanket invalidation logic in Drawable.Invalidate
             if ((invalidation & (Invalidation.Presence | Invalidation.RequiredParentSizeToFit | Invalidation.DrawInfo)) > 0)
-                screenSpaceSizeBacking.Invalidate();
+                drawSizeBacking.Invalidate();
 
             return base.Invalidate(invalidation, source, shallPropagate);
         }
@@ -293,17 +296,17 @@ namespace osu.Framework.Graphics.Containers
             // Invalidate drawn frame buffer every frame.
             if (!CacheDrawnFrameBuffer)
                 ForceRedraw();
-            else if (!screenSpaceSizeBacking.IsValid)
+            else if (!drawSizeBacking.IsValid)
             {
-                var screenSpaceSize = ScreenSpaceDrawQuad.AABBFloat.Size;
+                var drawSize = Vector2.Divide(ScreenSpaceDrawQuad.AABBFloat.Size, DrawInfo.Matrix.ExtractScale().Xy);
 
-                if (!Precision.AlmostEquals(lastScreenSpaceSize, screenSpaceSize))
+                if (!Precision.AlmostEquals(lastDrawSize, drawSize))
                 {
                     ++updateVersion;
-                    lastScreenSpaceSize = screenSpaceSize;
+                    lastDrawSize = drawSize;
                 }
 
-                screenSpaceSizeBacking.Validate();
+                drawSizeBacking.Validate();
             }
         }
 
