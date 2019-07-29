@@ -36,7 +36,7 @@ namespace osu.Framework.Tests.Visual.Testing
 
             Children = new[]
             {
-                target = new TestSceneDynamicDepth
+                target = new TestSceneCachedBufferedContainer
                 {
                     Anchor = Anchor.BottomRight,
                     Origin = Anchor.BottomRight,

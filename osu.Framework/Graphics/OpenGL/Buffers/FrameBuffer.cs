@@ -12,23 +12,25 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
 {
     public class FrameBuffer : IDisposable
     {
-        private int frameBuffer = -1;
+        public int FrameBufferId { get; private set; } = -1;
 
         public TextureGL Texture { get; private set; }
 
         private readonly List<RenderBuffer> attachedRenderBuffers = new List<RenderBuffer>();
 
+        internal IReadOnlyList<RenderBuffer> AttachedRenderBuffers => attachedRenderBuffers.AsReadOnly();
+
         public bool IsInitialized { get; private set; }
 
-        public void Initialise(All filteringMode = All.Linear, RenderbufferInternalFormat[] renderBufferFormats = null)
+        public void Initialise(All filteringMode = All.Linear, RenderbufferInternalFormat[] renderBufferFormats = null, FramebufferAttachment textureAttachment = FramebufferAttachment.ColorAttachment0)
         {
-            frameBuffer = GL.GenFramebuffer();
+            FrameBufferId = GL.GenFramebuffer();
 
             Texture = new FrameBufferTexture(filteringMode);
 
             Bind();
 
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget2d.Texture2D, Texture.TextureId, 0);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, textureAttachment, TextureTarget2d.Texture2D, Texture.TextureId, 0);
             GLWrapper.BindTexture(null);
 
             if (renderBufferFormats != null)
@@ -71,12 +73,12 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         /// Binds the framebuffer.
         /// <para>Does not clear the buffer or reset the viewport/ortho.</para>
         /// </summary>
-        public void Bind() => GLWrapper.BindFrameBuffer(frameBuffer);
+        public void Bind() => GLWrapper.BindFrameBuffer(FrameBufferId);
 
         /// <summary>
         /// Unbinds the framebuffer.
         /// </summary>
-        public void Unbind() => GLWrapper.UnbindFrameBuffer(frameBuffer);
+        public void Unbind() => GLWrapper.UnbindFrameBuffer(FrameBufferId);
 
         #region Disposal
 
@@ -101,7 +103,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             Texture?.Dispose();
             Texture = null;
 
-            GLWrapper.DeleteFrameBuffer(frameBuffer);
+            GLWrapper.DeleteFrameBuffer(FrameBufferId);
 
             foreach (var buffer in attachedRenderBuffers)
                 buffer.Dispose();

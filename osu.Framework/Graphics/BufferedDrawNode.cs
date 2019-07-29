@@ -25,7 +25,7 @@ namespace osu.Framework.Graphics
         /// <summary>
         /// Data shared amongst all <see cref="BufferedDrawNode"/>s, providing storage for <see cref="FrameBuffer"/>s.
         /// </summary>
-        protected readonly BufferedDrawNodeSharedData SharedData;
+        protected internal readonly BufferedDrawNodeSharedData SharedData;
 
         /// <summary>
         /// Contains the colour and blending information of this <see cref="DrawNode"/>.

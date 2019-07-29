@@ -10,16 +10,16 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
 {
     internal class RenderBuffer : IDisposable
     {
-        private readonly RenderbufferInternalFormat format;
-        private readonly int renderBuffer;
-
         private static readonly GlobalStatistic<long> loaded_bytes = GlobalStatistics.Get<long>("Native", nameof(RenderBuffer));
 
+        public readonly RenderbufferInternalFormat Format;
+
+        private readonly int renderBuffer;
         private readonly int sizePerPixel;
 
         public RenderBuffer(RenderbufferInternalFormat format)
         {
-            this.format = format;
+            Format = format;
 
             renderBuffer = GL.GenRenderbuffer();
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, renderBuffer);
@@ -64,7 +64,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
                 loaded_bytes.Value += sizeInMemory;
 
                 GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, renderBuffer);
-                GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, format, (int)Math.Ceiling(Size.X), (int)Math.Ceiling(Size.Y));
+                GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, Format, (int)Math.Ceiling(Size.X), (int)Math.Ceiling(Size.Y));
             }
         }
 

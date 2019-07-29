@@ -16,7 +16,7 @@ namespace osu.Framework.Graphics
     public class BufferedDrawNodeSharedData : IDisposable
     {
         /// <summary>
-        /// The version of drawn contents currently present in <see cref="MainBuffer"/> and <see cref="effectBuffers"/>.
+        /// The version of drawn contents currently present in <see cref="MainBuffer"/> and <see cref="EffectBuffers"/>.
         /// This should only be modified by <see cref="BufferedDrawNode"/>.
         /// </summary>
         internal long DrawVersion = -1;
@@ -29,7 +29,7 @@ namespace osu.Framework.Graphics
         /// <summary>
         /// A set of <see cref="FrameBuffer"/>s which are used in a ping-pong manner to render effects to.
         /// </summary>
-        private readonly FrameBuffer[] effectBuffers;
+        internal readonly FrameBuffer[] EffectBuffers;
 
         /// <summary>
         /// Creates a new <see cref="BufferedDrawNodeSharedData"/> with no effect buffers.
@@ -50,10 +50,10 @@ namespace osu.Framework.Graphics
                 throw new ArgumentOutOfRangeException(nameof(effectBufferCount), "Must be positive.");
 
             MainBuffer = new FrameBuffer();
-            effectBuffers = new FrameBuffer[effectBufferCount];
+            EffectBuffers = new FrameBuffer[effectBufferCount];
 
             for (int i = 0; i < effectBufferCount; i++)
-                effectBuffers[i] = new FrameBuffer();
+                EffectBuffers[i] = new FrameBuffer();
         }
 
         private int currentEffectBuffer = -1;
@@ -61,7 +61,7 @@ namespace osu.Framework.Graphics
         /// <summary>
         /// The <see cref="FrameBuffer"/> which contains the most up-to-date drawn effect.
         /// </summary>
-        public FrameBuffer CurrentEffectBuffer => currentEffectBuffer == -1 ? MainBuffer : effectBuffers[currentEffectBuffer];
+        public FrameBuffer CurrentEffectBuffer => currentEffectBuffer == -1 ? MainBuffer : EffectBuffers[currentEffectBuffer];
 
         /// <summary>
         /// Retrieves the next <see cref="FrameBuffer"/> which effects can be rendered to.
@@ -69,12 +69,12 @@ namespace osu.Framework.Graphics
         /// <exception cref="InvalidOperationException">If there are no available effect buffers.</exception>
         public FrameBuffer GetNextEffectBuffer()
         {
-            if (effectBuffers.Length == 0)
+            if (EffectBuffers.Length == 0)
                 throw new InvalidOperationException($"The {nameof(BufferedDrawNode)} requested an effect buffer, but none were available.");
 
-            if (++currentEffectBuffer >= effectBuffers.Length)
+            if (++currentEffectBuffer >= EffectBuffers.Length)
                 currentEffectBuffer = 0;
-            return effectBuffers[currentEffectBuffer];
+            return EffectBuffers[currentEffectBuffer];
         }
 
         /// <summary>
@@ -98,8 +98,8 @@ namespace osu.Framework.Graphics
         {
             MainBuffer.Dispose();
 
-            for (int i = 0; i < effectBuffers.Length; i++)
-                effectBuffers[i].Dispose();
+            for (int i = 0; i < EffectBuffers.Length; i++)
+                EffectBuffers[i].Dispose();
         }
     }
 }

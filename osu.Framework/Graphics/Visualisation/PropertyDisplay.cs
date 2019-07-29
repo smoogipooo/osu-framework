@@ -25,31 +25,48 @@ namespace osu.Framework.Graphics.Visualisation
 
         protected override Container<Drawable> Content => flow;
 
+        private readonly FrameBufferDisplay frameBufferDisplay;
+
         public PropertyDisplay()
         {
-            Width = width;
+            AutoSizeAxes = Axes.X;
             RelativeSizeAxes = Axes.Y;
 
-            AddRangeInternal(new Drawable[]
+            InternalChildren = new Drawable[]
             {
                 new Box
                 {
                     Colour = FrameworkColour.GreenDarker,
                     RelativeSizeAxes = Axes.Both,
                 },
-                new BasicScrollContainer<Drawable>
+                new FillFlowContainer
                 {
+                    AutoSizeAxes = Axes.X,
+                    RelativeSizeAxes = Axes.Y,
+                    Direction = FillDirection.Horizontal,
+                    Spacing = new Vector2(10, 0),
                     Padding = new MarginPadding(10),
-                    RelativeSizeAxes = Axes.Both,
-                    ScrollbarOverlapsContent = false,
-                    Child = flow = new FillFlowContainer
+                    Children = new Drawable[]
                     {
-                        RelativeSizeAxes = Axes.X,
-                        AutoSizeAxes = Axes.Y,
-                        Direction = FillDirection.Vertical
+                        new BasicScrollContainer<Drawable>
+                        {
+                            RelativeSizeAxes = Axes.Y,
+                            Width = width,
+                            ScrollbarOverlapsContent = false,
+                            Child = flow = new FillFlowContainer
+                            {
+                                RelativeSizeAxes = Axes.X,
+                                AutoSizeAxes = Axes.Y,
+                                Direction = FillDirection.Vertical
+                            }
+                        },
+                        frameBufferDisplay = new FrameBufferDisplay
+                        {
+                            State = { Value = Visibility.Visible }
+                        }
                     }
                 }
-            });
+            };
         }
 
         public void UpdateFrom(Drawable source)
@@ -71,16 +88,22 @@ namespace osu.Framework.Graphics.Visualisation
                                .Where(m => m.GetCustomAttribute<CompilerGeneratedAttribute>() == null)
                                .Where(m => m.GetCustomAttribute<DebuggerBrowsableAttribute>()?.State != DebuggerBrowsableState.Never)
                                .Select(m => new PropertyItem(m, source)));
+
+            if (source is IBufferedDrawable bufferedSource)
+                frameBufferDisplay.UpdateFrom(bufferedSource);
+            else
+                frameBufferDisplay.UpdateFrom(null);
         }
 
         protected override void PopIn()
         {
-            this.ResizeWidthTo(width, 500, Easing.OutQuint);
+            AutoSizeAxes = Axes.X;
         }
 
         protected override void PopOut()
         {
-            this.ResizeWidthTo(0, 500, Easing.OutQuint);
+            AutoSizeAxes &= ~Axes.X;
+            Width = 0;
         }
 
         private class PropertyItem : Container
