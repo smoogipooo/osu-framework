@@ -81,8 +81,7 @@ namespace osu.Framework.Graphics
         /// <remarks>
         /// Subclasses must invoke <code>base.Draw()</code> prior to drawing vertices.
         /// </remarks>
-        /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
-        public virtual void Draw(Action<TexturedVertex2D> vertexAction)
+        public virtual void Draw()
         {
             GLWrapper.SetBlend(DrawColourInfo.Blending);
 

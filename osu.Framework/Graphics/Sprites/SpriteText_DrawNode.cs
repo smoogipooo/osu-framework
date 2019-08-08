@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using osu.Framework.Graphics.Colour;
-using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
 using osuTK;
@@ -44,9 +43,9 @@ namespace osu.Framework.Graphics.Sprites
                 }
             }
 
-            public override void Draw(Action<TexturedVertex2D> vertexAction)
+            public override void Draw()
             {
-                base.Draw(vertexAction);
+                base.Draw();
 
                 Shader.Bind();
 
@@ -68,10 +67,10 @@ namespace osu.Framework.Graphics.Sprites
                         shadowQuad.BottomLeft += shadowOffset;
                         shadowQuad.BottomRight += shadowOffset;
 
-                        DrawQuad(parts[i].Texture, shadowQuad, finalShadowColour, vertexAction: vertexAction);
+                        DrawQuad(parts[i].Texture, shadowQuad, finalShadowColour);
                     }
 
-                    DrawQuad(parts[i].Texture, parts[i].DrawQuad, DrawColourInfo.Colour, vertexAction: vertexAction);
+                    DrawQuad(parts[i].Texture, parts[i].DrawQuad, DrawColourInfo.Colour);
                 }
 
                 Shader.Unbind();

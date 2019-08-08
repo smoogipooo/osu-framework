@@ -60,11 +60,6 @@ namespace osu.Framework.Graphics.Containers
             private bool forceLocalVertexBatch;
 
             /// <summary>
-            /// The vertex batch used for child quads during the back-to-front pass.
-            /// </summary>
-            private QuadBatch<TexturedVertex2D> quadBatch;
-
-            /// <summary>
             /// The vertex batch used for child triangles during the front-to-back pass.
             /// </summary>
             private TriangleBatch<TexturedVertex2D> triangleBatch;
@@ -167,17 +162,6 @@ namespace osu.Framework.Graphics.Containers
 
             private bool mayHaveOwnVertexBatch(int amountChildren) => forceLocalVertexBatch || amountChildren >= min_amount_children_to_warrant_batch;
 
-            private void updateQuadBatch()
-            {
-                if (Children == null)
-                    return;
-
-                // This logic got roughly copied from the old osu! code base. These constants seem to have worked well so far.
-                int clampedAmountChildren = MathHelper.Clamp(Children.Count, 1, 1000);
-                if (mayHaveOwnVertexBatch(clampedAmountChildren) && (quadBatch == null || quadBatch.Size < clampedAmountChildren))
-                    quadBatch = new QuadBatch<TexturedVertex2D>(clampedAmountChildren * 2, 500);
-            }
-
             private void updateTriangleBatch()
             {
                 if (Children == null)
@@ -193,15 +177,9 @@ namespace osu.Framework.Graphics.Containers
                 }
             }
 
-            public override void Draw(Action<TexturedVertex2D> vertexAction)
+            public override void Draw()
             {
-                updateQuadBatch();
-
-                // Prefer to use own vertex batch instead of the parent-owned one.
-                if (quadBatch != null)
-                    vertexAction = quadBatch.AddAction;
-
-                base.Draw(vertexAction);
+                base.Draw();
 
                 drawEdgeEffect();
 
@@ -216,7 +194,7 @@ namespace osu.Framework.Graphics.Containers
 
                 if (Children != null)
                     for (int i = 0; i < Children.Count; i++)
-                        Children[i].Draw(vertexAction);
+                        Children[i].Draw();
 
                 if (maskingInfo != null)
                     GLWrapper.PopMaskingInfo();
@@ -273,7 +251,6 @@ namespace osu.Framework.Graphics.Containers
                 // Children disposed via their source drawables
                 Children = null;
 
-                quadBatch?.Dispose();
                 triangleBatch?.Dispose();
             }
         }

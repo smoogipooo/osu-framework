@@ -2,8 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osuTK;
-using System;
-using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Textures;
 using osuTK.Graphics.ES30;
@@ -41,15 +39,15 @@ namespace osu.Framework.Graphics.Sprites
             WrapTexture = Source.WrapTexture;
         }
 
-        protected virtual void Blit(Action<TexturedVertex2D> vertexAction)
+        protected virtual void Blit()
         {
-            DrawQuad(Texture, ScreenSpaceDrawQuad, DrawColourInfo.Colour, null, vertexAction,
-                new Vector2(InflationAmount.X / DrawRectangle.Width, InflationAmount.Y / DrawRectangle.Height));
+            DrawQuad(Texture, ScreenSpaceDrawQuad, DrawColourInfo.Colour, null,
+                inflationPercentage: new Vector2(InflationAmount.X / DrawRectangle.Width, InflationAmount.Y / DrawRectangle.Height));
         }
 
-        public override void Draw(Action<TexturedVertex2D> vertexAction)
+        public override void Draw()
         {
-            base.Draw(vertexAction);
+            base.Draw();
 
             if (Texture?.Available != true)
                 return;
@@ -58,7 +56,7 @@ namespace osu.Framework.Graphics.Sprites
 
             Shader.Bind();
 
-            Blit(vertexAction);
+            Blit();
 
             Shader.Unbind();
         }

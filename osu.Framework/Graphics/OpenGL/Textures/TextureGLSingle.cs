@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using osu.Framework.Allocation.VertexBuffers;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Primitives;
@@ -24,14 +25,10 @@ namespace osu.Framework.Graphics.OpenGL.Textures
     {
         public const int MAX_MIPMAP_LEVELS = 3;
 
-        private static readonly Action<TexturedVertex2D> default_quad_action;
         private static readonly Action<TexturedVertex2D> default_triangle_action;
 
         static TextureGLSingle()
         {
-            QuadBatch<TexturedVertex2D> quadBatch = new QuadBatch<TexturedVertex2D>(512, 128);
-            default_quad_action = quadBatch.AddAction;
-
             // We multiply the size param by 3 such that the amount of vertices is a multiple of the amount of vertices
             // per primitive (triangles in this case). Otherwise overflowing the batch will result in wrong
             // grouping of vertices into primitives.
@@ -266,10 +263,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
             RectangleF inflatedTexRect = texRect.Inflate(inflationAmount);
             Vector2 blendRange = blendRangeOverride ?? inflationAmount;
 
-            if (vertexAction == null)
-                vertexAction = default_quad_action;
-
-            vertexAction(new TexturedVertex2D
+            VertexBufferAllocator<TexturedVertex2D>.AddVertex(new TexturedVertex2D
             {
                 Position = vertexQuad.BottomLeft,
                 TexturePosition = new Vector2(inflatedTexRect.Left, inflatedTexRect.Bottom),
@@ -277,7 +271,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 BlendRange = blendRange,
                 Colour = drawColour.BottomLeft.Linear,
             });
-            vertexAction(new TexturedVertex2D
+            VertexBufferAllocator<TexturedVertex2D>.AddVertex(new TexturedVertex2D
             {
                 Position = vertexQuad.BottomRight,
                 TexturePosition = new Vector2(inflatedTexRect.Right, inflatedTexRect.Bottom),
@@ -285,7 +279,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 BlendRange = blendRange,
                 Colour = drawColour.BottomRight.Linear,
             });
-            vertexAction(new TexturedVertex2D
+            VertexBufferAllocator<TexturedVertex2D>.AddVertex(new TexturedVertex2D
             {
                 Position = vertexQuad.TopRight,
                 TexturePosition = new Vector2(inflatedTexRect.Right, inflatedTexRect.Top),
@@ -293,7 +287,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
                 BlendRange = blendRange,
                 Colour = drawColour.TopRight.Linear,
             });
-            vertexAction(new TexturedVertex2D
+            VertexBufferAllocator<TexturedVertex2D>.AddVertex(new TexturedVertex2D
             {
                 Position = vertexQuad.TopLeft,
                 TexturePosition = new Vector2(inflatedTexRect.Left, inflatedTexRect.Top),
