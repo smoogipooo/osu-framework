@@ -371,7 +371,7 @@ namespace osu.Framework.Platform
                 }
             }
 
-            GLWrapper.FlushCurrentBatch();
+            GLWrapper.Finish();
 
             using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
             {

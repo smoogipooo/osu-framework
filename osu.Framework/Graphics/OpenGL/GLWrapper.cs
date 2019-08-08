@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using osu.Framework.Development;
-using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.OpenGL.Textures;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.Threading;
@@ -30,6 +29,10 @@ namespace osu.Framework.Graphics.OpenGL
         /// This is a carefully-chosen number to enable the update and draw threads to work concurrently without causing unnecessary load.
         /// </summary>
         public const int MAX_DRAW_NODES = 3;
+
+        public static event Action OnReset;
+        public static event Action OnFinish;
+        public static event Action OnBatchBroken;
 
         public static MaskingInfo CurrentMaskingInfo { get; private set; }
         public static RectangleI Viewport { get; private set; }
@@ -58,8 +61,6 @@ namespace osu.Framework.Graphics.OpenGL
         /// A queue from which a maximum of one operation is invoked per draw frame.
         /// </summary>
         private static readonly ConcurrentQueue<Action> expensive_operations_queue = new ConcurrentQueue<Action>();
-
-        private static readonly List<IVertexBatch> batch_reset_list = new List<IVertexBatch>();
 
         public static bool IsInitialized { get; private set; }
 
@@ -113,13 +114,10 @@ namespace osu.Framework.Graphics.OpenGL
                 action.Invoke();
 
             lastBoundTexture = null;
-            lastActiveBatch = null;
             lastBlendingInfo = new BlendingInfo();
             lastBlendingEnabledState = null;
 
-            foreach (var b in batch_reset_list)
-                b.ResetCounters();
-            batch_reset_list.Clear();
+            OnReset?.Invoke();
 
             viewport_stack.Clear();
             ortho_stack.Clear();
@@ -150,6 +148,8 @@ namespace osu.Framework.Graphics.OpenGL
             PushDepthInfo(DepthInfo.Default);
             Clear(ClearInfo.Default);
         }
+
+        internal static void Finish() => OnFinish?.Invoke();
 
         private static ClearInfo currentClearInfo;
 
@@ -261,28 +261,6 @@ namespace osu.Framework.Graphics.OpenGL
             return true;
         }
 
-        private static IVertexBatch lastActiveBatch;
-
-        /// <summary>
-        /// Sets the last vertex batch used for drawing.
-        /// <para>
-        /// This is done so that various methods that change GL state can force-draw the batch
-        /// before continuing with the state change.
-        /// </para>
-        /// </summary>
-        /// <param name="batch">The batch.</param>
-        internal static void SetActiveBatch(IVertexBatch batch)
-        {
-            if (lastActiveBatch == batch)
-                return;
-
-            batch_reset_list.Add(batch);
-
-            FlushCurrentBatch();
-
-            lastActiveBatch = batch;
-        }
-
         private static TextureGL lastBoundTexture;
 
         internal static bool AtlasTextureIsBound => lastBoundTexture is TextureGLAtlas;
@@ -295,7 +273,7 @@ namespace osu.Framework.Graphics.OpenGL
         {
             if (lastBoundTexture != texture)
             {
-                FlushCurrentBatch();
+                OnBatchBroken?.Invoke();
 
                 GL.BindTexture(TextureTarget.Texture2D, texture?.TextureId ?? 0);
                 lastBoundTexture = texture;
@@ -316,7 +294,7 @@ namespace osu.Framework.Graphics.OpenGL
             if (lastBlendingInfo.Equals(blendingInfo))
                 return;
 
-            FlushCurrentBatch();
+            OnBatchBroken?.Invoke();
 
             if (blendingInfo.IsDisabled)
             {
@@ -405,7 +383,7 @@ namespace osu.Framework.Graphics.OpenGL
         /// <param name="ortho">The orthographic projection rectangle.</param>
         public static void PushOrtho(RectangleF ortho)
         {
-            FlushCurrentBatch();
+            OnBatchBroken?.Invoke();
 
             ortho_stack.Push(ortho);
             if (Ortho == ortho)
@@ -426,7 +404,7 @@ namespace osu.Framework.Graphics.OpenGL
         {
             Trace.Assert(ortho_stack.Count > 1);
 
-            FlushCurrentBatch();
+            OnBatchBroken?.Invoke();
 
             ortho_stack.Pop();
             RectangleF actualRect = ortho_stack.Peek();
@@ -471,7 +449,7 @@ namespace osu.Framework.Graphics.OpenGL
 
         private static void setMaskingInfo(MaskingInfo maskingInfo, bool isPushing, bool overwritePreviousScissor)
         {
-            FlushCurrentBatch();
+            OnBatchBroken?.Invoke();
 
             GlobalPropertyManager.Set(GlobalProperty.MaskingRect, new Vector4(
                 maskingInfo.MaskingRect.Left,
@@ -530,11 +508,6 @@ namespace osu.Framework.Graphics.OpenGL
             }
 
             UpdateScissorToCurrentViewportAndOrtho();
-        }
-
-        internal static void FlushCurrentBatch()
-        {
-            lastActiveBatch?.Draw();
         }
 
         public static bool IsMaskingActive => masking_stack.Count > 1;
@@ -605,7 +578,7 @@ namespace osu.Framework.Graphics.OpenGL
 
         private static void setDepthInfo(DepthInfo depthInfo)
         {
-            FlushCurrentBatch();
+            OnBatchBroken?.Invoke();
 
             if (depthInfo.DepthTest)
             {
@@ -639,7 +612,7 @@ namespace osu.Framework.Graphics.OpenGL
 
             if (!alreadyBound)
             {
-                FlushCurrentBatch();
+                OnBatchBroken?.Invoke();
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, frameBuffer);
                 GlobalPropertyManager.Set(GlobalProperty.BackbufferDraw, UsingBackbuffer);
             }
@@ -660,7 +633,7 @@ namespace osu.Framework.Graphics.OpenGL
 
             frame_buffer_stack.Pop();
 
-            FlushCurrentBatch();
+            OnBatchBroken?.Invoke();
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, frame_buffer_stack.Peek());
 
             GlobalPropertyManager.Set(GlobalProperty.BackbufferDraw, UsingBackbuffer);
@@ -708,7 +681,7 @@ namespace osu.Framework.Graphics.OpenGL
 
             FrameStatistics.Increment(StatisticsCounterType.ShaderBinds);
 
-            FlushCurrentBatch();
+            OnBatchBroken?.Invoke();
 
             GL.UseProgram(s);
             currentShader = s;
@@ -718,7 +691,7 @@ namespace osu.Framework.Graphics.OpenGL
             where T : struct
         {
             if (uniform.Owner == currentShader)
-                FlushCurrentBatch();
+                OnBatchBroken?.Invoke();
 
             switch (uniform)
             {
