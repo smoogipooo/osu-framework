@@ -4,6 +4,7 @@
 using osu.Framework.Graphics.OpenGL;
 using System;
 using System.Runtime.CompilerServices;
+using osu.Framework.Allocation.VertexBuffers;
 using osu.Framework.Graphics.Batches;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.OpenGL.Buffers;
@@ -45,6 +46,8 @@ namespace osu.Framework.Graphics
         /// </summary>
         protected IDrawable Source { get; private set; }
 
+        internal readonly VertexAllocationInfo VertexAllocationInfo = new VertexAllocationInfo();
+
         private readonly AtomicCounter referenceCount = new AtomicCounter();
 
         /// <summary>
@@ -83,6 +86,8 @@ namespace osu.Framework.Graphics
         /// </remarks>
         public virtual void Draw()
         {
+            GLWrapper.SetCurrentDrawNode(this);
+
             GLWrapper.SetBlend(DrawColourInfo.Blending);
 
             // This is the back-to-front (BTF) pass. The back-buffer depth test function used is GL_LESS.

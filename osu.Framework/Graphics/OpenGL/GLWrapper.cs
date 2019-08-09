@@ -40,6 +40,8 @@ namespace osu.Framework.Graphics.OpenGL
         public static Matrix4 ProjectionMatrix { get; private set; }
         public static DepthInfo CurrentDepthInfo { get; private set; }
 
+        public static DrawNode CurrentDrawNode { get; private set; }
+
         public static float BackbufferDrawDepth { get; private set; }
 
         public static bool UsingBackbuffer => frame_buffer_stack.Peek() == DefaultFrameBuffer;
@@ -150,6 +152,11 @@ namespace osu.Framework.Graphics.OpenGL
         }
 
         internal static void Finish() => OnFinish?.Invoke();
+
+        internal static void SetCurrentDrawNode(DrawNode drawNode)
+        {
+            CurrentDrawNode = drawNode;
+        }
 
         private static ClearInfo currentClearInfo;
 
