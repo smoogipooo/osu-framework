@@ -22,17 +22,17 @@ namespace osu.Framework.Text
         /// <summary>
         /// The rectangle for the character to be drawn in.
         /// </summary>
-        public RectangleF DrawRectangle;
+        public RectangleF DrawRectangle { get; internal set; }
 
         /// <summary>
         /// Whether this is the first character on a new line.
         /// </summary>
-        public bool OnNewLine;
+        public bool OnNewLine { get; internal set; }
 
         private readonly float textSize;
         private readonly float? fixedWidth;
 
-        public TextBuilderGlyph(ITexturedCharacterGlyph glyph, float textSize, float? fixedWidth = null)
+        internal TextBuilderGlyph(ITexturedCharacterGlyph glyph, float textSize, float? fixedWidth = null)
         {
             this = default;
             this.textSize = textSize;
