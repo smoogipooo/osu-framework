@@ -423,12 +423,12 @@ namespace osu.Framework.Graphics.Sprites
         #region Characters
 
         private readonly Cached charactersCache = new Cached();
-        private readonly List<TextBuilder.TextBuilderGlyph> charactersBacking = new List<TextBuilder.TextBuilderGlyph>();
+        private readonly List<TextBuilderGlyph> charactersBacking = new List<TextBuilderGlyph>();
 
         /// <summary>
         /// The characters in local space.
         /// </summary>
-        private List<TextBuilder.TextBuilderGlyph> characters
+        private List<TextBuilderGlyph> characters
         {
             get
             {

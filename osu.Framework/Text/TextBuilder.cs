@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using osu.Framework.Caching;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.Graphics.Textures;
 using osu.Framework.IO.Stores;
 using osuTK;
 
@@ -285,40 +284,6 @@ namespace osu.Framework.Text
                    ?? store.Get(null, character)
                    ?? store.Get(font.FontName, FallbackCharacter)
                    ?? store.Get(null, FallbackCharacter);
-        }
-
-        public class TextBuilderGlyph : ITexturedCharacterGlyph
-        {
-            public Texture Texture => glyph.Texture;
-            public float XOffset => ((fixedWidth - glyph.Width) / 2 ?? glyph.XOffset) * textSize;
-            public float YOffset => glyph.YOffset * textSize;
-            public float XAdvance => (fixedWidth ?? glyph.XAdvance) * textSize;
-            public float Width => glyph.Width * textSize;
-            public float Height => glyph.Height * textSize;
-            public char Character => glyph.Character;
-
-            /// <summary>
-            /// The rectangle for the character to be drawn in.
-            /// </summary>
-            public RectangleF DrawRectangle;
-
-            /// <summary>
-            /// Whether this is the first character on a new line.
-            /// </summary>
-            public bool OnNewLine;
-
-            private readonly ITexturedCharacterGlyph glyph;
-            private readonly float textSize;
-            private readonly float? fixedWidth;
-
-            public TextBuilderGlyph(ITexturedCharacterGlyph glyph, float textSize, float? fixedWidth = null)
-            {
-                this.glyph = glyph;
-                this.textSize = textSize;
-                this.fixedWidth = fixedWidth;
-            }
-
-            public float GetKerning(ICharacterGlyph lastGlyph) => fixedWidth != null ? 0 : glyph.GetKerning(lastGlyph);
         }
     }
 }
