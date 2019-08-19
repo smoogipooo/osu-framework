@@ -26,6 +26,7 @@ namespace osu.Framework.Graphics.Sprites
     public partial class SpriteText : Drawable, IHasLineBaseHeight, ITexturedShaderDrawable, IHasText, IHasFilterTerms, IFillFlowContainer, IHasCurrentValue<string>
     {
         private const float default_text_size = 20;
+        private static readonly char[] default_never_fixed_width_characters = { '.', ',', ':', ' ' };
 
         [Resolved]
         private FontStore store { get; set; }
@@ -559,28 +560,43 @@ namespace osu.Framework.Graphics.Sprites
 
         #endregion
 
-        #region DrawNode
-
         protected override DrawNode CreateDrawNode() => new SpriteTextDrawNode(this);
 
-        #endregion
+        /// <summary>
+        /// The characters for which fixed-width spacing should never be applied. Defaults to (".", ",", ":", " ") if null.
+        /// </summary>
+        protected virtual char[] NeverFixedWidthCharacters { get; } = null;
 
+        /// <summary>
+        /// The character to fallback to if a character glyph lookup failed.
+        /// </summary>
+        protected virtual char FallbackCharacter => '?';
+
+        /// <summary>
+        /// Creates a <see cref="TextBuilder"/> to generate the character layout for this <see cref="SpriteText"/>.
+        /// </summary>
+        /// <param name="store">The <see cref="ITexturedGlyphLookupStore"/> where characters should be retrieved from.</param>
+        /// <returns>The <see cref="TextBuilder"/>.</returns>
         protected virtual TextBuilder CreateTextBuilder(ITexturedGlyphLookupStore store)
         {
+            var neverFixedWidthCharacters = NeverFixedWidthCharacters ?? default_never_fixed_width_characters;
+
             float maxWidth = requiresAutoSizedWidth ? float.PositiveInfinity : ApplyRelativeAxes(RelativeSizeAxes, new Vector2(base.Width, base.Height), FillMode).X - Padding.Right;
 
             if (AllowMultiline)
-                return new MultilineTextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, charactersBacking);
+            {
+                return new MultilineTextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, charactersBacking,
+                    neverFixedWidthCharacters, FallbackCharacter);
+            }
 
             if (Truncate)
             {
-                return new TruncatingTextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, charactersBacking)
-                {
-                    EllipsisString = ellipsisString
-                };
+                return new TruncatingTextBuilder(store, Font, maxWidth, ellipsisString, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, charactersBacking,
+                    neverFixedWidthCharacters, FallbackCharacter);
             }
 
-            return new TextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, charactersBacking);
+            return new TextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, charactersBacking,
+                neverFixedWidthCharacters, FallbackCharacter);
         }
 
         public override string ToString() => $@"""{displayedText}"" " + base.ToString();

@@ -6,9 +6,7 @@ using osuTK.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
-using osu.Framework.IO.Stores;
 using osu.Framework.MathUtils;
-using osu.Framework.Text;
 using osu.Framework.Timing;
 using osuTK;
 
@@ -96,14 +94,7 @@ namespace osu.Framework.Graphics.Performance
                 Font = new FontUsage(fixedWidth: true);
             }
 
-            protected override TextBuilder CreateTextBuilder(ITexturedGlyphLookupStore store)
-            {
-                var builder = base.CreateTextBuilder(store);
-
-                builder.NeverFixedWidthCharacters = new[] { ',', '.', ' ' };
-
-                return builder;
-            }
+            protected override char[] NeverFixedWidthCharacters { get; } = { ',', '.', ' ' };
         }
     }
 }
