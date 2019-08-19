@@ -17,14 +17,12 @@ namespace osu.Framework.Text
         public float XOffset => xOffset * ScaleAdjustment;
         public float YOffset => yOffset * ScaleAdjustment;
         public float XAdvance => xAdvance * ScaleAdjustment;
-        public float Width => width * ScaleAdjustment;
-        public float Height => height * ScaleAdjustment;
+        public float Width => (Texture?.Width ?? 0) * ScaleAdjustment;
+        public float Height => (Texture?.Height ?? 0) * ScaleAdjustment;
 
         private readonly float xOffset;
         private readonly float yOffset;
         private readonly float xAdvance;
-        private readonly float width;
-        private readonly float height;
 
         private readonly GlyphStore containingStore;
 
@@ -39,8 +37,6 @@ namespace osu.Framework.Text
             this.xOffset = xOffset;
             this.yOffset = yOffset;
             this.xAdvance = xAdvance;
-            width = texture?.Width ?? 0;
-            height = texture?.Height ?? 0;
 
             Texture = texture;
             Character = character;
