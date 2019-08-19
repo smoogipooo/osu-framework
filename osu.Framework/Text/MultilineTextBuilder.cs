@@ -8,7 +8,7 @@ using osuTK;
 
 namespace osu.Framework.Text
 {
-    public class MultilineTextBuilder : TextBuilder
+    public sealed class MultilineTextBuilder : TextBuilder
     {
         public MultilineTextBuilder(ITexturedGlyphLookupStore store, FontUsage font, float maxWidth, bool useFontSizeAsHeight = true, Vector2 startOffset = default, Vector2 spacing = default,
                                     List<TextBuilderGlyph> characterList = null)

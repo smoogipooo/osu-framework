@@ -9,7 +9,7 @@ using osuTK;
 
 namespace osu.Framework.Text
 {
-    public class TruncatingTextBuilder : TextBuilder
+    public sealed class TruncatingTextBuilder : TextBuilder
     {
         /// <summary>
         /// The string to be displayed if the text exceeds the allowable text area.
