@@ -64,7 +64,7 @@ namespace osu.Framework.Text
             addingEllipsis = false;
         }
 
-        private Cached<Vector2> ellipsisSizeCache;
+        private readonly Cached<Vector2> ellipsisSizeCache = new Cached<Vector2>();
 
         private Vector2 getEllipsisSize()
         {

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using osu.Framework.Logging;
 using System.Collections.Concurrent;
+using osu.Framework.Platform;
 using osu.Framework.Text;
 
 namespace osu.Framework.IO.Stores
@@ -17,11 +18,19 @@ namespace osu.Framework.IO.Stores
 
         private readonly List<FontStore> nestedFontStores = new List<FontStore>();
 
+        private Storage cacheStorage;
+
         private readonly ConcurrentDictionary<(string, char), ICharacterGlyph> namespacedGlyphCache = new ConcurrentDictionary<(string, char), ICharacterGlyph>();
 
         public FontStore(IResourceStore<TextureUpload> store = null, float scaleAdjust = 100)
-            : base(store, scaleAdjust: scaleAdjust)
+            : this(store, scaleAdjust, false)
         {
+        }
+
+        internal FontStore(IResourceStore<TextureUpload> store = null, float scaleAdjust = 100, bool useAtlas = false, Storage cacheStorage = null)
+            : base(store, scaleAdjust: scaleAdjust, useAtlas: useAtlas)
+        {
+            this.cacheStorage = cacheStorage;
         }
 
         public ICharacterGlyph Get(string fontName, char character)
@@ -59,7 +68,7 @@ namespace osu.Framework.IO.Stores
         /// <summary>
         /// Retrieves the base height of a font containing a particular character.
         /// </summary>
-        /// <param name="c">The character to search for.</param>
+        /// <param name="c">The charcter to search for.</param>
         /// <returns>The base height of the font.</returns>
         public float? GetBaseHeight(char c)
         {
@@ -115,10 +124,23 @@ namespace osu.Framework.IO.Stores
             switch (store)
             {
                 case FontStore fs:
+                    if (fs.Atlas == null)
+                    {
+                        // share the main store's atlas.
+                        fs.Atlas = Atlas;
+                    }
+
+                    if (fs.cacheStorage == null)
+                        fs.cacheStorage = cacheStorage;
+
                     nestedFontStores.Add(fs);
                     return;
 
                 case GlyphStore gs:
+
+                    if (gs.CacheStorage == null)
+                        gs.CacheStorage = cacheStorage;
+
                     glyphStores.Add(gs);
                     queueLoad(gs);
                     break;

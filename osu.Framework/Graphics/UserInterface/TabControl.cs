@@ -99,6 +99,8 @@ namespace osu.Framework.Graphics.UserInterface
         /// </summary>
         private readonly Dictionary<T, TabItem<T>> tabMap;
 
+        private bool firstSelection = true;
+
         protected TabControl()
         {
             Dropdown = CreateDropdown();
@@ -125,16 +127,7 @@ namespace osu.Framework.Graphics.UserInterface
             TabContainer.TabVisibilityChanged = updateDropdown;
             TabContainer.ChildrenEnumerable = tabMap.Values;
 
-            Current.ValueChanged += newSelection =>
-            {
-                var newTab = Current.Value != null ? tabMap[Current.Value] : null;
-
-                if (IsLoaded)
-                    SelectTab(newTab);
-                else
-                    //will be handled in LoadComplete
-                    SelectedTab = newTab;
-            };
+            Current.ValueChanged += _ => firstSelection = false;
         }
 
         protected override void Update()
@@ -151,10 +144,10 @@ namespace osu.Framework.Graphics.UserInterface
         // Default to first selection in list
         protected override void LoadComplete()
         {
-            if (SelectedTab != null)
-                SelectTab(SelectedTab);
-            else if (TabContainer.Children.Any())
-                SelectTab(TabContainer.Children.First());
+            if (firstSelection && !Current.Disabled && Items.Any())
+                Current.Value = Items.First();
+
+            Current.BindValueChanged(v => selectTab(v.NewValue != null ? tabMap[v.NewValue] : null), true);
         }
 
         /// <summary>
@@ -270,8 +263,14 @@ namespace osu.Framework.Graphics.UserInterface
 
         protected virtual void SelectTab(TabItem<T> tab)
         {
+            selectTab(tab);
+            Current.Value = SelectedTab != null ? SelectedTab.Value : default;
+        }
+
+        private void selectTab(TabItem<T> tab)
+        {
             // Only reorder if not pinned and not showing
-            if (AutoSort && !tab.IsPresent && !tab.Pinned)
+            if (AutoSort && tab != null && !tab.IsPresent && !tab.Pinned)
                 performTabSort(tab);
 
             // Deactivate previously selected tab
@@ -280,14 +279,7 @@ namespace osu.Framework.Graphics.UserInterface
             SelectedTab = tab;
 
             if (SelectedTab != null)
-            {
                 SelectedTab.Active.Value = true;
-                Current.Value = SelectedTab.Value;
-            }
-            else
-            {
-                Current.Value = default;
-            }
         }
 
         /// <summary>
@@ -407,8 +399,7 @@ namespace osu.Framework.Graphics.UserInterface
                     bool isVisible = allowMultiline || result[i].Y == 0;
                     updateChildIfNeeded(child, isVisible);
 
-                    if (isVisible)
-                        yield return result[i];
+                    yield return result[i];
 
                     i++;
                 }
@@ -428,6 +419,18 @@ namespace osu.Framework.Graphics.UserInterface
                     else
                         child.Hide();
                 }
+            }
+
+            public override void Clear(bool disposeChildren)
+            {
+                tabVisibility.Clear();
+                base.Clear(disposeChildren);
+            }
+
+            public override bool Remove(TabItem<T> drawable)
+            {
+                tabVisibility.Remove(drawable);
+                return base.Remove(drawable);
             }
         }
     }

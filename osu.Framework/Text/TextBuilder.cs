@@ -261,7 +261,7 @@ namespace osu.Framework.Text
             return glyph.YOffset + glyph.Height;
         }
 
-        private Cached<float> constantWidthCache;
+        private readonly Cached<float> constantWidthCache = new Cached<float>();
 
         private float getConstantWidth() => constantWidthCache.IsValid ? constantWidthCache.Value : constantWidthCache.Value = getGlyph('m')?.Width ?? 0;
 
