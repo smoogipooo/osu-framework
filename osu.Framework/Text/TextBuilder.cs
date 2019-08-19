@@ -36,8 +36,6 @@ namespace osu.Framework.Text
         /// </summary>
         public char FallbackCharacter = '?';
 
-        private TextBuilderGlyph? lastGlyph => Characters.Count == 0 ? null : (TextBuilderGlyph?)Characters[Characters.Count - 1];
-
         private readonly ITexturedGlyphLookupStore store;
         private readonly FontUsage font;
         private readonly bool useFontSizeAsHeight;
@@ -113,8 +111,8 @@ namespace osu.Framework.Text
 
             if (!currentNewLine)
             {
-                if (lastGlyph != null)
-                    kerning = glyph.GetKerning(lastGlyph.Value);
+                if (Characters.Count > 0)
+                    kerning = glyph.GetKerning(Characters[Characters.Count - 1].Glyph);
                 kerning += spacing.X;
             }
 
