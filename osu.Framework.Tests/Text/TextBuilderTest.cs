@@ -15,13 +15,53 @@ namespace osu.Framework.Tests.Text
     [TestFixture]
     public class TextBuilderTest
     {
+        private const float font_size = 1;
+
+        private const float x_offset = 1;
+        private const float y_offset = 2;
+        private const float x_advance = 3;
+        private const float width = 4;
+        private const float height = 5;
+        private const float kerning = -6;
+
+        private const float b_x_offset = 7;
+        private const float b_y_offset = 8;
+        private const float b_x_advance = 9;
+        private const float b_width = 10;
+        private const float b_height = 11;
+        private const float b_kerning = -12;
+
+        private const float m_x_offset = 13;
+        private const float m_y_offset = 14;
+        private const float m_x_advance = 15;
+        private const float m_width = 16;
+        private const float m_height = 17;
+        private const float m_kerning = -18;
+
+        private static readonly TestFontUsage normal_font = new TestFontUsage("test");
+        private static readonly TestFontUsage fixed_width_font = new TestFontUsage("test-fixedwidth", fixedWidth: true);
+
+        private readonly TestStore fontStore;
+
+        public TextBuilderTest()
+        {
+            fontStore = new TestStore(
+                (normal_font, new TestGlyph('a', x_offset, y_offset, x_advance, width, height, kerning)),
+                (normal_font, new TestGlyph('b', b_x_offset, b_y_offset, b_x_advance, b_width, b_height, b_kerning)),
+                (normal_font, new TestGlyph('m', m_x_offset, m_y_offset, m_x_advance, m_width, m_height, m_kerning)),
+                (fixed_width_font, new TestGlyph('a', x_offset, y_offset, x_advance, width, height, kerning)),
+                (fixed_width_font, new TestGlyph('b', b_x_offset, b_y_offset, b_x_advance, b_width, b_height, b_kerning)),
+                (fixed_width_font, new TestGlyph('m', m_x_offset, m_y_offset, m_x_advance, m_width, m_height, m_kerning))
+            );
+        }
+
         /// <summary>
         /// Tests that the size of a fresh text builder is zero.
         /// </summary>
         [Test]
         public void TestInitialSizeIsZero()
         {
-            var builder = new TextBuilder(null, null);
+            var builder = new TextBuilder(fontStore, null);
 
             Assert.That(builder.TextSize, Is.EqualTo(Vector2.Zero));
         }
@@ -32,8 +72,8 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestFirstCharacterIsOnNewLine()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore((font, new TestGlyph('a', 1, 2, 3, 4, 5, 0))), font);
+            var builder = new TextBuilder(fontStore, normal_font);
+
             builder.AddText("a");
 
             Assert.That(builder.Characters[0].OnNewLine, Is.True);
@@ -45,17 +85,14 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestFirstCharacterRectangleIsCorrect()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, 0))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo(font.Size));
-            Assert.That(builder.Characters[0].DrawRectangle.Top, Is.EqualTo(font.Size * 2));
-            Assert.That(builder.Characters[0].DrawRectangle.Width, Is.EqualTo(font.Size * 4));
-            Assert.That(builder.Characters[0].DrawRectangle.Height, Is.EqualTo(font.Size * 5));
+            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo(x_offset));
+            Assert.That(builder.Characters[0].DrawRectangle.Top, Is.EqualTo(y_offset));
+            Assert.That(builder.Characters[0].DrawRectangle.Width, Is.EqualTo(width));
+            Assert.That(builder.Characters[0].DrawRectangle.Height, Is.EqualTo(height));
         }
 
         /// <summary>
@@ -64,18 +101,14 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestFirstFixedWidthCharacterRectangleIsCorrect()
         {
-            var font = new FontUsage("test", fixedWidth: true);
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, 0)),
-                (font, new TestGlyph('m', 7, 8, 9, 10, 11, 0))
-            ), font);
+            var builder = new TextBuilder(fontStore, fixed_width_font);
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo((10 - 4) * font.Size / 2));
-            Assert.That(builder.Characters[0].DrawRectangle.Top, Is.EqualTo(font.Size * 2));
-            Assert.That(builder.Characters[0].DrawRectangle.Width, Is.EqualTo(font.Size * 4));
-            Assert.That(builder.Characters[0].DrawRectangle.Height, Is.EqualTo(font.Size * 5));
+            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo((m_width - width) / 2));
+            Assert.That(builder.Characters[0].DrawRectangle.Top, Is.EqualTo(y_offset));
+            Assert.That(builder.Characters[0].DrawRectangle.Width, Is.EqualTo(width));
+            Assert.That(builder.Characters[0].DrawRectangle.Height, Is.EqualTo(height));
         }
 
         /// <summary>
@@ -84,18 +117,15 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestCurrentPositionAdvancedAfterCharacter()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, 0))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddText("a");
             builder.AddText("a");
 
-            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(3 * font.Size + font.Size));
-            Assert.That(builder.Characters[1].DrawRectangle.Top, Is.EqualTo(font.Size * 2));
-            Assert.That(builder.Characters[1].DrawRectangle.Width, Is.EqualTo(font.Size * 4));
-            Assert.That(builder.Characters[1].DrawRectangle.Height, Is.EqualTo(font.Size * 5));
+            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(x_advance + kerning + x_offset));
+            Assert.That(builder.Characters[1].DrawRectangle.Top, Is.EqualTo(y_offset));
+            Assert.That(builder.Characters[1].DrawRectangle.Width, Is.EqualTo(width));
+            Assert.That(builder.Characters[1].DrawRectangle.Height, Is.EqualTo(height));
         }
 
         /// <summary>
@@ -104,108 +134,44 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestCurrentPositionAdvancedAfterFixedWidthCharacter()
         {
-            var font = new FontUsage("test", fixedWidth: true);
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, 0)),
-                (font, new TestGlyph('m', 7, 8, 9, 10, 11, 0))
-            ), font);
+            var builder = new TextBuilder(fontStore, fixed_width_font);
 
             builder.AddText("a");
             builder.AddText("a");
 
-            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(10 * font.Size + (10 - 4) * font.Size / 2));
-            Assert.That(builder.Characters[1].DrawRectangle.Top, Is.EqualTo(font.Size * 2));
-            Assert.That(builder.Characters[1].DrawRectangle.Width, Is.EqualTo(font.Size * 4));
-            Assert.That(builder.Characters[1].DrawRectangle.Height, Is.EqualTo(font.Size * 5));
-        }
-
-        /// <summary>
-        /// Tests that no kerning is added for the first character.
-        /// </summary>
-        [Test]
-        public void TestFirstCharacterHasNoKerning()
-        {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6))
-            ), font);
-
-            builder.AddText("a");
-
-            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo(font.Size));
-        }
-
-        /// <summary>
-        /// Tests that kerning is added for the second character.
-        /// </summary>
-        [Test]
-        public void TestKerningAddedOnSecondCharacter()
-        {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6))
-            ), font);
-
-            builder.AddText("a");
-            builder.AddText("a");
-
-            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(3 * font.Size - 6 * font.Size + font.Size));
-        }
-
-        /// <summary>
-        /// Tests that no kerning is added for fixed-width characters,
-        /// </summary>
-        [Test]
-        public void TestFixedWidthCharacterHasNoKerning()
-        {
-            var font = new FontUsage("test", fixedWidth: true);
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6)),
-                (font, new TestGlyph('m', 7, 8, 9, 10, 11, 0))
-            ), font);
-
-            builder.AddText("a");
-            builder.AddText("a");
-
-            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo((10 - 4) * font.Size / 2));
-            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(10 * font.Size + (10 - 4) * font.Size / 2));
+            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(m_width + (m_width - width) / 2));
+            Assert.That(builder.Characters[1].DrawRectangle.Top, Is.EqualTo(y_offset));
+            Assert.That(builder.Characters[1].DrawRectangle.Width, Is.EqualTo(width));
+            Assert.That(builder.Characters[1].DrawRectangle.Height, Is.EqualTo(height));
         }
 
         /// <summary>
         /// Tests that a new line added to an empty builder always uses the font height.
         /// </summary>
-        [TestCase(false)]
-        [TestCase(true)]
-        public void TestNewLineOnEmptyBuilderOffsetsPositionByFontSize(bool useFontHeightAsSize)
+        [Test]
+        public void TestNewLineOnEmptyBuilderOffsetsPositionByFontSize()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddNewLine();
             builder.AddText("a");
 
-            Assert.That(builder.Characters[0].DrawRectangle.Top, Is.EqualTo(font.Size + 2 * font.Size));
+            Assert.That(builder.Characters[0].DrawRectangle.Top, Is.EqualTo(font_size + y_offset));
         }
 
         /// <summary>
         /// Tests that a new line added to an empty line always uses the font height.
         /// </summary>
-        [TestCase(false)]
-        [TestCase(true)]
-        public void TestNewLineOnEmptyLineOffsetsPositionByFontSize(bool useFontHeightAsSize)
+        [Test]
+        public void TestNewLineOnEmptyLineOffsetsPositionByFontSize()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddNewLine();
             builder.AddNewLine();
             builder.AddText("a");
 
-            Assert.That(builder.Characters[0].DrawRectangle.Top, Is.EqualTo(2 * font.Size + 2 * font.Size));
+            Assert.That(builder.Characters[0].DrawRectangle.Top, Is.EqualTo(y_offset + y_offset));
         }
 
         /// <summary>
@@ -214,18 +180,14 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestNewLineUsesFontHeightWhenUsingFontHeightAsSize()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6)),
-                (font, new TestGlyph('b', 7, 8, 9, 10, 11, -12))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddText("a");
             builder.AddText("b");
             builder.AddNewLine();
             builder.AddText("a");
 
-            Assert.That(builder.Characters[2].DrawRectangle.Top, Is.EqualTo(font.Size + 2 * font.Size));
+            Assert.That(builder.Characters[2].DrawRectangle.Top, Is.EqualTo(font_size + y_offset));
         }
 
         /// <summary>
@@ -234,18 +196,15 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestNewLineUsesGlyphHeightWhenNotUsingFontHeightAsSize()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6)),
-                (font, new TestGlyph('b', 7, 8, 9, 10, 11, -12))
-            ), font, useFontSizeAsHeight: false);
+            var builder = new TextBuilder(fontStore, normal_font, useFontSizeAsHeight: false);
 
             builder.AddText("a");
             builder.AddText("b");
             builder.AddNewLine();
             builder.AddText("a");
 
-            Assert.That(builder.Characters[2].DrawRectangle.Top, Is.EqualTo(8 * font.Size + 11 * font.Size + 2 * font.Size));
+            // b is the larger glyph
+            Assert.That(builder.Characters[2].DrawRectangle.Top, Is.EqualTo(b_y_offset + b_height + y_offset));
         }
 
         /// <summary>
@@ -254,10 +213,7 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestFirstCharacterOnNewLineIsOnNewLine()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddText("a");
             builder.AddNewLine();
@@ -272,16 +228,13 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestFirstCharacterOnNewLineHasNoKerning()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddText("a");
             builder.AddNewLine();
             builder.AddText("a");
 
-            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(font.Size));
+            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(x_offset));
         }
 
         /// <summary>
@@ -290,10 +243,7 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestRemoveFirstCharacterResetsCurrentPosition()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddText("a");
             builder.RemoveLastCharacter();
@@ -302,7 +252,7 @@ namespace osu.Framework.Tests.Text
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo(font.Size));
+            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo(x_offset));
         }
 
         /// <summary>
@@ -311,20 +261,17 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestRemoveCharacterOnSameLineRemovesCharacter()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddText("a");
             builder.AddText("a");
             builder.RemoveLastCharacter();
 
-            Assert.That(builder.TextSize, Is.EqualTo(new Vector2(3 * font.Size, font.Size)));
+            Assert.That(builder.TextSize, Is.EqualTo(new Vector2(x_advance, font_size)));
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(3 * font.Size - 6 * font.Size + font.Size));
+            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(x_advance + kerning + x_offset));
         }
 
         /// <summary>
@@ -333,22 +280,19 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestRemoveCharacterOnNewLineRemovesCharacterAndLine()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, -6))
-            ), font);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             builder.AddText("a");
             builder.AddNewLine();
             builder.AddText("a");
             builder.RemoveLastCharacter();
 
-            Assert.That(builder.TextSize, Is.EqualTo(new Vector2(3 * font.Size, font.Size)));
+            Assert.That(builder.TextSize, Is.EqualTo(new Vector2(x_advance, font_size)));
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[1].DrawRectangle.TopLeft, Is.EqualTo(new Vector2(font.Size + 3 * font.Size - 6 * font.Size, 2 * font.Size)));
-            Assert.That(builder.TextSize, Is.EqualTo(new Vector2(3 * font.Size, font.Size)));
+            Assert.That(builder.Characters[1].DrawRectangle.TopLeft, Is.EqualTo(new Vector2(x_advance + kerning + x_offset, y_offset)));
+            Assert.That(builder.TextSize, Is.EqualTo(new Vector2(x_advance, font_size)));
         }
 
         /// <summary>
@@ -357,20 +301,19 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestSpacingAdded()
         {
-            var font = new FontUsage("test");
-            var builder = new TextBuilder(new TestStore(
-                (font, new TestGlyph('a', 1, 2, 3, 4, 5, 0))
-            ), font, spacing: new Vector2(7, 8));
+            Vector2 spacing = new Vector2(19, 20);
+
+            var builder = new TextBuilder(fontStore, normal_font, spacing: spacing);
 
             builder.AddText("a");
             builder.AddText("a");
             builder.AddNewLine();
             builder.AddText("a");
 
-            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo(font.Size));
-            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(3 * font.Size + 7 + font.Size));
-            Assert.That(builder.Characters[2].DrawRectangle.Left, Is.EqualTo(font.Size));
-            Assert.That(builder.Characters[2].DrawRectangle.Top, Is.EqualTo(font.Size + 8 + 2 * font.Size));
+            Assert.That(builder.Characters[0].DrawRectangle.Left, Is.EqualTo(x_offset));
+            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(x_advance + spacing.X + kerning + x_offset));
+            Assert.That(builder.Characters[2].DrawRectangle.Left, Is.EqualTo(x_offset));
+            Assert.That(builder.Characters[2].DrawRectangle.Top, Is.EqualTo(font_size + spacing.Y + y_offset));
         }
 
         /// <summary>
@@ -379,8 +322,8 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestSameCharacterFallsBackWithNoFontName()
         {
-            var font = new FontUsage("test");
-            var nullFont = new FontUsage(null);
+            var font = new TestFontUsage("test");
+            var nullFont = new TestFontUsage(null);
             var builder = new TextBuilder(new TestStore(
                 (font, new TestGlyph('b', 0, 0, 0, 0, 0, 0)),
                 (nullFont, new TestGlyph('a', 0, 0, 0, 0, 0, 0)),
@@ -399,8 +342,8 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestFallBackCharacterFallsBackWithFontName()
         {
-            var font = new FontUsage("test");
-            var nullFont = new FontUsage(null);
+            var font = new TestFontUsage("test");
+            var nullFont = new TestFontUsage(null);
             var builder = new TextBuilder(new TestStore(
                 (font, new TestGlyph('b', 0, 0, 0, 0, 0, 0)),
                 (nullFont, new TestGlyph('b', 0, 0, 0, 0, 0, 0)),
@@ -420,8 +363,8 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestFallBackCharacterFallsBackWithNoFontName()
         {
-            var font = new FontUsage("test");
-            var nullFont = new FontUsage(null);
+            var font = new TestFontUsage("test");
+            var nullFont = new TestFontUsage(null);
             var builder = new TextBuilder(new TestStore(
                 (font, new TestGlyph('b', 0, 0, 0, 0, 0, 0)),
                 (nullFont, new TestGlyph('b', 0, 0, 0, 0, 0, 0)),
@@ -432,7 +375,7 @@ namespace osu.Framework.Tests.Text
             builder.AddText("a");
 
             Assert.That(builder.Characters[0].Character, Is.EqualTo('?'));
-            Assert.That(builder.Characters[0].XOffset, Is.EqualTo(font.Size));
+            Assert.That(builder.Characters[0].XOffset, Is.EqualTo(1));
         }
 
         /// <summary>
@@ -441,12 +384,31 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestFailedCharacterLookup()
         {
-            var font = new FontUsage("test");
+            var font = new TestFontUsage("test");
             var builder = new TextBuilder(new TestStore(), font);
 
             builder.AddText("a");
 
             Assert.That(builder.TextSize, Is.EqualTo(Vector2.Zero));
+        }
+
+        private struct TestFontUsage
+        {
+            private readonly string family;
+            private readonly string weight;
+            private readonly bool italics;
+            private readonly bool fixedWidth;
+
+            public TestFontUsage(string family = null, string weight = null, bool italics = false, bool fixedWidth = false)
+            {
+                this.family = family;
+                this.weight = weight;
+                this.italics = italics;
+                this.fixedWidth = fixedWidth;
+            }
+
+            public static implicit operator FontUsage(TestFontUsage tfu)
+                => new FontUsage(tfu.family, font_size, tfu.weight, tfu.italics, tfu.fixedWidth);
         }
 
         private class TestStore : ITexturedGlyphLookupStore
@@ -479,12 +441,11 @@ namespace osu.Framework.Tests.Text
             public float Height { get; }
             public char Character { get; }
 
-            private readonly float kerning;
+            private readonly float glyphKerning;
 
             public TestGlyph(char character, float xOffset, float yOffset, float xAdvance, float width, float height, float kerning)
             {
-                this.kerning = kerning;
-
+                glyphKerning = kerning;
                 Character = character;
                 XOffset = xOffset;
                 YOffset = yOffset;
@@ -493,7 +454,7 @@ namespace osu.Framework.Tests.Text
                 Height = height;
             }
 
-            public float GetKerning(ICharacterGlyph lastGlyph) => kerning;
+            public float GetKerning(ICharacterGlyph lastGlyph) => glyphKerning;
         }
     }
 }
