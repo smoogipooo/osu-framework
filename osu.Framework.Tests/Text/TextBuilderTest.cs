@@ -61,7 +61,7 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestInitialSizeIsZero()
         {
-            var builder = new TextBuilder(fontStore, null);
+            var builder = new TextBuilder(fontStore, normal_font);
 
             Assert.That(builder.TextSize, Is.EqualTo(Vector2.Zero));
         }
