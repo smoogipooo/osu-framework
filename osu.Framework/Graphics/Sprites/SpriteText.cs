@@ -467,8 +467,6 @@ namespace osu.Framework.Graphics.Sprites
 
                 textBuilder = CreateTextBuilder(store);
                 textBuilder.AddText(displayedText);
-
-                charactersBacking.AddRange(textBuilder.Characters);
             }
             finally
             {
@@ -521,7 +519,8 @@ namespace osu.Framework.Graphics.Sprites
 
         private readonly Cached<Vector2> shadowOffsetCache = new Cached<Vector2>();
 
-        private Vector2 premultipliedShadowOffset => shadowOffsetCache.IsValid ? shadowOffsetCache.Value : shadowOffsetCache.Value = ToScreenSpace(shadowOffset * Font.Size) - ToScreenSpace(Vector2.Zero);
+        private Vector2 premultipliedShadowOffset =>
+            shadowOffsetCache.IsValid ? shadowOffsetCache.Value : shadowOffsetCache.Value = ToScreenSpace(shadowOffset * Font.Size) - ToScreenSpace(Vector2.Zero);
 
         #endregion
 
@@ -571,12 +570,17 @@ namespace osu.Framework.Graphics.Sprites
             float maxWidth = requiresAutoSizedWidth ? float.PositiveInfinity : ApplyRelativeAxes(RelativeSizeAxes, new Vector2(base.Width, base.Height), FillMode).X - Padding.Right;
 
             if (AllowMultiline)
-                return new MultilineTextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
+                return new MultilineTextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, charactersBacking);
 
             if (Truncate)
-                return new TruncatingTextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing) { EllipsisString = ellipsisString };
+            {
+                return new TruncatingTextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, charactersBacking)
+                {
+                    EllipsisString = ellipsisString
+                };
+            }
 
-            return new TextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing);
+            return new TextBuilder(store, Font, maxWidth, UseFullGlyphHeight, new Vector2(Padding.Left, Padding.Top), Spacing, charactersBacking);
         }
 
         public override string ToString() => $@"""{displayedText}"" " + base.ToString();

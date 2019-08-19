@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Collections.Generic;
 using osu.Framework.Caching;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.IO.Stores;
@@ -20,8 +21,9 @@ namespace osu.Framework.Text
         private readonly bool useFontSizeAsHeight;
         private readonly Vector2 spacing;
 
-        public TruncatingTextBuilder(ITexturedGlyphLookupStore store, FontUsage font, float maxWidth, bool useFontSizeAsHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
-            : base(store, font, maxWidth, useFontSizeAsHeight, startOffset, spacing)
+        public TruncatingTextBuilder(ITexturedGlyphLookupStore store, FontUsage font, float maxWidth, bool useFontSizeAsHeight = true, Vector2 startOffset = default, Vector2 spacing = default,
+                                     List<TextBuilderGlyph> characterList = null)
+            : base(store, font, maxWidth, useFontSizeAsHeight, startOffset, spacing, characterList)
         {
             this.store = store;
             this.font = font;
