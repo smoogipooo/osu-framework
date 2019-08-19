@@ -12,7 +12,7 @@ using osu.Framework.Text;
 
 namespace osu.Framework.IO.Stores
 {
-    public class FontStore : TextureStore, IGlyphLookupStore
+    public class FontStore : TextureStore, ITexturedGlyphLookupStore
     {
         private readonly List<GlyphStore> glyphStores = new List<GlyphStore>();
 
@@ -20,7 +20,7 @@ namespace osu.Framework.IO.Stores
 
         private Storage cacheStorage;
 
-        private readonly ConcurrentDictionary<(string, char), ICharacterGlyph> namespacedGlyphCache = new ConcurrentDictionary<(string, char), ICharacterGlyph>();
+        private readonly ConcurrentDictionary<(string, char), ITexturedCharacterGlyph> namespacedGlyphCache = new ConcurrentDictionary<(string, char), ITexturedCharacterGlyph>();
 
         public FontStore(IResourceStore<TextureUpload> store = null, float scaleAdjust = 100)
             : this(store, scaleAdjust, false)
@@ -33,7 +33,7 @@ namespace osu.Framework.IO.Stores
             this.cacheStorage = cacheStorage;
         }
 
-        public ICharacterGlyph Get(string fontName, char character)
+        public ITexturedCharacterGlyph Get(string fontName, char character)
         {
             var key = (fontName, character);
 
@@ -43,14 +43,7 @@ namespace osu.Framework.IO.Stores
             foreach (var store in glyphStores)
             {
                 if (store.ContainsTexture(getTextureName(fontName, character)))
-                {
-                    var glyph = store.GetCharacterInfo(character);
-
-                    glyph.Texture = Get(getTextureName(fontName, character));
-                    glyph.ScaleAdjustment = 1 / ScaleAdjust;
-
-                    return namespacedGlyphCache[key] = glyph;
-                }
+                    return namespacedGlyphCache[key] = new TexturedCharacterGlyph(store.GetCharacterInfo(character), Get(getTextureName(fontName, character)), 1 / ScaleAdjust);
             }
 
             foreach (var store in nestedFontStores)
@@ -63,7 +56,7 @@ namespace osu.Framework.IO.Stores
             return namespacedGlyphCache[key] = null;
         }
 
-        public Task<ICharacterGlyph> GetAsync(string fontName, char character) => Task.Run(() => Get(fontName, character));
+        public Task<ITexturedCharacterGlyph> GetAsync(string fontName, char character) => Task.Run(() => Get(fontName, character));
 
         /// <summary>
         /// Retrieves the base height of a font containing a particular character.

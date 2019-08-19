@@ -39,7 +39,7 @@ namespace osu.Framework.Text
 
         private TextBuilderGlyph lastGlyph => Characters.Count == 0 ? null : Characters[Characters.Count - 1];
 
-        private readonly IGlyphLookupStore store;
+        private readonly ITexturedGlyphLookupStore store;
         private readonly FontUsage font;
         private readonly bool useFontSizeAsHeight;
         private readonly Vector2 startOffset;
@@ -59,7 +59,7 @@ namespace osu.Framework.Text
         /// <param name="startOffset">The offset at which characters should begin being added at.</param>
         /// <param name="spacing">The spacing between characters.</param>
         /// <param name="maxWidth">The maximum width of the resulting text bounds.</param>
-        public TextBuilder(IGlyphLookupStore store, FontUsage font, float maxWidth = float.MaxValue, bool useFontSizeAsHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
+        public TextBuilder(ITexturedGlyphLookupStore store, FontUsage font, float maxWidth = float.MaxValue, bool useFontSizeAsHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
         {
             this.store = store;
             this.font = font;
@@ -248,7 +248,7 @@ namespace osu.Framework.Text
         /// <param name="glyph">The glyph to retrieve the height of.</param>
         /// <returns>The height of the glyph.</returns>
         private float getGlyphHeight<T>(T glyph)
-            where T : ICharacterGlyph
+            where T : ITexturedCharacterGlyph
         {
             if (useFontSizeAsHeight)
                 return font.Size;
@@ -282,7 +282,7 @@ namespace osu.Framework.Text
             return new TextBuilderGlyph(glyph, font.Size);
         }
 
-        public class TextBuilderGlyph : ICharacterGlyph
+        public class TextBuilderGlyph : ITexturedCharacterGlyph
         {
             public Texture Texture => glyph.Texture;
             public float XOffset => ((fixedWidth - glyph.Width) / 2 ?? glyph.XOffset) * textSize;
@@ -302,11 +302,11 @@ namespace osu.Framework.Text
             /// </summary>
             public bool OnNewLine;
 
-            private readonly ICharacterGlyph glyph;
+            private readonly ITexturedCharacterGlyph glyph;
             private readonly float textSize;
             private readonly float? fixedWidth;
 
-            public TextBuilderGlyph(ICharacterGlyph glyph, float textSize, float? fixedWidth = null)
+            public TextBuilderGlyph(ITexturedCharacterGlyph glyph, float textSize, float? fixedWidth = null)
             {
                 this.glyph = glyph;
                 this.textSize = textSize;

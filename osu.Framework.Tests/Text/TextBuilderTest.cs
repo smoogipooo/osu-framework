@@ -449,16 +449,16 @@ namespace osu.Framework.Tests.Text
             Assert.That(builder.TextSize, Is.EqualTo(Vector2.Zero));
         }
 
-        private class TestStore : IGlyphLookupStore
+        private class TestStore : ITexturedGlyphLookupStore
         {
-            private readonly (FontUsage font, ICharacterGlyph glyph)[] glyphs;
+            private readonly (FontUsage font, ITexturedCharacterGlyph glyph)[] glyphs;
 
-            public TestStore(params (FontUsage font, ICharacterGlyph glyph)[] glyphs)
+            public TestStore(params (FontUsage font, ITexturedCharacterGlyph glyph)[] glyphs)
             {
                 this.glyphs = glyphs;
             }
 
-            public ICharacterGlyph Get(string fontName, char character)
+            public ITexturedCharacterGlyph Get(string fontName, char character)
             {
                 if (string.IsNullOrEmpty(fontName))
                     return glyphs.FirstOrDefault(g => g.glyph.Character == character).glyph;
@@ -466,10 +466,10 @@ namespace osu.Framework.Tests.Text
                 return glyphs.FirstOrDefault(g => g.font.FontName == fontName && g.glyph.Character == character).glyph;
             }
 
-            public Task<ICharacterGlyph> GetAsync(string fontName, char character) => throw new System.NotImplementedException();
+            public Task<ITexturedCharacterGlyph> GetAsync(string fontName, char character) => throw new System.NotImplementedException();
         }
 
-        private struct TestGlyph : ICharacterGlyph
+        private struct TestGlyph : ITexturedCharacterGlyph
         {
             public Texture Texture => new Texture(1, 1);
             public float XOffset { get; }

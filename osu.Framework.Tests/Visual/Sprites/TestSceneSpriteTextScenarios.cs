@@ -239,7 +239,7 @@ namespace osu.Framework.Tests.Visual.Sprites
                 Font = new FontUsage(fixedWidth: true);
             }
 
-            protected override TextBuilder CreateTextBuilder(IGlyphLookupStore store)
+            protected override TextBuilder CreateTextBuilder(ITexturedGlyphLookupStore store)
             {
                 var builder = base.CreateTextBuilder(store);
 

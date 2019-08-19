@@ -15,12 +15,12 @@ namespace osu.Framework.Text
         /// </summary>
         public string EllipsisString;
 
-        private readonly IGlyphLookupStore store;
+        private readonly ITexturedGlyphLookupStore store;
         private readonly FontUsage font;
         private readonly bool useFontSizeAsHeight;
         private readonly Vector2 spacing;
 
-        public TruncatingTextBuilder(IGlyphLookupStore store, FontUsage font, float maxWidth, bool useFontSizeAsHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
+        public TruncatingTextBuilder(ITexturedGlyphLookupStore store, FontUsage font, float maxWidth, bool useFontSizeAsHeight = true, Vector2 startOffset = default, Vector2 spacing = default)
             : base(store, font, maxWidth, useFontSizeAsHeight, startOffset, spacing)
         {
             this.store = store;
