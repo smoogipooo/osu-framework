@@ -504,11 +504,14 @@ namespace osu.Framework.Graphics.Sprites
 
             screenSpaceCharactersBacking.Clear();
 
+            Vector2 inflationAmount = DrawInfo.MatrixInverse.ExtractScale().Xy;
+
             foreach (var character in characters)
             {
                 screenSpaceCharactersBacking.Add(new ScreenSpaceCharacterPart
                 {
-                    DrawQuad = ToScreenSpace(character.DrawRectangle),
+                    DrawQuad = ToScreenSpace(character.DrawRectangle.Inflate(inflationAmount)),
+                    InflationPercentage = Vector2.Divide(inflationAmount, character.DrawRectangle.Size),
                     Texture = character.Texture
                 });
             }
