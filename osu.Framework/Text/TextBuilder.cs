@@ -84,7 +84,7 @@ namespace osu.Framework.Text
         {
             foreach (var c in text)
             {
-                var glyph = getGlyph(c);
+                var glyph = createGlyph(c);
 
                 if (glyph == null)
                     continue;
@@ -263,23 +263,28 @@ namespace osu.Framework.Text
 
         private readonly Cached<float> constantWidthCache = new Cached<float>();
 
-        private float getConstantWidth() => constantWidthCache.IsValid ? constantWidthCache.Value : constantWidthCache.Value = getGlyph('m', true)?.Width ?? 0;
+        private float getConstantWidth() => constantWidthCache.IsValid ? constantWidthCache.Value : constantWidthCache.Value = getGlyph('m')?.Width ?? 0;
 
-        private TextBuilderGlyph getGlyph(char character, bool bypassFixedWidth = false)
+        private TextBuilderGlyph createGlyph(char character)
         {
-            var glyph = store.Get(font.FontName, character)
-                        ?? store.Get(null, character)
-                        ?? store.Get(font.FontName, FallbackCharacter)
-                        ?? store.Get(null, FallbackCharacter);
+            var glyph = getGlyph(character);
 
             if (glyph == null)
                 return null;
 
             // Array.IndexOf is used to avoid LINQ
-            if (!bypassFixedWidth && font.FixedWidth && Array.IndexOf(NeverFixedWidthCharacters, character) == -1)
+            if (font.FixedWidth && Array.IndexOf(NeverFixedWidthCharacters, character) == -1)
                 return new TextBuilderGlyph(glyph, font.Size, getConstantWidth());
 
             return new TextBuilderGlyph(glyph, font.Size);
+        }
+
+        private ITexturedCharacterGlyph getGlyph(char character)
+        {
+            return store.Get(font.FontName, character)
+                   ?? store.Get(null, character)
+                   ?? store.Get(font.FontName, FallbackCharacter)
+                   ?? store.Get(null, FallbackCharacter);
         }
 
         public class TextBuilderGlyph : ITexturedCharacterGlyph
