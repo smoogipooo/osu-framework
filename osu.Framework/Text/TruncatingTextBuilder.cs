@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
-using osu.Framework.Caching;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.IO.Stores;
 using osuTK;
@@ -45,53 +44,57 @@ namespace osu.Framework.Text
             this.fallbackCharacter = fallbackCharacter;
         }
 
-        private bool widthExceededOnce;
         private bool addingEllipsis;
+        private bool ellipsisAdded;
 
-        protected override bool CanAddCharacters => base.CanAddCharacters && (!widthExceededOnce || addingEllipsis);
+        protected override bool CanAddCharacters => base.CanAddCharacters && !ellipsisAdded || addingEllipsis;
 
         protected override void OnWidthExceeded()
         {
-            if (widthExceededOnce)
-                return;
-
-            widthExceededOnce = true;
-
-            if (string.IsNullOrEmpty(ellipsisString))
+            if (addingEllipsis)
                 return;
 
             addingEllipsis = true;
 
-            // Remove characters by backtracking until both of the following conditions are met:
-            // 1. The ellipsis glyphs can be added without exceeding the text bounds
-            // 2. The last character in the builder is not a whitespace (for visual niceness)
-            // Or until there are no more non-ellipsis characters in the builder (if the ellipsis string is very long)
-
-            do
+            try
             {
-                RemoveLastCharacter();
+                if (string.IsNullOrEmpty(ellipsisString))
+                    return;
 
-                if (Characters.Count == 0)
-                    break;
-            } while (Characters[Characters.Count - 1].IsWhiteSpace() || !HasAvailableSpace(getEllipsisSize().X));
+                // Characters is re-used to reduce allocations, but must be reset after use
+                int startIndex = Characters.Count;
 
-            AddText(ellipsisString);
+                // Compute the ellipsis to find out the size required
+                var builder = new TextBuilder(store, font, float.MaxValue, useFontSizeAsHeight, Vector2.Zero, spacing, Characters, neverFixedWidthCharacters, fallbackCharacter);
+                builder.AddText(ellipsisString);
 
-            addingEllipsis = false;
-        }
+                float ellipsisWidth = builder.TextSize.X;
+                TextBuilderGlyph firstEllipsisGlyph = builder.Characters[startIndex];
 
-        private readonly Cached<Vector2> ellipsisSizeCache = new Cached<Vector2>();
+                // Reset the characters list by removing all ellipsis characters
+                Characters.RemoveRange(startIndex, Characters.Count - startIndex);
 
-        private Vector2 getEllipsisSize()
-        {
-            if (ellipsisSizeCache.IsValid)
-                return ellipsisSizeCache.Value;
+                while (true)
+                {
+                    RemoveLastCharacter();
 
-            var builder = new TextBuilder(store, font, float.MaxValue, useFontSizeAsHeight, Vector2.Zero, spacing, null, neverFixedWidthCharacters, fallbackCharacter);
+                    if (Characters.Count == 0)
+                        break;
 
-            builder.AddText(ellipsisString);
+                    if (Characters[Characters.Count - 1].IsWhiteSpace())
+                        continue;
 
-            return ellipsisSizeCache.Value = builder.TextSize;
+                    if (HasAvailableSpace(firstEllipsisGlyph.GetKerning(Characters[Characters.Count - 1]) + spacing.X + ellipsisWidth))
+                        break;
+                }
+
+                AddText(ellipsisString);
+            }
+            finally
+            {
+                addingEllipsis = false;
+                ellipsisAdded = true;
+            }
         }
     }
 }
