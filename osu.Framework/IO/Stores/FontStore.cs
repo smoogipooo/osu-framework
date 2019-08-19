@@ -91,7 +91,7 @@ namespace osu.Framework.IO.Stores
             foreach (var store in glyphStores)
             {
                 if (store.FontName == fontName)
-                    return store.GetBaseHeight();
+                    return store.GetBaseHeight() / ScaleAdjust;
             }
 
             foreach (var store in nestedFontStores)
