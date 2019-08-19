@@ -454,7 +454,9 @@ namespace osu.Framework.Tests.Text
                 Height = height;
             }
 
-            public float GetKerning(ICharacterGlyph lastGlyph) => glyphKerning;
+            public float GetKerning<T>(T lastGlyph)
+                where T : ICharacterGlyph
+                => glyphKerning;
         }
     }
 }

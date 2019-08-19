@@ -36,7 +36,7 @@ namespace osu.Framework.Text
         /// </summary>
         public char FallbackCharacter = '?';
 
-        private TextBuilderGlyph lastGlyph => Characters.Count == 0 ? null : Characters[Characters.Count - 1];
+        private TextBuilderGlyph? lastGlyph => Characters.Count == 0 ? null : (TextBuilderGlyph?)Characters[Characters.Count - 1];
 
         private readonly ITexturedGlyphLookupStore store;
         private readonly FontUsage font;
@@ -86,9 +86,7 @@ namespace osu.Framework.Text
         {
             foreach (var c in text)
             {
-                var glyph = createGlyph(c);
-
-                if (glyph == null)
+                if (!tryCreateGlyph(c, out var glyph))
                     continue;
 
                 addCharacter(glyph);
@@ -111,7 +109,14 @@ namespace osu.Framework.Text
             // 3. Advance the current position by glyph's XAdvance.
 
             // Spacing + kerning are only applied for non-first characters on each line
-            float kerning = currentNewLine ? 0 : glyph.GetKerning(lastGlyph) + spacing.X;
+            float kerning = 0;
+
+            if (!currentNewLine)
+            {
+                if (lastGlyph != null)
+                    kerning = glyph.GetKerning(lastGlyph.Value);
+                kerning += spacing.X;
+            }
 
             // Check if there is enough space for the character and let subclasses decide whether to continue adding the character if not
             if (!HasAvailableSpace(kerning + glyph.XAdvance))
@@ -166,7 +171,7 @@ namespace osu.Framework.Text
                 return;
 
             TextBuilderGlyph currentCharacter = Characters[Characters.Count - 1];
-            TextBuilderGlyph lastCharacter = Characters.Count == 1 ? null : Characters[Characters.Count - 2];
+            TextBuilderGlyph? lastCharacter = Characters.Count == 1 ? null : (TextBuilderGlyph?)Characters[Characters.Count - 2];
 
             Characters.RemoveAt(Characters.Count - 1);
 
@@ -198,7 +203,7 @@ namespace osu.Framework.Text
                 {
                     // The character's draw rectangle is the only marker that keeps a constant state for the position, but it has the glyph's XOffset added into it
                     // So the post-kerned position can be retrieved by taking the XOffset away, and the post-XAdvanced position is retrieved by adding the XAdvance back in
-                    currentPos.X = lastCharacter.DrawRectangle.Left - lastCharacter.XOffset + lastCharacter.XAdvance;
+                    currentPos.X = lastCharacter.Value.DrawRectangle.Left - lastCharacter.Value.XOffset + lastCharacter.Value.XAdvance;
                 }
             }
             else
@@ -206,8 +211,9 @@ namespace osu.Framework.Text
                 // This character is not the first on a new line - move back within the current line (reversing the operations in AddCharacter())
                 currentPos.X -= currentCharacter.XAdvance;
 
+                // Todo: This is almost 100% wrong
                 if (lastCharacter != null)
-                    currentPos.X -= currentCharacter.GetKerning(lastCharacter);
+                    currentPos.X -= currentCharacter.GetKerning(lastCharacter.Value);
             }
 
             // Calculate the text size after the removal
@@ -267,18 +273,23 @@ namespace osu.Framework.Text
 
         private float getConstantWidth() => constantWidthCache.IsValid ? constantWidthCache.Value : constantWidthCache.Value = getGlyph('m')?.Width ?? 0;
 
-        private TextBuilderGlyph createGlyph(char character)
+        private bool tryCreateGlyph(char character, out TextBuilderGlyph glyph)
         {
-            var glyph = getGlyph(character);
+            var fontStoreGlyph = getGlyph(character);
 
-            if (glyph == null)
-                return null;
+            if (fontStoreGlyph == null)
+            {
+                glyph = default;
+                return false;
+            }
 
             // Array.IndexOf is used to avoid LINQ
             if (font.FixedWidth && Array.IndexOf(NeverFixedWidthCharacters, character) == -1)
-                return new TextBuilderGlyph(glyph, font.Size, getConstantWidth());
+                glyph = new TextBuilderGlyph(fontStoreGlyph, font.Size, getConstantWidth());
+            else
+                glyph = new TextBuilderGlyph(fontStoreGlyph, font.Size);
 
-            return new TextBuilderGlyph(glyph, font.Size);
+            return true;
         }
 
         private ITexturedCharacterGlyph getGlyph(char character)

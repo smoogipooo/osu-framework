@@ -6,7 +6,7 @@ using osu.Framework.Graphics.Textures;
 
 namespace osu.Framework.Text
 {
-    public class TextBuilderGlyph : ITexturedCharacterGlyph
+    public struct TextBuilderGlyph : ITexturedCharacterGlyph
     {
         public Texture Texture => glyph.Texture;
         public float XOffset => ((fixedWidth - glyph.Width) / 2 ?? glyph.XOffset) * textSize;
@@ -32,11 +32,14 @@ namespace osu.Framework.Text
 
         public TextBuilderGlyph(ITexturedCharacterGlyph glyph, float textSize, float? fixedWidth = null)
         {
+            this = default;
             this.glyph = glyph;
             this.textSize = textSize;
             this.fixedWidth = fixedWidth;
         }
 
-        public float GetKerning(ICharacterGlyph lastGlyph) => fixedWidth != null ? 0 : glyph.GetKerning(lastGlyph);
+        public float GetKerning<T>(T lastGlyph)
+            where T : ICharacterGlyph
+            => fixedWidth != null ? 0 : glyph.GetKerning(lastGlyph);
     }
 }

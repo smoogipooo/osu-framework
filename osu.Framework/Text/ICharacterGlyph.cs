@@ -32,7 +32,7 @@ namespace osu.Framework.Text
         /// Retrieves the kerning between this <see cref="CharacterGlyph"/> and the one prior to it.
         /// </summary>
         /// <param name="lastGlyph">The <see cref="CharacterGlyph"/> prior to this one.</param>
-        float GetKerning(ICharacterGlyph lastGlyph);
+        float GetKerning<T>(T lastGlyph) where T : ICharacterGlyph;
     }
 
     public static class CharacterGlyphExtensions

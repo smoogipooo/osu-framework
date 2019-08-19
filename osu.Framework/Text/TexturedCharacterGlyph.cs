@@ -27,6 +27,8 @@ namespace osu.Framework.Text
             Texture = texture;
         }
 
-        public float GetKerning(ICharacterGlyph lastGlyph) => glyph.GetKerning(lastGlyph) * scaleAdjustment;
+        public float GetKerning<T>(T lastGlyph)
+            where T : ICharacterGlyph
+            => glyph.GetKerning(lastGlyph) * scaleAdjustment;
     }
 }

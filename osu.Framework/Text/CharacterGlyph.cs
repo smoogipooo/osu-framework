@@ -24,7 +24,8 @@ namespace osu.Framework.Text
             XAdvance = xAdvance;
         }
 
-        public float GetKerning(ICharacterGlyph lastGlyph)
-            => lastGlyph == null || containingStore == null ? 0 : containingStore.GetKerning(lastGlyph.Character, Character);
+        public float GetKerning<T>(T lastGlyph)
+            where T : ICharacterGlyph
+            => containingStore?.GetKerning(lastGlyph.Character, Character) ?? 0;
     }
 }
