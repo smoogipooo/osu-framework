@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using osu.Framework.IO.Stores;
 
@@ -24,6 +25,7 @@ namespace osu.Framework.Text
             XAdvance = xAdvance;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float GetKerning<T>(T lastGlyph)
             where T : ICharacterGlyph
             => containingStore?.GetKerning(lastGlyph.Character, Character) ?? 0;

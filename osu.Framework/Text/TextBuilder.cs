@@ -87,7 +87,7 @@ namespace osu.Framework.Text
                 if (!tryCreateGlyph(c, out var glyph))
                     continue;
 
-                addCharacter(glyph);
+                addCharacter(ref glyph);
             }
         }
 
@@ -95,7 +95,7 @@ namespace osu.Framework.Text
         /// Adds a character to this <see cref="TextBuilder"/>.
         /// </summary>
         /// <param name="glyph">The glyph of the character to add.</param>
-        private void addCharacter(TextBuilderGlyph glyph)
+        private void addCharacter(ref TextBuilderGlyph glyph)
         {
             if (!CanAddCharacters)
                 return;
@@ -134,7 +134,7 @@ namespace osu.Framework.Text
 
             // Move the current position
             currentPos.X += glyph.XAdvance;
-            currentLineHeight = Math.Max(currentLineHeight, getGlyphHeight(glyph));
+            currentLineHeight = Math.Max(currentLineHeight, getGlyphHeight(ref glyph));
             currentNewLine = false;
 
             // Calculate the text size
@@ -247,6 +247,25 @@ namespace osu.Framework.Text
         /// </summary>
         /// <param name="length">The space requested.</param>
         protected bool HasAvailableSpace(float length) => currentPos.X + length <= maxWidth;
+
+        /// <summary>
+        /// Retrieves the height of a glyph.
+        /// </summary>
+        /// <param name="glyph">The glyph to retrieve the height of.</param>
+        /// <returns>The height of the glyph.</returns>
+        private float getGlyphHeight<T>(ref T glyph)
+            where T : ITexturedCharacterGlyph
+        {
+            if (useFontSizeAsHeight)
+                return font.Size;
+
+            // Space characters typically have heights that exceed the height of all other characters in the font
+            // Thus, the height is forced to 0 such that only non-whitespace character heights are considered
+            if (glyph.IsWhiteSpace())
+                return 0;
+
+            return glyph.YOffset + glyph.Height;
+        }
 
         /// <summary>
         /// Retrieves the height of a glyph.
