@@ -5,6 +5,9 @@ using osu.Framework.Graphics.Textures;
 
 namespace osu.Framework.Text
 {
+    /// <summary>
+    /// A <see cref="ICharacterGlyph"/> with an associated <see cref="Texture"/>.
+    /// </summary>
     public interface ITexturedCharacterGlyph : ICharacterGlyph
     {
         /// <summary>

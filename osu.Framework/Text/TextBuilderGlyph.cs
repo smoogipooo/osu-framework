@@ -7,6 +7,9 @@ using osu.Framework.Graphics.Textures;
 
 namespace osu.Framework.Text
 {
+    /// <summary>
+    /// A <see cref="ITexturedCharacterGlyph"/> provided as final output from a <see cref="TextBuilder"/>.
+    /// </summary>
     public struct TextBuilderGlyph : ITexturedCharacterGlyph
     {
         public Texture Texture => Glyph.Texture;

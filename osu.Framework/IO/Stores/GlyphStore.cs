@@ -68,7 +68,7 @@ namespace osu.Framework.IO.Stores
         }, TaskCreationOptions.PreferFairness));
 
         /// <summary>
-        /// Gets the information for the specified character.
+        /// Retrieves the information for the specified character.
         /// </summary>
         /// <param name="c">The character to retrieve the information for.</param>
         /// <returns>The information for the specified character, without the texture.</returns>
@@ -78,15 +78,24 @@ namespace osu.Framework.IO.Stores
             return new CharacterGlyph(c, character.XOffset, character.YOffset, character.XAdvance, this);
         }
 
+        /// <summary>
+        /// Retrieves the kerning for a pair of characters.
+        /// </summary>
+        /// <param name="left">The character to the left.</param>
+        /// <param name="right">The character to the right.</param>
+        /// <returns></returns>
         public int GetKerning(char left, char right) => Font.GetKerningAmount(left, right);
 
+        /// <summary>
+        /// Retrieves the base height for characters in this <see cref="GlyphStore"/>.
+        /// </summary>
         public int GetBaseHeight() => Font.Common.Base;
 
         /// <summary>
-        /// Gets whether or not the specified texture is contained inside this GlyphStore.
+        /// Retrieves whether or not the specified texture is contained inside this <see cref="GlyphStore"/>.
         /// </summary>
         /// <param name="name">The name of the texture to look up.</param>
-        /// <returns>Whether or not the specified texture is contained inside this GlyphStore.</returns>
+        /// <returns>Whether or not the specified texture is contained inside this <see cref="GlyphStore"/>.</returns>
         public bool ContainsTexture(string name) =>
             (name.Length == 1 || name.StartsWith($@"{FontName}/", StringComparison.Ordinal)) && Font.Characters.ContainsKey(name.Last());
 
