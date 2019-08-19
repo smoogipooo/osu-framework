@@ -38,6 +38,8 @@ namespace osu.Framework.Tests.Text
         private const float m_height = 17;
         private const float m_kerning = -18;
 
+        private static readonly Vector2 spacing = new Vector2(19, 20);
+
         private static readonly TestFontUsage normal_font = new TestFontUsage("test");
         private static readonly TestFontUsage fixed_width_font = new TestFontUsage("test-fixedwidth", fixedWidth: true);
 
@@ -261,7 +263,7 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestRemoveCharacterOnSameLineRemovesCharacter()
         {
-            var builder = new TextBuilder(fontStore, normal_font);
+            var builder = new TextBuilder(fontStore, normal_font, spacing: spacing);
 
             builder.AddText("a");
             builder.AddText("a");
@@ -271,7 +273,7 @@ namespace osu.Framework.Tests.Text
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(x_advance + kerning + x_offset));
+            Assert.That(builder.Characters[1].DrawRectangle.Left, Is.EqualTo(x_advance + spacing.X + kerning + x_offset));
         }
 
         /// <summary>
@@ -280,7 +282,7 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestRemoveCharacterOnNewLineRemovesCharacterAndLine()
         {
-            var builder = new TextBuilder(fontStore, normal_font);
+            var builder = new TextBuilder(fontStore, normal_font, spacing: spacing);
 
             builder.AddText("a");
             builder.AddNewLine();
@@ -291,8 +293,8 @@ namespace osu.Framework.Tests.Text
 
             builder.AddText("a");
 
-            Assert.That(builder.Characters[1].DrawRectangle.TopLeft, Is.EqualTo(new Vector2(x_advance + kerning + x_offset, y_offset)));
-            Assert.That(builder.TextSize, Is.EqualTo(new Vector2(x_advance, font_size)));
+            Assert.That(builder.Characters[1].DrawRectangle.TopLeft, Is.EqualTo(new Vector2(x_advance + spacing.X + kerning + x_offset, y_offset)));
+            Assert.That(builder.TextSize, Is.EqualTo(new Vector2(x_advance + spacing.X + kerning + x_advance, font_size)));
         }
 
         /// <summary>
@@ -301,8 +303,6 @@ namespace osu.Framework.Tests.Text
         [Test]
         public void TestSpacingAdded()
         {
-            Vector2 spacing = new Vector2(19, 20);
-
             var builder = new TextBuilder(fontStore, normal_font, spacing: spacing);
 
             builder.AddText("a");

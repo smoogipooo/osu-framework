@@ -206,9 +206,8 @@ namespace osu.Framework.Text
                 // This character is not the first on a new line - move back within the current line (reversing the operations in AddCharacter())
                 currentPos.X -= currentCharacter.XAdvance;
 
-                // Todo: This is almost 100% wrong
                 if (lastCharacter != null)
-                    currentPos.X -= currentCharacter.GetKerning(lastCharacter.Value);
+                    currentPos.X -= currentCharacter.GetKerning(lastCharacter.Value) + spacing.X;
             }
 
             // Calculate the text size after the removal
