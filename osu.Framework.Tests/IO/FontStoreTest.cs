@@ -1,9 +1,10 @@
-// // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
-// // See the LICENCE file in the repository root for full licence text.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
 
 using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.IO.Stores;
+using osu.Framework.Text;
 
 namespace osu.Framework.Tests.IO
 {
@@ -30,8 +31,8 @@ namespace osu.Framework.Tests.IO
 
             fontStore.AddStore(nestedFontStore);
 
-            var normalGlyph = (FontStore.TexturedCharacterGlyph)fontStore.Get("OpenSans", 'a');
-            var boldGlyph = (FontStore.TexturedCharacterGlyph)fontStore.Get("OpenSans-Bold", 'a');
+            var normalGlyph = (TexturedCharacterGlyph)fontStore.Get("OpenSans", 'a');
+            var boldGlyph = (TexturedCharacterGlyph)fontStore.Get("OpenSans-Bold", 'a');
 
             Assert.That(normalGlyph.ScaleAdjustment, Is.EqualTo(1f / 100));
             Assert.That(boldGlyph.ScaleAdjustment, Is.EqualTo(1f / 10));
