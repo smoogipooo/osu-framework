@@ -13,7 +13,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
     internal class TextureGLAtlasWhite : TextureGLSub
     {
         public TextureGLAtlasWhite(TextureGLSingle parent)
-            : base(new RectangleI(0, 0, 1, 1), parent)
+            : base(new RectangleI(40, 40, 1, 1), parent)
         {
         }
 
