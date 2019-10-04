@@ -13,6 +13,7 @@ using osuTK.Platform;
 using osuTK.Input;
 using System.ComponentModel;
 using System.Drawing;
+using System.Text;
 using JetBrains.Annotations;
 using osu.Framework.Bindables;
 using Icon = osuTK.Icon;
@@ -127,12 +128,23 @@ namespace osu.Framework.Platform
             if (GLSLVersion == null)
                 GLSLVersion = new Version();
 
+            GL.GetInteger(GetPName.NumExtensions, out var extensionCount);
+
+            var extStringBuilder = new StringBuilder();
+
+            for (int i = 0; i < extensionCount; i++)
+            {
+                if (i > 0)
+                    extStringBuilder.Append(", ");
+                extStringBuilder.Append(GL.GetString(StringNameIndexed.Extensions, i));
+            }
+
             Logger.Log($@"GL Initialized
                         GL Version:                 {GL.GetString(StringName.Version)}
                         GL Renderer:                {GL.GetString(StringName.Renderer)}
                         GL Shader Language version: {GL.GetString(StringName.ShadingLanguageVersion)}
                         GL Vendor:                  {GL.GetString(StringName.Vendor)}
-                        GL Extensions:              {GL.GetString(StringName.Extensions)}");
+                        GL Extensions:              {extStringBuilder}");
 
             Context.MakeCurrent(null);
         }
