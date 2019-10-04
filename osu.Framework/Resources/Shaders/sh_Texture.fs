@@ -1,11 +1,13 @@
 #include "sh_Utils.h"
 
-varying lowp vec4 v_Colour;
-varying mediump vec2 v_TexCoord;
+in lowp vec4 v_Colour;
+in mediump vec2 v_TexCoord;
+
+out lowp vec4 f_Colour;
 
 uniform lowp sampler2D m_Sampler;
 
 void main(void)
 {
-	gl_FragColor = toSRGB(v_Colour * texture2D(m_Sampler, v_TexCoord, -0.9));
+	f_Colour = toSRGB(v_Colour * texture(m_Sampler, v_TexCoord, -0.9));
 }

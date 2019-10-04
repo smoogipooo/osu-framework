@@ -2,8 +2,10 @@
     precision mediump float;
 #endif
 
-varying vec4 v_Colour;
-varying vec2 v_TexCoord;
+in vec4 v_Colour;
+in vec2 v_TexCoord;
+
+out lowp vec4 f_Colour;
 
 uniform float g_Radius;
 uniform vec4 g_TexRect;
@@ -25,10 +27,10 @@ float distanceFromRoundedRect()
 void main(void)
 {
 	float dist = g_Radius == 0.0 ? 0.0 : distanceFromRoundedRect();
-	gl_FragColor = v_Colour;
+	f_Colour = v_Colour;
 
 	// This correction is needed to avoid fading of the alpha value for radii below 1px.
 	float radiusCorrection = max(0.0, 1.0 - g_Radius);
 	if (dist > g_Radius - 1.0 + radiusCorrection)
-		gl_FragColor.a *= max(0.0, g_Radius - dist + radiusCorrection);
+		f_Colour.a *= max(0.0, g_Radius - dist + radiusCorrection);
 }
