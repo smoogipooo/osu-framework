@@ -34,6 +34,9 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         {
             base.Initialise();
 
+            // Must be outside the conditional below as it needs to be added to the VAO
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, QuadIndexData.EBO_ID);
+
             int amountIndices = amountQuads * 6;
 
             if (amountIndices > QuadIndexData.MaxAmountIndices)
@@ -50,19 +53,10 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
                     indices[j + 5] = (ushort)(i + 1);
                 }
 
-                GLWrapper.BindBuffer(BufferTarget.ElementArrayBuffer, QuadIndexData.EBO_ID);
                 GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(amountIndices * sizeof(ushort)), indices, BufferUsageHint.StaticDraw);
 
                 QuadIndexData.MaxAmountIndices = amountIndices;
             }
-        }
-
-        public override void Bind(bool forRendering)
-        {
-            base.Bind(forRendering);
-
-            if (forRendering)
-                GLWrapper.BindBuffer(BufferTarget.ElementArrayBuffer, QuadIndexData.EBO_ID);
         }
 
         protected override int ToElements(int vertices) => 3 * vertices / 2;

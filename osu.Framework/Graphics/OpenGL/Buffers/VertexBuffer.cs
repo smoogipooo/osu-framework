@@ -23,6 +23,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         private Memory<DepthWrappingVertex<T>> vertexMemory;
 
         private bool isInitialised;
+        private int vaoId;
         private int vboId;
 
         protected VertexBuffer(int amountVertices, BufferUsageHint usage)
@@ -65,15 +66,15 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         {
             ThreadSafety.EnsureDrawThread();
 
-            GL.GenBuffers(1, out vboId);
-
-            if (GLWrapper.BindBuffer(BufferTarget.ArrayBuffer, vboId))
-                VertexUtils<DepthWrappingVertex<T>>.Bind();
-
             int size = Size * STRIDE;
 
-            memoryLease = NativeMemoryTracker.AddMemory(this, size);
+            vboId = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vboId);
             GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)size, IntPtr.Zero, usage);
+
+            VertexUtils<DepthWrappingVertex<T>>.SetAttributes();
+
+            memoryLease = NativeMemoryTracker.AddMemory(this, size);
         }
 
         ~VertexBuffer()
@@ -100,32 +101,28 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
 
             if (isInitialised)
             {
-                Unbind();
-
                 memoryLease?.Dispose();
                 GL.DeleteBuffer(vboId);
+                GL.DeleteVertexArray(vaoId);
             }
 
             IsDisposed = true;
         }
 
-        public virtual void Bind(bool forRendering)
+        public void Bind(bool forRendering)
         {
             if (IsDisposed)
                 throw new ObjectDisposedException(ToString(), "Can not bind disposed vertex buffers.");
 
             if (!isInitialised)
             {
+                GLWrapper.BindVertexArray(vaoId = GL.GenVertexArray());
                 Initialise();
+
                 isInitialised = true;
             }
-
-            if (GLWrapper.BindBuffer(BufferTarget.ArrayBuffer, vboId))
-                VertexUtils<DepthWrappingVertex<T>>.Bind();
-        }
-
-        public virtual void Unbind()
-        {
+            else
+                GLWrapper.BindVertexArray(vaoId);
         }
 
         protected virtual int ToElements(int vertices) => vertices;
@@ -145,8 +142,6 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
 
             int amountVertices = endIndex - startIndex;
             GL.DrawElements(Type, ToElements(amountVertices), DrawElementsType.UnsignedShort, (IntPtr)(ToElementIndex(startIndex) * sizeof(ushort)));
-
-            Unbind();
         }
 
         public void Update()
@@ -159,9 +154,9 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             Bind(false);
 
             int amountVertices = endIndex - startIndex;
-            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(startIndex * STRIDE), (IntPtr)(amountVertices * STRIDE), ref vertexMemory.Span[startIndex]);
 
-            Unbind();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, vboId);
+            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(startIndex * STRIDE), (IntPtr)(amountVertices * STRIDE), ref vertexMemory.Span[startIndex]);
 
             FrameStatistics.Add(StatisticsCounterType.VerticesUpl, amountVertices);
         }

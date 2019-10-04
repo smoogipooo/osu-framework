@@ -241,23 +241,16 @@ namespace osu.Framework.Graphics.OpenGL
                 expensive_operations_queue.Enqueue(shader.EnsureLoaded);
         }
 
-        private static readonly int[] last_bound_buffers = new int[2];
+        private static int lastBoundVertexArray;
 
-        /// <summary>
-        /// Bind an OpenGL buffer object.
-        /// </summary>
-        /// <param name="target">The buffer type to bind.</param>
-        /// <param name="buffer">The buffer ID to bind.</param>
-        /// <returns>Whether an actual bind call was necessary. This value is false when repeatedly binding the same buffer.</returns>
-        public static bool BindBuffer(BufferTarget target, int buffer)
+        public static bool BindVertexArray(int vaoId)
         {
-            int bufferIndex = target - BufferTarget.ArrayBuffer;
-            if (last_bound_buffers[bufferIndex] == buffer)
+            if (lastBoundVertexArray == vaoId)
                 return false;
 
-            last_bound_buffers[bufferIndex] = buffer;
-            GL.BindBuffer(target, buffer);
+            lastBoundVertexArray = vaoId;
 
+            GL.BindVertexArray(vaoId);
             FrameStatistics.Increment(StatisticsCounterType.VBufBinds);
 
             return true;

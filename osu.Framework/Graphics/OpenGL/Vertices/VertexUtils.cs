@@ -23,7 +23,6 @@ namespace osu.Framework.Graphics.OpenGL.Vertices
         public static readonly int STRIDE = Marshal.SizeOf(default(T));
 
         private static readonly List<VertexMemberAttribute> attributes = new List<VertexMemberAttribute>();
-        private static int amountEnabledAttributes;
 
         static VertexUtils()
         {
@@ -54,33 +53,13 @@ namespace osu.Framework.Graphics.OpenGL.Vertices
             }
         }
 
-        /// <summary>
-        /// Enables and binds the vertex attributes/pointers for the vertex of type <see cref="T"/>.
-        /// </summary>
-        public static void Bind()
+        public static void SetAttributes()
         {
-            enableAttributes(attributes.Count);
             for (int i = 0; i < attributes.Count; i++)
+            {
+                GL.EnableVertexAttribArray(i);
                 GL.VertexAttribPointer(i, attributes[i].Count, attributes[i].Type, attributes[i].Normalized, STRIDE, attributes[i].Offset);
-        }
-
-        private static void enableAttributes(int amount)
-        {
-            if (amount == amountEnabledAttributes)
-                return;
-
-            if (amount > amountEnabledAttributes)
-            {
-                for (int i = amountEnabledAttributes; i < amount; ++i)
-                    GL.EnableVertexAttribArray(i);
             }
-            else
-            {
-                for (int i = amountEnabledAttributes - 1; i >= amount; --i)
-                    GL.DisableVertexAttribArray(i);
-            }
-
-            amountEnabledAttributes = amount;
         }
     }
 }
