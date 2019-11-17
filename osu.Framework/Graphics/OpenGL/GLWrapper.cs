@@ -37,6 +37,8 @@ namespace osu.Framework.Graphics.OpenGL
         public static Matrix4 ProjectionMatrix { get; private set; }
         public static DepthInfo CurrentDepthInfo { get; private set; }
 
+        public static OcclusionLayer OcclusionLayer { get; private set; }
+
         public static float BackbufferDrawDepth { get; private set; }
 
         public static bool UsingBackbuffer => frame_buffer_stack.Peek() == DefaultFrameBuffer;
@@ -151,6 +153,8 @@ namespace osu.Framework.Graphics.OpenGL
 
             PushDepthInfo(DepthInfo.Default);
             Clear(new ClearInfo(Color4.Black));
+
+            OcclusionLayer = new OcclusionLayer((int)Math.Ceiling(size.X), (int)Math.Ceiling(size.Y));
         }
 
         private static ClearInfo currentClearInfo;

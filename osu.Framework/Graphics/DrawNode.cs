@@ -40,10 +40,14 @@ namespace osu.Framework.Graphics
         /// </summary>
         protected internal long InvalidationID { get; private set; }
 
+        protected Quad ScreenSpaceDrawQuad { get; private set; }
+
         /// <summary>
         /// The <see cref="Drawable"/> which this <see cref="DrawNode"/> draws.
         /// </summary>
         protected IDrawable Source { get; private set; }
+
+        protected bool IsOccluded { get; private set; }
 
         private readonly AtomicCounter referenceCount = new AtomicCounter();
 
@@ -73,6 +77,7 @@ namespace osu.Framework.Graphics
             DrawInfo = Source.DrawInfo;
             DrawColourInfo = Source.DrawColourInfo;
             InvalidationID = Source.InvalidationID;
+            ScreenSpaceDrawQuad = Source.ScreenSpaceDrawQuad;
         }
 
         /// <summary>
@@ -105,6 +110,8 @@ namespace osu.Framework.Graphics
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
         internal virtual void DrawOpaqueInteriorSubTree(DepthValue depthValue, Action<TexturedVertex2D> vertexAction)
         {
+            IsOccluded = GLWrapper.OcclusionLayer.IsOccluded(ScreenSpaceDrawQuad);
+
             if (!depthValue.CanIncrement || !CanDrawOpaqueInterior)
             {
                 // The back-to-front pass requires the depth value

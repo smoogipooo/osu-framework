@@ -11,9 +11,9 @@ namespace osu.Framework.Graphics.OpenGL
 {
     public class OcclusionLayer
     {
-        private const int tile_size = 32;
+        private const int tile_count = 32;
 
-        private readonly bool[,] tiles = new bool[tile_size, tile_size];
+        private readonly bool[,] tiles = new bool[tile_count + 1, tile_count + 1];
 
         private readonly int fullScreenWidth;
         private readonly int fullScreenHeight;
@@ -27,10 +27,13 @@ namespace osu.Framework.Graphics.OpenGL
         /// <returns>Whether the input is fully occluded.</returns>
         public bool IsOccluded<T>(T input)
             where T : IConvexPolygon
-        {
-            RectangleI tileAabb = screenToTile(input.GetAABB());
+            => IsOccluded(input.GetVertices());
 
-            // Todo: these may be off-by-one in right / bottom
+        /// <returns>Whether the input is fully occluded.</returns>
+        public bool IsOccluded(ReadOnlySpan<Vector2> input)
+        {
+            RectangleI tileAabb = screenToTile(getAabb(input));
+
             for (int x = tileAabb.Left; x < tileAabb.Right; x++)
             {
                 for (int y = tileAabb.Top; y < tileAabb.Bottom; y++)
@@ -43,13 +46,14 @@ namespace osu.Framework.Graphics.OpenGL
             return true;
         }
 
-        public void Add<T>(T input)
+        internal void Add<T>(T polygon)
             where T : IConvexPolygon
-        {
-            RectangleI inputAabb = input.GetAABB();
-            RectangleI tileAabb = screenToTile(inputAabb);
+            => Add(polygon.GetVertices());
 
-            // Todo: these may be off-by-one in right / bottom
+        public void Add(ReadOnlySpan<Vector2> input)
+        {
+            RectangleI tileAabb = screenToTile(getAabb(input));
+
             for (int x = tileAabb.Left; x < tileAabb.Right; x++)
             {
                 for (int y = tileAabb.Top; y < tileAabb.Bottom; y++)
@@ -63,15 +67,34 @@ namespace osu.Framework.Graphics.OpenGL
             }
         }
 
-        private bool tileContains<T>(Quad tileQuad, T input)
-            where T : IConvexPolygon
+        private bool tileContains(Quad tileQuad, in ReadOnlySpan<Vector2> vertices)
         {
             // Clip the input by the tile
-            var clipper = new ConvexPolygonClipper<Quad, T>(ref tileQuad, ref input);
-            Span<Vector2> clipBuffer = stackalloc Vector2[clipper.GetClipBufferSize()];
-            clipBuffer = clipper.Clip(clipBuffer);
+            Span<Vector2> buffer = stackalloc Vector2[ConvexPolygonClipper.GetClipBufferSize(vertices)];
+            ReadOnlySpan<Vector2> clipped = ConvexPolygonClipper.Create(ref tileQuad, vertices, buffer).Clip();
 
-            return Precision.AlmostEquals(Vector2Extensions.GetOrientation(clipBuffer), Vector2Extensions.GetOrientation(tileQuad.GetVertices()));
+            return Precision.AlmostEquals(Vector2Extensions.GetOrientation(clipped), Vector2Extensions.GetOrientation(tileQuad.GetVertices()));
+        }
+
+        private RectangleF getAabb(in ReadOnlySpan<Vector2> vertexSpan)
+        {
+            if (vertexSpan.IsEmpty)
+                return RectangleF.Empty;
+
+            float minX = vertexSpan[0].X;
+            float minY = vertexSpan[0].Y;
+            float maxX = vertexSpan[0].X;
+            float maxY = vertexSpan[0].Y;
+
+            for (int i = 1; i < vertexSpan.Length; i++)
+            {
+                minX = Math.Min(minX, vertexSpan[i].X);
+                minY = Math.Min(minY, vertexSpan[i].Y);
+                maxX = Math.Max(maxX, vertexSpan[i].X);
+                maxY = Math.Max(maxY, vertexSpan[i].Y);
+            }
+
+            return new RectangleF(minX, minY, maxX - minX, maxY - minY);
         }
 
         /// <summary>
@@ -81,10 +104,10 @@ namespace osu.Framework.Graphics.OpenGL
         /// <returns>A rectangle representing the mapping of <paramref name="screenSpaceRectangle"/> into the tile area.</returns>
         private RectangleI screenToTile(RectangleF screenSpaceRectangle)
             => new RectangleI(
-                (int)Math.Floor(screenSpaceRectangle.Left / fullScreenWidth * tile_size),
-                (int)Math.Floor(screenSpaceRectangle.Top / fullScreenHeight * tile_size),
-                (int)Math.Ceiling(screenSpaceRectangle.Width / fullScreenWidth * tile_size),
-                (int)Math.Ceiling(screenSpaceRectangle.Height / fullScreenHeight * tile_size));
+                (int)MathHelper.Clamp(Math.Floor(screenSpaceRectangle.Left / fullScreenWidth * tile_count), 0, tile_count),
+                (int)MathHelper.Clamp(Math.Floor(screenSpaceRectangle.Top / fullScreenHeight * tile_count), 0, tile_count),
+                (int)MathHelper.Clamp(Math.Ceiling(screenSpaceRectangle.Width / fullScreenWidth * tile_count), 0, tile_count),
+                (int)MathHelper.Clamp(Math.Ceiling(screenSpaceRectangle.Height / fullScreenHeight * tile_count), 0, tile_count));
 
         /// <summary>
         /// Retrieves the screen-space rectangle of a tile.
@@ -94,10 +117,10 @@ namespace osu.Framework.Graphics.OpenGL
         /// <returns>A rectangle representing the screen-space dimensions of the tile.</returns>
         private RectangleF getScreenSpaceTile(int x, int y)
             => new RectangleF(
-                (float)x / tile_size * fullScreenWidth,
-                (float)y / tile_size * fullScreenHeight,
-                (float)fullScreenWidth / tile_size,
-                (float)fullScreenHeight / tile_size
+                (float)x / tile_count * fullScreenWidth,
+                (float)y / tile_count * fullScreenHeight,
+                (float)fullScreenWidth / tile_count,
+                (float)fullScreenHeight / tile_count
             );
     }
 }

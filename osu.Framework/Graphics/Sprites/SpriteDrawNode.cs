@@ -16,8 +16,6 @@ namespace osu.Framework.Graphics.Sprites
     public class SpriteDrawNode : TexturedShaderDrawNode
     {
         protected Texture Texture { get; private set; }
-        protected Quad ScreenSpaceDrawQuad { get; private set; }
-
         protected RectangleF DrawRectangle { get; private set; }
         protected Vector2 InflationAmount { get; private set; }
 
@@ -35,7 +33,6 @@ namespace osu.Framework.Graphics.Sprites
             base.ApplyState();
 
             Texture = Source.Texture;
-            ScreenSpaceDrawQuad = Source.ScreenSpaceDrawQuad;
             DrawRectangle = Source.DrawRectangle;
             InflationAmount = Source.InflationAmount;
             WrapTexture = Source.WrapTexture;
@@ -49,6 +46,9 @@ namespace osu.Framework.Graphics.Sprites
 
         public override void Draw(Action<TexturedVertex2D> vertexAction)
         {
+            if (IsOccluded)
+                return;
+
             base.Draw(vertexAction);
 
             if (Texture?.Available != true)
