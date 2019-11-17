@@ -31,5 +31,9 @@ namespace osu.Framework.Graphics.Primitives
         /// </remarks>
         /// <returns>The vertices of this polygon.</returns>
         ReadOnlySpan<Vector2> GetVertices();
+
+        RectangleF GetAABBFloat();
+
+        RectangleI GetAABB();
     }
 }

@@ -27,6 +27,18 @@ namespace osu.Framework.Graphics.Primitives
             return new ReadOnlySpan<Vector2>(Unsafe.AsPointer(ref this), 3);
         }
 
+        public RectangleF GetAABBFloat() => AABBFloat;
+
+        public RectangleI GetAABB()
+        {
+            int xMin = (int)Math.Floor(Math.Min(P0.X, Math.Min(P1.X, P2.X)));
+            int yMin = (int)Math.Floor(Math.Min(P0.Y, Math.Min(P1.Y, P2.Y)));
+            int xMax = (int)Math.Ceiling(Math.Max(P0.X, Math.Max(P1.X, P2.X)));
+            int yMax = (int)Math.Ceiling(Math.Max(P0.Y, Math.Max(P1.Y, P2.Y)));
+
+            return new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin);
+        }
+
         public bool Equals(Triangle other) =>
             P0 == other.P0 &&
             P1 == other.P1 &&

@@ -113,6 +113,10 @@ namespace osu.Framework.Graphics.Primitives
             }
         }
 
+        public RectangleF GetAABBFloat() => AABBFloat;
+
+        public RectangleI GetAABB() => AABB;
+
         public bool Contains(Vector2 pos) =>
             new Triangle(BottomRight, BottomLeft, TopRight).Contains(pos) ||
             new Triangle(TopLeft, TopRight, BottomLeft).Contains(pos);
