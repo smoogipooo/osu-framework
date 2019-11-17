@@ -9,83 +9,92 @@ using osuTK;
 
 namespace osu.Framework.MathUtils.Clipping
 {
-    public readonly ref struct ConvexPolygonClipper<TClip, TSubject>
-        where TClip : IConvexPolygon
-        where TSubject : IConvexPolygon
+    public readonly ref struct ConvexPolygonClipper
     {
-        private readonly TClip clipPolygon;
-        private readonly TSubject subjectPolygon;
+        private readonly ReadOnlySpan<Vector2> clipVertices;
+        private readonly ReadOnlySpan<Vector2> subjectVertices;
+        private readonly Span<Vector2> buffer;
 
-        public ConvexPolygonClipper(ref TClip clipPolygon, ref TSubject subjectPolygon)
+        public static ConvexPolygonClipper Create<TClip, TSubject>(ref TClip clipPolygon, ref TSubject subjectPolygon)
+            where TClip : IConvexPolygon
+            where TSubject : IConvexPolygon
+            => Create(ref clipPolygon, ref subjectPolygon, new Vector2[GetClipBufferSize(subjectPolygon.GetVertices())]);
+
+        public static ConvexPolygonClipper Create<TClip, TSubject>(ref TClip clipPolygon, ref TSubject subjectPolygon, in Span<Vector2> buffer)
+            where TClip : IConvexPolygon
+            where TSubject : IConvexPolygon
+            => new ConvexPolygonClipper(clipPolygon.GetVertices(), subjectPolygon.GetVertices(), buffer);
+
+        public static ConvexPolygonClipper Create<TClip>(ref TClip clipPolygon, in ReadOnlySpan<Vector2> subjectVertices)
+            where TClip : IConvexPolygon
+            => Create(ref clipPolygon, subjectVertices, new Vector2[GetClipBufferSize(subjectVertices)]);
+
+        public static ConvexPolygonClipper Create<TClip>(ref TClip clipPolygon, in ReadOnlySpan<Vector2> subjectVertices, in Span<Vector2> buffer)
+            where TClip : IConvexPolygon
+            => new ConvexPolygonClipper(clipPolygon.GetVertices(), subjectVertices, buffer);
+
+        public static ConvexPolygonClipper Create<TSubject>(in ReadOnlySpan<Vector2> clipVertices, ref TSubject subjectPolygon)
+            where TSubject : IConvexPolygon
+            => Create(clipVertices, ref subjectPolygon, new Vector2[GetClipBufferSize(subjectPolygon.GetVertices())]);
+
+        public static ConvexPolygonClipper Create<TSubject>(in ReadOnlySpan<Vector2> clipVertices, ref TSubject subjectPolygon, in Span<Vector2> buffer)
+            where TSubject : IConvexPolygon
+            => new ConvexPolygonClipper(clipVertices, subjectPolygon.GetVertices(), buffer);
+
+        private ConvexPolygonClipper(in ReadOnlySpan<Vector2> clipVertices, in ReadOnlySpan<Vector2> subjectVertices, in Span<Vector2> buffer)
         {
-            this.clipPolygon = clipPolygon;
-            this.subjectPolygon = subjectPolygon;
+            this.clipVertices = clipVertices;
+            this.subjectVertices = subjectVertices;
+            this.buffer = buffer;
         }
 
         /// <summary>
-        /// Determines the minimum buffer size required to clip the two polygons.
+        /// Determines the minimum buffer size required to clip a set of vertices.
         /// </summary>
-        /// <returns>The minimum buffer size required for <see cref="clipPolygon"/> to clip <see cref="subjectPolygon"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetClipBufferSize()
+        public static int GetClipBufferSize(ReadOnlySpan<Vector2> subjectVertices)
         {
             // There can only be at most two intersections for each of the subject's vertices
-            return subjectPolygon.GetVertices().Length * 2;
+            return subjectVertices.Length * 2;
         }
 
         /// <summary>
-        /// Clips <see cref="subjectPolygon"/> by <see cref="clipPolygon"/>.
+        /// Clips <see cref="subjectVertices"/> by <see cref="clipVertices"/>.
         /// </summary>
-        /// <returns>A clockwise-ordered set of vertices representing the result of clipping <see cref="subjectPolygon"/> by <see cref="clipPolygon"/>.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Span<Vector2> Clip() => Clip(new Vector2[GetClipBufferSize()]);
-
-        /// <summary>
-        /// Clips <see cref="subjectPolygon"/> by <see cref="clipPolygon"/> using an intermediate buffer.
-        /// </summary>
-        /// <param name="buffer">The buffer to contain the clipped vertices. Must have a length of <see cref="GetClipBufferSize"/>.</param>
-        /// <returns>A clockwise-ordered set of vertices representing the result of clipping <see cref="subjectPolygon"/> by <see cref="clipPolygon"/>.</returns>
-        public Span<Vector2> Clip(in Span<Vector2> buffer)
+        /// <returns>A clockwise-ordered set of vertices representing the result of clipping <see cref="subjectVertices"/> by <see cref="clipVertices"/>.</returns>
+        public Span<Vector2> Clip()
         {
-            if (buffer.Length < GetClipBufferSize())
-            {
-                throw new ArgumentException($"Clip buffer must have a length of {GetClipBufferSize()}, but was {buffer.Length}."
-                                            + "Use GetClipBufferSize() to calculate the size of the buffer.", nameof(buffer));
-            }
-
-            ReadOnlySpan<Vector2> origSubjectVertices = subjectPolygon.GetVertices();
-            if (origSubjectVertices.Length == 0)
+            if (subjectVertices.Length == 0)
                 return Span<Vector2>.Empty;
 
-            ReadOnlySpan<Vector2> origClipVertices = clipPolygon.GetVertices();
-            if (origClipVertices.Length == 0)
+            if (clipVertices.Length == 0)
                 return Span<Vector2>.Empty;
 
             // Add the subject vertices to the buffer and immediately normalise them
-            Span<Vector2> subjectVertices = getNormalised(origSubjectVertices, buffer.Slice(0, origSubjectVertices.Length), true);
+            Span<Vector2> normalisedSubject = getNormalised(subjectVertices, buffer.Slice(0, subjectVertices.Length), true);
 
             // Since the clip vertices aren't modified, we can use them as they are if they are normalised
             // However if they are not normalised, then we must add them to the buffer and normalise them there
-            bool clipNormalised = Vector2Extensions.GetOrientation(origClipVertices) >= 0;
-            Span<Vector2> clipBuffer = clipNormalised ? null : stackalloc Vector2[origClipVertices.Length];
-            ReadOnlySpan<Vector2> clipVertices = clipNormalised
-                ? origClipVertices
-                : getNormalised(origClipVertices, clipBuffer, false);
+            bool clipNormalised = Vector2Extensions.GetOrientation(clipVertices) >= 0;
+            Span<Vector2> clipBuffer = clipNormalised ? null : stackalloc Vector2[clipVertices.Length];
+            ReadOnlySpan<Vector2> normalisedClip = clipNormalised
+                ? clipVertices
+                : getNormalised(clipVertices, clipBuffer, false);
 
             // Number of vertices in the buffer that need to be tested against
             // This becomes the number of vertices in the resulting polygon after each clipping iteration
-            int inputCount = subjectVertices.Length;
+            int inputCount = normalisedSubject.Length;
 
             // Process the clip edge connecting the last vertex to the first vertex
-            inputCount = processClipEdge(new Line(clipVertices[clipVertices.Length - 1], clipVertices[0]), buffer, inputCount);
+            inputCount = processClipEdge(new Line(normalisedClip[normalisedClip.Length - 1], normalisedClip[0]), buffer, inputCount);
 
             // Process all other edges
-            for (int c = 1; c < clipVertices.Length; c++)
+            for (int c = 1; c < normalisedClip.Length; c++)
             {
                 if (inputCount == 0)
                     break;
 
-                inputCount = processClipEdge(new Line(clipVertices[c - 1], clipVertices[c]), buffer, inputCount);
+                inputCount = processClipEdge(new Line(normalisedClip[c - 1], normalisedClip[c]), buffer, inputCount);
             }
 
             return buffer.Slice(0, inputCount);

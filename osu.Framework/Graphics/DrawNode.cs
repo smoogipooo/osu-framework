@@ -216,12 +216,13 @@ namespace osu.Framework.Graphics
         {
             var maskingQuad = GLWrapper.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
 
-            var clipper = new ConvexPolygonClipper<Quad, T>(ref maskingQuad, ref polygon);
-            Span<Vector2> buffer = stackalloc Vector2[clipper.GetClipBufferSize()];
-            Span<Vector2> clippedRegion = clipper.Clip(buffer);
+            Span<Vector2> buffer = stackalloc Vector2[ConvexPolygonClipper.GetClipBufferSize(polygon.GetVertices())];
+            ReadOnlySpan<Vector2> clippedRegion = ConvexPolygonClipper.Create(ref maskingQuad, ref polygon, buffer).Clip();
 
             for (int i = 2; i < clippedRegion.Length; i++)
                 DrawTriangle(texture, new Triangle(clippedRegion[0], clippedRegion[i - 1], clippedRegion[i]), drawColour, textureRect, vertexAction, inflationPercentage);
+
+            GLWrapper.OcclusionLayer.Add(clippedRegion);
         }
 
         /// <summary>
@@ -240,12 +241,13 @@ namespace osu.Framework.Graphics
         {
             var maskingQuad = GLWrapper.CurrentMaskingInfo.ConservativeScreenSpaceQuad;
 
-            var clipper = new ConvexPolygonClipper<Quad, T>(ref maskingQuad, ref polygon);
-            Span<Vector2> buffer = stackalloc Vector2[clipper.GetClipBufferSize()];
-            Span<Vector2> clippedRegion = clipper.Clip(buffer);
+            Span<Vector2> buffer = stackalloc Vector2[ConvexPolygonClipper.GetClipBufferSize(polygon.GetVertices())];
+            ReadOnlySpan<Vector2> clippedRegion = ConvexPolygonClipper.Create(ref maskingQuad, ref polygon, buffer).Clip();
 
             for (int i = 2; i < clippedRegion.Length; i++)
                 DrawTriangle(texture, new Triangle(clippedRegion[0], clippedRegion[i - 1], clippedRegion[i]), drawColour, textureRect, vertexAction, inflationPercentage);
+
+            GLWrapper.OcclusionLayer.Add(clippedRegion);
         }
 
         /// <summary>
