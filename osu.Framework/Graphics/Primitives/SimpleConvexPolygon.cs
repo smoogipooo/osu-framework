@@ -21,6 +21,9 @@ namespace osu.Framework.Graphics.Primitives
 
         public RectangleF GetAABBFloat()
         {
+            if (vertices.Length == 0)
+                return RectangleF.Empty;
+
             float minX = vertices[0].X;
             float minY = vertices[0].Y;
             float maxX = vertices[0].X;
@@ -39,6 +42,9 @@ namespace osu.Framework.Graphics.Primitives
 
         public RectangleI GetAABB()
         {
+            if (vertices.Length == 0)
+                return RectangleI.Empty;
+
             int minX = (int)vertices[0].X;
             int minY = (int)vertices[0].Y;
             int maxX = (int)Math.Ceiling(vertices[0].X);
