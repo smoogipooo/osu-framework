@@ -239,6 +239,16 @@ namespace osu.Framework.Graphics.Primitives
 
         public static implicit operator RectangleI(RectangleF r) => r.AABB;
 
+        /// <summary>
+        /// Constructs a <see cref="RectangleI"/> from left, top, right, and bottom coordinates.
+        /// </summary>
+        /// <param name="left">The left coordinate.</param>
+        /// <param name="top">The top coordinate.</param>
+        /// <param name="right">The right coordinate.</param>
+        /// <param name="bottom">The bottom coordinate.</param>
+        /// <returns>The <see cref="RectangleF"/>.</returns>
+        public static RectangleF FromLTRB(int left, int top, int right, int bottom) => new RectangleI(left, top, right - left, bottom - top);
+
         /// <summary>Converts the Location and <see cref="Size"/> of this <see cref="RectangleI"/> to a human-readable string.</summary>
         /// <returns>A string that contains the position, width, and height of this <see cref="RectangleI"/> structure¾for example, "{X=20, Y=20, Width=100, Height=50}".</returns>
         /// <filterpriority>1</filterpriority>

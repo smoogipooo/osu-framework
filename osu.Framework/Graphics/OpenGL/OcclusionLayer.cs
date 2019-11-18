@@ -2,6 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections;
+using System.Collections.Specialized;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.MathUtils;
 using osu.Framework.MathUtils.Clipping;
@@ -13,8 +15,7 @@ namespace osu.Framework.Graphics.OpenGL
     {
         private const int tile_count = 32;
 
-        private readonly bool[,] tiles = new bool[tile_count + 1, tile_count + 1];
-
+        private readonly BitArray tiles;
         private readonly int fullScreenWidth;
         private readonly int fullScreenHeight;
 
@@ -22,6 +23,8 @@ namespace osu.Framework.Graphics.OpenGL
         {
             fullScreenWidth = width;
             fullScreenHeight = height;
+
+            tiles = new BitArray(tile_count * tile_count, false);
         }
 
         /// <returns>Whether the input is fully occluded.</returns>
@@ -38,7 +41,7 @@ namespace osu.Framework.Graphics.OpenGL
             {
                 for (int y = tileAabb.Top; y < tileAabb.Bottom; y++)
                 {
-                    if (!tiles[x, y])
+                    if (tiles[getTileIndex(x, y)])
                         return false;
                 }
             }
@@ -59,13 +62,15 @@ namespace osu.Framework.Graphics.OpenGL
                 for (int y = tileAabb.Top; y < tileAabb.Bottom; y++)
                 {
                     // If the tile is already occluding, it does not need to be processed
-                    if (tiles[x, y])
+                    if (tiles[getTileIndex(x, y)])
                         continue;
 
-                    tiles[x, y] = tileContains(getScreenSpaceTile(x, y), input);
+                    tiles[getTileIndex(x, y)] = tileContains(getScreenSpaceTile(x, y), input);
                 }
             }
         }
+
+        private int getTileIndex(int x, int y) => y * tile_count + x;
 
         private bool tileContains(Quad tileQuad, in ReadOnlySpan<Vector2> vertices)
         {
@@ -103,11 +108,11 @@ namespace osu.Framework.Graphics.OpenGL
         /// <param name="screenSpaceRectangle">The screen-space rectangle.</param>
         /// <returns>A rectangle representing the mapping of <paramref name="screenSpaceRectangle"/> into the tile area.</returns>
         private RectangleI screenToTile(RectangleF screenSpaceRectangle)
-            => new RectangleI(
+            => RectangleI.FromLTRB(
                 (int)MathHelper.Clamp(Math.Floor(screenSpaceRectangle.Left / fullScreenWidth * tile_count), 0, tile_count),
                 (int)MathHelper.Clamp(Math.Floor(screenSpaceRectangle.Top / fullScreenHeight * tile_count), 0, tile_count),
-                (int)MathHelper.Clamp(Math.Ceiling(screenSpaceRectangle.Width / fullScreenWidth * tile_count), 0, tile_count),
-                (int)MathHelper.Clamp(Math.Ceiling(screenSpaceRectangle.Height / fullScreenHeight * tile_count), 0, tile_count));
+                (int)MathHelper.Clamp(Math.Ceiling(screenSpaceRectangle.Right / fullScreenWidth * tile_count), 0, tile_count),
+                (int)MathHelper.Clamp(Math.Ceiling(screenSpaceRectangle.Bottom / fullScreenHeight * tile_count), 0, tile_count));
 
         /// <summary>
         /// Retrieves the screen-space rectangle of a tile.

@@ -74,6 +74,12 @@ namespace osu.Framework.Tests.Visual.Containers
                     },
                 }
             });
+
+            Add(new Box
+            {
+                RelativeSizeAxes = Axes.Both,
+                Size = new Vector2(2)
+            });
         }
 
         protected override void Update()

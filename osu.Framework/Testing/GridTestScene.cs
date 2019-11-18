@@ -4,6 +4,7 @@
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osuTK;
 
 namespace osu.Framework.Testing
 {
@@ -34,7 +35,12 @@ namespace osu.Framework.Testing
             Cols = cols;
 
             GridContainer testContainer;
-            Add(testContainer = new GridContainer { RelativeSizeAxes = Axes.Both });
+            Add(testContainer = new GridContainer
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                RelativeSizeAxes = Axes.Both, Size = new Vector2(0.7f)
+            });
 
             cells = new Drawable[rows, cols];
 
