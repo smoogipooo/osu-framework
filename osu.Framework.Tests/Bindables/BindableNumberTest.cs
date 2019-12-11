@@ -110,6 +110,15 @@ namespace osu.Framework.Tests.Bindables
             Assert.That(bindable1ValueChange, Is.EqualTo(4));
         }
 
+        [Test]
+        [Ignore("This should work but seems to be incorrectly supported by BindableNumber.")]
+        public void TestDefaultPrecisionAppliedInConstructor()
+        {
+            var bindable = new BindableNumberWithDefaultPrecision(2);
+
+            Assert.That(bindable.Value, Is.EqualTo(3));
+        }
+
         /// <summary>
         /// Tests that the value of a bindable is updated when the minimum value is changed.
         /// </summary>
@@ -201,6 +210,16 @@ namespace osu.Framework.Tests.Bindables
         }
 
         private object createBindable(Type type) => Activator.CreateInstance(typeof(BindableNumber<>).MakeGenericType(type), Convert.ChangeType(0, type));
+
+        private class BindableNumberWithDefaultPrecision : BindableInt
+        {
+            public BindableNumberWithDefaultPrecision(int value = 0)
+                : base(value)
+            {
+            }
+
+            protected override int DefaultPrecision => 3;
+        }
 
         private class BindableNumberWithDefaultMinValue : BindableInt
         {
