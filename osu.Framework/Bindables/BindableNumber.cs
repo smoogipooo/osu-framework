@@ -29,9 +29,12 @@ namespace osu.Framework.Bindables
                     $"{nameof(BindableNumber<T>)} only accepts the primitive numeric types (except for {typeof(decimal).FullName}) as type arguments. You provided {typeof(T).FullName}.");
             }
 
-            MinValue = DefaultMinValue;
-            MaxValue = DefaultMaxValue;
+            minValue = DefaultMinValue;
+            maxValue = DefaultMaxValue;
             precision = DefaultPrecision;
+
+            // Re-apply the current value to apply the default min/max/precision values
+            Value = Value;
         }
 
         private T precision;
@@ -96,9 +99,25 @@ namespace osu.Framework.Bindables
                 if (minValue.Equals(value))
                     return;
 
-                minValue = value;
+                SetMinValue(value, true, this);
+            }
+        }
 
-                TriggerMinValueChange();
+        /// <summary>
+        /// Sets the minimum value. This method does no equality comparisons.
+        /// </summary>
+        /// <param name="minValue">The new minimum value.</param>
+        /// <param name="updateCurrentValue">Whether to update the current value after the minimum value is set.</param>
+        /// <param name="source">The bindable that triggered this. A null value represents the current bindable instance.</param>
+        internal void SetMinValue(T minValue, bool updateCurrentValue, BindableNumber<T> source)
+        {
+            this.minValue = minValue;
+            TriggerMinValueChange(source);
+
+            if (updateCurrentValue)
+            {
+                // Re-apply the current value to apply the new minimum value
+                Value = Value;
             }
         }
 
@@ -217,8 +236,8 @@ namespace osu.Framework.Bindables
             base.TriggerChange();
 
             TriggerPrecisionChange(this, false);
-            TriggerMinValueChange(false);
             TriggerMaxValueChange(false);
+            TriggerMinValueChange(this, false);
         }
 
         protected void TriggerPrecisionChange(BindableNumber<T> source = null, bool propagateToBindings = true)
@@ -241,7 +260,7 @@ namespace osu.Framework.Bindables
                 PrecisionChanged?.Invoke(precision);
         }
 
-        protected void TriggerMinValueChange(bool propagateToBindings = true)
+        protected void TriggerMinValueChange(BindableNumber<T> source = null, bool propagateToBindings = true)
         {
             // check a bound bindable hasn't changed the value again (it will fire its own event)
             T beforePropagation = minValue;
@@ -250,8 +269,10 @@ namespace osu.Framework.Bindables
             {
                 foreach (var b in Bindings)
                 {
+                    if (b == source) continue;
+
                     if (b is BindableNumber<T> bn)
-                        bn.MinValue = minValue;
+                        bn.SetMinValue(minValue, false, this);
                 }
             }
 
