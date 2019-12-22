@@ -77,6 +77,8 @@ namespace osu.Framework.Graphics
                 }
 
                 InvalidationID = invalidation_counter.Increment();
+
+                OnInvalidate?.Invoke(this);
             };
 
             Layout.AddDependency(drawSizeBacking);
