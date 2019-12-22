@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Caching;
+using osu.Framework.Graphics.Layout;
 using osuTK;
 
 namespace osu.Framework.Graphics.Containers
@@ -100,6 +101,11 @@ namespace osu.Framework.Graphics.Containers
             set => base.AutoSizeAxes = value;
         }
 
+        public GridContainer()
+        {
+            Layout.AddDependency(cellLayout);
+        }
+
         protected override void Update()
         {
             base.Update();
@@ -108,24 +114,8 @@ namespace osu.Framework.Graphics.Containers
             layoutCells();
         }
 
-        public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
-        {
-            if ((invalidation & (Invalidation.DrawInfo | Invalidation.RequiredParentSizeToFit)) > 0)
-                cellLayout.Invalidate();
-
-            return base.Invalidate(invalidation, source, shallPropagate);
-        }
-
-        public override void InvalidateFromChild(Invalidation invalidation, Drawable source = null)
-        {
-            if ((invalidation & (Invalidation.RequiredParentSizeToFit | Invalidation.Presence)) > 0)
-                cellLayout.Invalidate();
-
-            base.InvalidateFromChild(invalidation, source);
-        }
-
         private readonly Cached cellContent = new Cached();
-        private readonly Cached cellLayout = new Cached();
+        private readonly LayoutCached cellLayout = new LayoutCached(Invalidation.DrawInfo | Invalidation.RequiredParentSizeToFit | Invalidation.Presence);
 
         private CellContainer[,] cells = new CellContainer[0, 0];
         private int cellRows => cells.GetLength(0);

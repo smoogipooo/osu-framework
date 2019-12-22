@@ -3,8 +3,8 @@
 
 using System;
 using System.Threading.Tasks;
-using osu.Framework.Caching;
 using osu.Framework.Extensions.PolygonExtensions;
+using osu.Framework.Graphics.Layout;
 using osu.Framework.Threading;
 
 namespace osu.Framework.Graphics.Containers
@@ -29,6 +29,18 @@ namespace osu.Framework.Graphics.Containers
 
             RelativeSizeAxes = content.RelativeSizeAxes;
             AutoSizeAxes = (content as CompositeDrawable)?.AutoSizeAxes ?? AutoSizeAxes;
+
+            optimisingContainerCache.OnInvalidate += _ =>
+            {
+                OptimisingContainer = null;
+
+                // Cancel the load task and allow the unload to take place by assuming the intersection is no longer valid
+                cancelLoadScheduledDelegate();
+                IsIntersecting = false;
+            };
+
+            Layout.AddDependency(optimisingContainerCache);
+            Layout.AddDependency(isIntersectingCache);
         }
 
         public override double LifetimeStart
@@ -123,8 +135,8 @@ namespace osu.Framework.Graphics.Containers
 
         public bool DelayedLoadCompleted => InternalChildren.Count > 0;
 
-        private readonly Cached optimisingContainerCache = new Cached();
-        private readonly Cached isIntersectingCache = new Cached();
+        private readonly LayoutCached optimisingContainerCache = new LayoutCached(Invalidation.Parent);
+        private readonly LayoutCached isIntersectingCache = new LayoutCached(Invalidation.All);
 
         private ScheduledDelegate loadScheduledDelegate;
 
@@ -167,22 +179,6 @@ namespace osu.Framework.Graphics.Containers
         {
             loadScheduledDelegate?.Cancel();
             loadScheduledDelegate = null;
-        }
-
-        public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
-        {
-            if (invalidation.HasFlag(Invalidation.Parent))
-            {
-                OptimisingContainer = null;
-                optimisingContainerCache.Invalidate();
-
-                // Cancel the load task and allow the unload to take place by assuming the intersection is no longer valid
-                cancelLoadScheduledDelegate();
-                IsIntersecting = false;
-            }
-
-            isIntersectingCache.Invalidate();
-            return base.Invalidate(invalidation, source, shallPropagate);
         }
 
         /// <summary>

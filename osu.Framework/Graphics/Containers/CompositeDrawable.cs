@@ -16,13 +16,13 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Transforms;
 using osu.Framework.Timing;
-using osu.Framework.Caching;
 using osu.Framework.Threading;
 using osu.Framework.Statistics;
 using System.Threading.Tasks;
 using osu.Framework.Development;
 using osu.Framework.Extensions.ExceptionExtensions;
 using osu.Framework.Graphics.Effects;
+using osu.Framework.Graphics.Layout;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.MathUtils;
 
@@ -439,6 +439,7 @@ namespace osu.Framework.Graphics.Containers
                 return false;
 
             internalChildren.RemoveAt(index);
+            Layout.RemoveDependency(drawable.Layout);
 
             if (drawable.IsAlive)
             {
@@ -481,6 +482,8 @@ namespace osu.Framework.Graphics.Containers
 
                 if (disposeChildren)
                     DisposeChildAsync(t);
+
+                Layout.RemoveDependency(t.Layout);
 
                 Trace.Assert(t.Parent == null);
             }
@@ -532,6 +535,7 @@ namespace osu.Framework.Graphics.Containers
             }
 
             internalChildren.Add(drawable);
+            Layout.AddDependency(drawable.Layout);
 
             if (AutoSizeAxes != Axes.None)
                 InvalidateFromChild(Invalidation.RequiredParentSizeToFit, drawable);
@@ -940,39 +944,39 @@ namespace osu.Framework.Graphics.Containers
                 childrenSizeDependencies.Invalidate();
         }
 
-        public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
-        {
-            if (!base.Invalidate(invalidation, source, shallPropagate))
-                return false;
-
-            if (!shallPropagate) return true;
-
-            for (int i = 0; i < internalChildren.Count; ++i)
-            {
-                Drawable c = internalChildren[i];
-                Debug.Assert(c != source);
-
-                Invalidation childInvalidation = invalidation;
-                if ((invalidation & Invalidation.RequiredParentSizeToFit) > 0)
-                    childInvalidation |= Invalidation.DrawInfo;
-
-                // Other geometry things like rotation, shearing, etc don't affect child properties.
-                childInvalidation &= ~Invalidation.MiscGeometry;
-
-                // Relative positioning can however affect child geometry
-                // ReSharper disable once PossibleNullReferenceException
-                if (c.RelativePositionAxes != Axes.None && (invalidation & Invalidation.DrawSize) > 0)
-                    childInvalidation |= Invalidation.MiscGeometry;
-
-                // No draw size changes if relative size axes does not propagate it downward.
-                if (c.RelativeSizeAxes == Axes.None)
-                    childInvalidation &= ~Invalidation.DrawSize;
-
-                c.Invalidate(childInvalidation, this);
-            }
-
-            return true;
-        }
+        // public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
+        // {
+        //     if (!base.Invalidate(invalidation, source, shallPropagate))
+        //         return false;
+        //
+        //     if (!shallPropagate) return true;
+        //
+        //     for (int i = 0; i < internalChildren.Count; ++i)
+        //     {
+        //         Drawable c = internalChildren[i];
+        //         Debug.Assert(c != source);
+        //
+        //         Invalidation childInvalidation = invalidation;
+        //         if ((invalidation & Invalidation.RequiredParentSizeToFit) > 0)
+        //             childInvalidation |= Invalidation.DrawInfo;
+        //
+        //         // Other geometry things like rotation, shearing, etc don't affect child properties.
+        //         childInvalidation &= ~Invalidation.MiscGeometry;
+        //
+        //         // Relative positioning can however affect child geometry
+        //         // ReSharper disable once PossibleNullReferenceException
+        //         if (c.RelativePositionAxes != Axes.None && (invalidation & Invalidation.DrawSize) > 0)
+        //             childInvalidation |= Invalidation.MiscGeometry;
+        //
+        //         // No draw size changes if relative size axes does not propagate it downward.
+        //         if (c.RelativeSizeAxes == Axes.None)
+        //             childInvalidation &= ~Invalidation.DrawSize;
+        //
+        //         c.Invalidate(childInvalidation, this);
+        //     }
+        //
+        //     return true;
+        // }
 
         #endregion
 
@@ -1630,7 +1634,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         internal event Action OnAutoSize;
 
-        private readonly Cached childrenSizeDependencies = new Cached();
+        private readonly LayoutCached childrenSizeDependencies = new LayoutCached(Invalidation.RequiredParentSizeToFit | Invalidation.Presence);
 
         public override float Width
         {

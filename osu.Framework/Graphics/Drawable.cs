@@ -4,7 +4,6 @@
 using osuTK;
 using osuTK.Graphics;
 using osu.Framework.Allocation;
-using osu.Framework.Caching;
 using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
@@ -26,6 +25,7 @@ using System.Threading;
 using osu.Framework.Bindables;
 using osu.Framework.Development;
 using osu.Framework.Graphics.Cursor;
+using osu.Framework.Graphics.Layout;
 using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
@@ -55,6 +55,35 @@ namespace osu.Framework.Graphics
         {
             scheduler = new Lazy<Scheduler>(() => new Scheduler(MainThread, Clock));
             total_count.Value++;
+
+            // If we change size/position and have a non-singular colour, we need to invalidate the colour also,
+            // as we'll need to do some interpolation that's dependent on our draw info
+            drawColourInfoBacking = new LayoutCached<DrawColourInfo>(
+                Invalidation.DrawInfo | Invalidation.RequiredParentSizeToFit | Invalidation.Presence | Invalidation.Colour,
+                invalidation => (invalidation & Invalidation.Colour) > 0 || (!Colour.HasSingleColour || drawColourInfoBacking.IsValid && !drawColourInfoBacking.Value.Colour.HasSingleColour));
+
+            Layout = new LayoutGroup(invalidation => invalidation != Invalidation.None && LoadState >= LoadState.Ready);
+            Layout.OnInvalidate += invalidation =>
+            {
+                if (Parent != null)
+                {
+                    var parentInvalidation = invalidation;
+
+                    // Colour doesn't affect parent's properties
+                    parentInvalidation &= ~Invalidation.Colour;
+
+                    if (parentInvalidation > 0)
+                        Parent.InvalidateFromChild(invalidation, this);
+                }
+
+                InvalidationID = invalidation_counter.Increment();
+            };
+
+            Layout.AddDependency(drawSizeBacking);
+            Layout.AddDependency(screenSpaceDrawQuadBacking);
+            Layout.AddDependency(drawInfoBacking);
+            Layout.AddDependency(drawColourInfoBacking);
+            Layout.AddDependency(requiredParentSizeToFitBacking);
         }
 
         ~Drawable()
@@ -389,7 +418,7 @@ namespace osu.Framework.Graphics
         public event Action<Drawable> OnLoadComplete;
 
         /// <summary>.
-        /// Fired after the <see cref="Invalidate(Invalidation, Drawable, bool)"/> method is called.
+        /// Fired after the <see cref="Invalidate(Invalidation)"/> method is called.
         /// </summary>
         internal event Action<Drawable> OnInvalidate;
 
@@ -740,7 +769,7 @@ namespace osu.Framework.Graphics
             }
         }
 
-        private readonly Cached<Vector2> drawSizeBacking = new Cached<Vector2>();
+        private readonly LayoutCached<Vector2> drawSizeBacking = new LayoutCached<Vector2>(Invalidation.DrawInfo | Invalidation.RequiredParentSizeToFit | Invalidation.Presence);
 
         /// <summary>
         /// Absolute size of this Drawable in the <see cref="Parent"/>'s coordinate system.
@@ -1538,7 +1567,7 @@ namespace osu.Framework.Graphics
         /// </summary>
         internal bool IsMaskedAway { get; private set; }
 
-        private readonly Cached<Quad> screenSpaceDrawQuadBacking = new Cached<Quad>();
+        private readonly LayoutCached<Quad> screenSpaceDrawQuadBacking = new LayoutCached<Quad>(Invalidation.DrawInfo | Invalidation.RequiredParentSizeToFit | Invalidation.Presence);
 
         protected virtual Quad ComputeScreenSpaceDrawQuad() => ToScreenSpace(DrawRectangle);
 
@@ -1547,7 +1576,7 @@ namespace osu.Framework.Graphics
         /// </summary>
         public virtual Quad ScreenSpaceDrawQuad => screenSpaceDrawQuadBacking.IsValid ? screenSpaceDrawQuadBacking : screenSpaceDrawQuadBacking.Value = ComputeScreenSpaceDrawQuad();
 
-        private readonly Cached<DrawInfo> drawInfoBacking = new Cached<DrawInfo>();
+        private readonly LayoutCached<DrawInfo> drawInfoBacking = new LayoutCached<DrawInfo>(Invalidation.DrawInfo | Invalidation.RequiredParentSizeToFit | Invalidation.Presence);
 
         private DrawInfo computeDrawInfo()
         {
@@ -1569,7 +1598,7 @@ namespace osu.Framework.Graphics
         /// </summary>
         public virtual DrawInfo DrawInfo => drawInfoBacking.IsValid ? drawInfoBacking : drawInfoBacking.Value = computeDrawInfo();
 
-        private readonly Cached<DrawColourInfo> drawColourInfoBacking = new Cached<DrawColourInfo>();
+        private readonly LayoutCached<DrawColourInfo> drawColourInfoBacking;
 
         /// <summary>
         /// Contains the colour and blending information of this <see cref="Drawable"/> that are used during draw.
@@ -1614,7 +1643,7 @@ namespace osu.Framework.Graphics
             return ci;
         }
 
-        private readonly Cached<Vector2> requiredParentSizeToFitBacking = new Cached<Vector2>();
+        private readonly LayoutCached<Vector2> requiredParentSizeToFitBacking = new LayoutCached<Vector2>(Invalidation.RequiredParentSizeToFit);
 
         private Vector2 computeRequiredParentSizeToFit()
         {
@@ -1665,61 +1694,9 @@ namespace osu.Framework.Graphics
         // Make sure we start out with a value of 1 such that ApplyDrawNode is always called at least once
         public long InvalidationID { get; private set; } = invalidation_counter.Increment();
 
-        /// <summary>
-        /// Invalidates draw matrix and autosize caches.
-        /// <para>
-        /// This does not ensure that the parent containers have been updated before us, thus operations involving
-        /// parent states (e.g. <see cref="DrawInfo"/>) should not be executed in an overridden implementation.
-        /// </para>
-        /// </summary>
-        /// <returns>If the invalidate was actually necessary.</returns>
-        public virtual bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
-        {
-            if (invalidation == Invalidation.None || LoadState < LoadState.Ready)
-                return false;
+        protected internal readonly LayoutGroup Layout;
 
-            if (shallPropagate && Parent != null && source != Parent)
-            {
-                var parentInvalidation = invalidation;
-
-                // Colour doesn't affect parent's properties
-                parentInvalidation &= ~Invalidation.Colour;
-
-                if (parentInvalidation > 0)
-                    Parent.InvalidateFromChild(invalidation, this);
-            }
-
-            bool alreadyInvalidated = true;
-
-            // Either ScreenSize OR ScreenPosition OR Presence
-            if ((invalidation & (Invalidation.DrawInfo | Invalidation.RequiredParentSizeToFit | Invalidation.Presence)) > 0)
-            {
-                if ((invalidation & Invalidation.RequiredParentSizeToFit) > 0)
-                    alreadyInvalidated &= !requiredParentSizeToFitBacking.Invalidate();
-
-                alreadyInvalidated &= !screenSpaceDrawQuadBacking.Invalidate();
-                alreadyInvalidated &= !drawInfoBacking.Invalidate();
-                alreadyInvalidated &= !drawSizeBacking.Invalidate();
-
-                // If we change size/position and have a non-singular colour, we need to invalidate the colour also,
-                // as we'll need to do some interpolation that's dependent on our draw info
-                if ((invalidation & Invalidation.Colour) == 0 && (!Colour.HasSingleColour || drawColourInfoBacking.IsValid && !drawColourInfoBacking.Value.Colour.HasSingleColour))
-                    invalidation |= Invalidation.Colour;
-            }
-
-            if ((invalidation & Invalidation.Colour) > 0)
-                alreadyInvalidated &= !drawColourInfoBacking.Invalidate();
-
-            if ((invalidation & Invalidation.Parent) > 0)
-                alreadyInvalidated = false;
-
-            if (!alreadyInvalidated || (invalidation & Invalidation.DrawNode) > 0)
-                InvalidationID = invalidation_counter.Increment();
-
-            OnInvalidate?.Invoke(this);
-
-            return !alreadyInvalidated;
-        }
+        public void Invalidate(Invalidation invalidation = Invalidation.All) => Layout.Invalidate(invalidation);
 
         public Invalidation InvalidationFromParentSize
         {

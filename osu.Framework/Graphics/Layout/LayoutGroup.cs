@@ -1,7 +1,9 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace osu.Framework.Graphics.Layout
 {
@@ -15,8 +17,8 @@ namespace osu.Framework.Graphics.Layout
         /// </summary>
         private readonly List<LayoutItem> dependencies = new List<LayoutItem>();
 
-        public LayoutGroup()
-            : base(Invalidation.All)
+        public LayoutGroup([CanBeNull] Func<Invalidation, bool> invalidationCondition = null)
+            : base(Invalidation.All, invalidationCondition)
         {
         }
 
@@ -28,6 +30,12 @@ namespace osu.Framework.Graphics.Layout
         {
             dependencies.Add(item);
             item.Dependent = this;
+        }
+
+        public void RemoveDependency(LayoutItem item)
+        {
+            dependencies.Remove(item);
+            item.Dependent = null;
         }
 
         protected override void InvalidateInternal(Invalidation type)

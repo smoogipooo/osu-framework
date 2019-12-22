@@ -1,6 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
+using JetBrains.Annotations;
 using osu.Framework.Statistics;
 
 namespace osu.Framework.Graphics.Layout
@@ -16,9 +18,19 @@ namespace osu.Framework.Graphics.Layout
         public readonly Invalidation Type;
 
         /// <summary>
+        /// An event that is invoked after this <see cref="LayoutItem"/> is invalidated.
+        /// </summary>
+        public event Action<Invalidation> OnInvalidate;
+
+        /// <summary>
         /// The dependent that is satisfied by this <see cref="LayoutItem"/>. It will be validated when this <see cref="LayoutItem"/> is validated.
         /// </summary>
         internal LayoutItem Dependent { get; set; }
+
+        /// <summary>
+        /// Extra conditions that must be satisfied for invalidation to take place.
+        /// </summary>
+        private readonly Func<Invalidation, bool> invalidationCondition;
 
         /// <summary>
         /// The current invalidation state of the layout subtree starting at this <see cref="LayoutItem"/>.
@@ -29,15 +41,20 @@ namespace osu.Framework.Graphics.Layout
         /// Creates a new <see cref="LayoutItem"/>.
         /// </summary>
         /// <param name="type">The <see cref="Invalidation"/> type which this <see cref="LayoutItem"/> responds to.</param>
-        protected LayoutItem(Invalidation type)
+        /// <param name="invalidationCondition">Extra conditions that must be satisfied for invalidation to take place.</param>
+        protected LayoutItem(Invalidation type, [CanBeNull] Func<Invalidation, bool> invalidationCondition = null)
         {
             Type = type;
+
+            this.invalidationCondition = invalidationCondition;
+
+            subTreeInvalidationState = Type;
         }
 
         /// <summary>
         /// Whether this <see cref="LayoutItem"/> is valid.
         /// </summary>
-        public bool IsValid => subTreeInvalidationState == Invalidation.None;
+        public bool IsValid => (subTreeInvalidationState & Type) == 0;
 
         /// <summary>
         /// Validates this <see cref="LayoutItem"/> and its dependent with a given <see cref="Invalidation"/> type.
@@ -72,9 +89,13 @@ namespace osu.Framework.Graphics.Layout
                 return;
             }
 
+            if (invalidationCondition?.Invoke(type) == false)
+                return;
+
             subTreeInvalidationState |= type;
 
             InvalidateInternal(type);
+            OnInvalidate?.Invoke(type);
 
             FrameStatistics.Increment(StatisticsCounterType.Invalidations);
         }

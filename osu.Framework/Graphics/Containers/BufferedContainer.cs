@@ -9,7 +9,7 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shaders;
 using osu.Framework.MathUtils;
-using osu.Framework.Caching;
+using osu.Framework.Graphics.Layout;
 using osu.Framework.Graphics.Sprites;
 
 namespace osu.Framework.Graphics.Containers
@@ -251,6 +251,9 @@ namespace osu.Framework.Graphics.Containers
         public BufferedContainer(RenderbufferInternalFormat[] formats = null, bool pixelSnapping = false)
         {
             sharedData = new BufferedContainerDrawNodeSharedData(formats, pixelSnapping);
+
+            Layout.OnInvalidate += _ => ++updateVersion;
+            Layout.AddDependency(screenSpaceSizeBacking);
         }
 
         [BackgroundDependencyLoader]
@@ -266,19 +269,7 @@ namespace osu.Framework.Graphics.Containers
         protected override RectangleF ComputeChildMaskingBounds(RectangleF maskingBounds) => ScreenSpaceDrawQuad.AABBFloat; // Make sure children never get masked away
 
         private Vector2 lastScreenSpaceSize;
-        private readonly Cached screenSpaceSizeBacking = new Cached();
-
-        public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
-        {
-            if ((invalidation & Invalidation.DrawNode) > 0)
-                ++updateVersion;
-
-            // We actually only care about Invalidation.MiscGeometry | Invalidation.DrawInfo, but must match the blanket invalidation logic in Drawable.Invalidate
-            if ((invalidation & (Invalidation.Presence | Invalidation.RequiredParentSizeToFit | Invalidation.DrawInfo)) > 0)
-                screenSpaceSizeBacking.Invalidate();
-
-            return base.Invalidate(invalidation, source, shallPropagate);
-        }
+        private readonly LayoutCached screenSpaceSizeBacking = new LayoutCached(Invalidation.Presence | Invalidation.RequiredParentSizeToFit | Invalidation.DrawInfo);
 
         private long childrenUpdateVersion = -1;
         protected override bool RequiresChildrenUpdate => base.RequiresChildrenUpdate && childrenUpdateVersion != updateVersion;

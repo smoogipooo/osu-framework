@@ -38,6 +38,12 @@ namespace osu.Framework.Graphics.Audio
         private void load(ShaderManager shaders)
         {
             shader = shaders.Load(VertexShaderDescriptor.TEXTURE_2, FragmentShaderDescriptor.TEXTURE_ROUNDED);
+
+            Layout.OnInvalidate += invalidation =>
+            {
+                if ((invalidation & Invalidation.RequiredParentSizeToFit) > 0)
+                    generate();
+            };
         }
 
         private float resolution = 1;
@@ -137,16 +143,6 @@ namespace osu.Framework.Graphics.Audio
 
                 Invalidate(Invalidation.DrawNode);
             }
-        }
-
-        public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
-        {
-            var result = base.Invalidate(invalidation, source, shallPropagate);
-
-            if ((invalidation & Invalidation.RequiredParentSizeToFit) > 0)
-                generate();
-
-            return result;
         }
 
         private CancellationTokenSource cancelSource = new CancellationTokenSource();

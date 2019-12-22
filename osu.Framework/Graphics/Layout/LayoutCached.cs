@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using JetBrains.Annotations;
 using osu.Framework.Caching;
 
 namespace osu.Framework.Graphics.Layout
@@ -11,8 +12,8 @@ namespace osu.Framework.Graphics.Layout
     /// </summary>
     public sealed class LayoutCached : LayoutItem
     {
-        public LayoutCached(Invalidation type)
-            : base(type)
+        public LayoutCached(Invalidation type, [CanBeNull] Func<Invalidation, bool> invalidationCondition = null)
+            : base(type, invalidationCondition)
         {
         }
 
@@ -28,8 +29,8 @@ namespace osu.Framework.Graphics.Layout
     /// <typeparam name="T">The type of value stored.</typeparam>
     public sealed class LayoutCached<T> : LayoutItem
     {
-        public LayoutCached(Invalidation type)
-            : base(type)
+        public LayoutCached(Invalidation type, [CanBeNull] Func<Invalidation, bool> invalidationCondition = null)
+            : base(type, invalidationCondition)
         {
         }
 
