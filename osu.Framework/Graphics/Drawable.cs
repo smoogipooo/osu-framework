@@ -1686,7 +1686,14 @@ namespace osu.Framework.Graphics
 
         protected internal readonly LayoutGroup Layout;
 
-        public void Invalidate(Invalidation invalidation = Invalidation.All) => Layout.Invalidate(invalidation);
+        public void Invalidate(Invalidation invalidation = Invalidation.All)
+        {
+            Layout.Invalidate(invalidation);
+
+            Invalidation parentInvalidation = invalidation & ~Invalidation.Colour;
+            if (parentInvalidation > 0)
+                Parent?.Layout.Invalidate(parentInvalidation);
+        }
 
         public Invalidation InvalidationFromParentSize
         {
