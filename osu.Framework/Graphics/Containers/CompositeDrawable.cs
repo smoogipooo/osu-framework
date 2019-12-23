@@ -48,6 +48,8 @@ namespace osu.Framework.Graphics.Containers
 
             internalChildren = new SortedList<Drawable>(new ChildComparer(this));
             aliveInternalChildren = new SortedList<Drawable>(new ChildComparer(this));
+
+            Layout.AddDependency(childrenSizeDependencies);
         }
 
         [Resolved]
