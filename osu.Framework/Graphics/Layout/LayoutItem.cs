@@ -97,6 +97,9 @@ namespace osu.Framework.Graphics.Layout
             InvalidateInternal(type);
             OnInvalidate?.Invoke(type);
 
+            // Colour doesn't affect the parent's properties
+            Dependent?.Invalidate(type & ~Invalidation.Colour);
+
             FrameStatistics.Increment(StatisticsCounterType.Invalidations);
         }
 

@@ -65,19 +65,7 @@ namespace osu.Framework.Graphics
             Layout = new LayoutGroup(invalidation => invalidation != Invalidation.None && LoadState >= LoadState.Ready);
             Layout.OnInvalidate += invalidation =>
             {
-                if (Parent != null)
-                {
-                    var parentInvalidation = invalidation;
-
-                    // Colour doesn't affect parent's properties
-                    parentInvalidation &= ~Invalidation.Colour;
-
-                    if (parentInvalidation > 0)
-                        Parent.InvalidateFromChild(invalidation, this);
-                }
-
                 InvalidationID = invalidation_counter.Increment();
-
                 OnInvalidate?.Invoke(this);
             };
 
@@ -895,7 +883,7 @@ namespace osu.Framework.Graphics
                 var changedAxes = bypassAutoSizeAxes ^ value;
                 bypassAutoSizeAxes = value;
                 if (((Parent?.AutoSizeAxes ?? 0) & changedAxes) != 0)
-                    Parent?.InvalidateFromChild(Invalidation.RequiredParentSizeToFit, this);
+                    Parent?.Invalidate(Invalidation.RequiredParentSizeToFit);
             }
         }
 

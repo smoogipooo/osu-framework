@@ -54,7 +54,7 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        private readonly LayoutCached layout = new LayoutCached(Invalidation.DrawSize);
+        private readonly LayoutCached layout = new LayoutCached(Invalidation.RequiredParentSizeToFit | Invalidation.Presence | Invalidation.DrawSize);
 
         protected FlowContainer()
         {
@@ -145,14 +145,6 @@ namespace osu.Framework.Graphics.Containers
                 InvalidateLayout();
 
             return changed;
-        }
-
-        public override void InvalidateFromChild(Invalidation invalidation, Drawable source = null)
-        {
-            if ((invalidation & (Invalidation.RequiredParentSizeToFit | Invalidation.Presence)) > 0)
-                InvalidateLayout();
-
-            base.InvalidateFromChild(invalidation, source);
         }
 
         /// <summary>

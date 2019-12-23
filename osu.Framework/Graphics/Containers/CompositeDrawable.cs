@@ -454,7 +454,7 @@ namespace osu.Framework.Graphics.Containers
             drawable.IsAlive = false;
 
             if (AutoSizeAxes != Axes.None)
-                InvalidateFromChild(Invalidation.RequiredParentSizeToFit, drawable);
+                Invalidate(Invalidation.RequiredParentSizeToFit);
 
             return true;
         }
@@ -494,7 +494,7 @@ namespace osu.Framework.Graphics.Containers
             RequestsPositionalInputSubTree = RequestsPositionalInput;
 
             if (AutoSizeAxes != Axes.None)
-                InvalidateFromChild(Invalidation.RequiredParentSizeToFit);
+                Invalidate(Invalidation.RequiredParentSizeToFit);
         }
 
         /// <summary>
@@ -538,7 +538,7 @@ namespace osu.Framework.Graphics.Containers
             Layout.AddDependency(drawable.Layout);
 
             if (AutoSizeAxes != Axes.None)
-                InvalidateFromChild(Invalidation.RequiredParentSizeToFit, drawable);
+                Invalidate(Invalidation.RequiredParentSizeToFit);
         }
 
         /// <summary>
@@ -932,17 +932,6 @@ namespace osu.Framework.Graphics.Containers
         #endregion
 
         #region Invalidation
-
-        /// <summary>
-        /// Informs this <see cref="CompositeDrawable"/> that a child has been invalidated.
-        /// </summary>
-        /// <param name="invalidation">The type of invalidation applied to the child.</param>
-        /// <param name="source">The child which caused this invalidation. May be null to indicate that a specific child wasn't specified.</param>
-        public virtual void InvalidateFromChild(Invalidation invalidation, Drawable source = null)
-        {
-            if ((invalidation & (Invalidation.RequiredParentSizeToFit | Invalidation.Presence)) > 0)
-                childrenSizeDependencies.Invalidate();
-        }
 
         // public override bool Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
         // {

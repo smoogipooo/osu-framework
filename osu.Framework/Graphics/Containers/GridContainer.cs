@@ -311,13 +311,6 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         private class CellContainer : Container
         {
-            public override void InvalidateFromChild(Invalidation invalidation, Drawable source = null)
-            {
-                if ((invalidation & (Invalidation.RequiredParentSizeToFit | Invalidation.Presence)) > 0)
-                    Parent?.InvalidateFromChild(invalidation, this);
-
-                base.InvalidateFromChild(invalidation, source);
-            }
         }
     }
 
