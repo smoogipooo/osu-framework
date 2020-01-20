@@ -329,10 +329,10 @@ namespace osu.Framework.Tests.Visual.Drawables
                 return true;
             }
 
-            protected override bool OnKeyUp(KeyUpEvent e)
+            protected override void OnKeyUp(KeyUpEvent e)
             {
                 ++KeyUpCount;
-                return base.OnKeyUp(e);
+                base.OnKeyUp(e);
             }
 
             protected override bool OnJoystickPress(JoystickPressEvent e)
@@ -341,10 +341,10 @@ namespace osu.Framework.Tests.Visual.Drawables
                 return base.OnJoystickPress(e);
             }
 
-            protected override bool OnJoystickRelease(JoystickReleaseEvent e)
+            protected override void OnJoystickRelease(JoystickReleaseEvent e)
             {
                 ++JoystickReleaseCount;
-                return base.OnJoystickRelease(e);
+                base.OnJoystickRelease(e);
             }
         }
     }
