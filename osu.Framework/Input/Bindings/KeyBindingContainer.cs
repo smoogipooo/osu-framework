@@ -249,16 +249,16 @@ namespace osu.Framework.Input.Bindings
             if (manager == null)
                 throw new InvalidOperationException($"An action that hasn't been pressed cannot be released ({released}).");
 
-            manualEventManagers.Remove(manager);
             handleReleased(manager);
+            manualEventManagers.Remove(manager);
         }
 
         public void TriggerPressed(T pressed)
         {
             var manager = createEventManager(pressed);
 
-            manualEventManagers.Add(manager);
-            handlePressed(manager);
+            if (handlePressed(manager))
+                manualEventManagers.Add(manager);
         }
 
         private readonly Dictionary<KeyBinding, ActionEventManager<T>> keyBindingEventManagers = new Dictionary<KeyBinding, ActionEventManager<T>>();
