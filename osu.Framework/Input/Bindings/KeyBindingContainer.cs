@@ -214,6 +214,10 @@ namespace osu.Framework.Input.Bindings
             foreach (var manager in keyBindingEventManagers.Values)
                 manager.HandleButtonStateChange(null, ButtonStateChangeKind.Released);
 
+            foreach (var manager in manualEventManagers)
+                manager.HandleButtonStateChange(null, ButtonStateChangeKind.Released);
+
+            manualEventManagers.Clear();
             pressedActions.Clear();
         }
 
