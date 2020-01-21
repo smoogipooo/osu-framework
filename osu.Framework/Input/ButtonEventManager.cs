@@ -51,12 +51,14 @@ namespace osu.Framework.Input
         /// </summary>
         /// <param name="state">The current <see cref="InputState"/>.</param>
         /// <param name="kind">The type of change in the button's state.</param>
-        public void HandleButtonStateChange(InputState state, ButtonStateChangeKind kind)
+        /// <returns>Whether the change was handled by any <see cref="Drawable"/>. This will always be false if <paramref name="kind"/> is <see cref="ButtonStateChangeKind.Released"/>.</returns>
+        public bool HandleButtonStateChange(InputState state, ButtonStateChangeKind kind)
         {
             if (kind == ButtonStateChangeKind.Pressed)
-                handleButtonDown(state);
-            else
-                handleButtonUp(state);
+                return handleButtonDown(state);
+
+            handleButtonUp(state);
+            return false;
         }
 
         /// <summary>
