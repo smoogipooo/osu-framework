@@ -245,7 +245,7 @@ namespace osu.Framework.Input.Bindings
 
         public void TriggerReleased(T released)
         {
-            var manager = manualEventManagers.FirstOrDefault(m => EqualityComparer<T>.Default.Equals(m.Button, released));
+            var manager = manualEventManagers.LastOrDefault(m => EqualityComparer<T>.Default.Equals(m.Button, released));
             if (manager == null)
                 throw new InvalidOperationException($"An action that hasn't been pressed cannot be released ({released}).");
 
