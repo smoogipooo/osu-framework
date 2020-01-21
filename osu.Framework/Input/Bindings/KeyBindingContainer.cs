@@ -233,18 +233,41 @@ namespace osu.Framework.Input.Bindings
             foreach (var binding in newlyReleased)
             {
                 pressedBindings.Remove(binding);
-
                 handleReleased(getEventManager(binding));
             }
         }
 
         private void handleReleased(ActionEventManager<T> eventManager)
         {
-            pressedActions.Remove(eventManager.Button);
-
-            eventManager.HandleButtonStateChange(null, ButtonStateChangeKind.Released);
+            // we either want multiple release events due to the simultaneous mode, or we only want one when we
+            // - were pressed (as an action)
+            // - are the last pressed binding with this action
+            if (simultaneousMode == SimultaneousBindingMode.All
+                || pressedActions.Contains(eventManager.Button) && pressedBindings.All(b => !EqualityComparer<T>.Default.Equals(b.GetAction<T>(), eventManager.Button)))
+            {
+                eventManager.HandleButtonStateChange(null, ButtonStateChangeKind.Released);
+                pressedActions.Remove(eventManager.Button);
+            }
         }
 
+        private readonly Dictionary<KeyBinding, ActionEventManager<T>> keyBindingEventManagers = new Dictionary<KeyBinding, ActionEventManager<T>>();
+
+        private ActionEventManager<T> getEventManager(T action) => new ActionEventManager<T>(action)
+        {
+            GetInputQueue = () => KeyBindingInputQueue
+        };
+
+        private ActionEventManager<T> getEventManager(KeyBinding binding)
+        {
+            if (keyBindingEventManagers.TryGetValue(binding, out var existing))
+                return existing;
+
+            return keyBindingEventManagers[binding] = getEventManager(binding.GetAction<T>());
+        }
+
+        #region Helpers
+
+        // The list of event managers that were triggered manually via TriggerPressed()
         private readonly List<ActionEventManager<T>> manualEventManagers = new List<ActionEventManager<T>>();
 
         public void TriggerReleased(T released)
@@ -259,26 +282,13 @@ namespace osu.Framework.Input.Bindings
 
         public void TriggerPressed(T pressed)
         {
-            var manager = createEventManager(pressed);
+            var manager = getEventManager(pressed);
 
             if (handlePressed(manager))
                 manualEventManagers.Add(manager);
         }
 
-        private readonly Dictionary<KeyBinding, ActionEventManager<T>> keyBindingEventManagers = new Dictionary<KeyBinding, ActionEventManager<T>>();
-
-        private ActionEventManager<T> createEventManager(T action) => new ActionEventManager<T>(action)
-        {
-            GetInputQueue = () => KeyBindingInputQueue
-        };
-
-        private ActionEventManager<T> getEventManager(KeyBinding binding)
-        {
-            if (keyBindingEventManagers.TryGetValue(binding, out var existing))
-                return existing;
-
-            return keyBindingEventManagers[binding] = createEventManager(binding.GetAction<T>());
-        }
+        #endregion
     }
 
     /// <summary>
