@@ -115,7 +115,7 @@ Task("InspectCode")
         var inspectcodereport = tempDirectory.CombineWithFilePath("inspectcodereport.xml");
 
         InspectCode(desktopSlnf, new InspectCodeSettings {
-            CachesHome = AppVeyor.IsRunningOnAppVeyor ? "C:\\caches\\inspectcode" : tempDirectory.Combine("inspectcode"),
+            CachesHome = tempDirectory.Combine("inspectcode"),
             OutputFile = inspectcodereport,
             ArgumentCustomization = args => args.Append("--verbosity=WARN")
         });
