@@ -1719,8 +1719,7 @@ namespace osu.Framework.Graphics
         /// parent states (e.g. <see cref="DrawInfo"/>) should not be executed in an overridden implementation.
         /// </para>
         /// </summary>
-        /// <returns>If the invalidate was actually necessary.</returns>
-        public virtual void Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
+        public void Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
         {
             if (invalidation == Invalidation.None || LoadState < LoadState.Ready)
                 return;

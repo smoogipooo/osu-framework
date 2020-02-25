@@ -37,6 +37,7 @@ namespace osu.Framework.Graphics.Containers
 
             AddLayout(optimisingContainerCache);
             AddLayout(isIntersectingCache);
+            AddLayout(new LayoutDelegate(resetIsIntersecting));
         }
 
         public override double LifetimeStart
@@ -137,17 +138,19 @@ namespace osu.Framework.Graphics.Containers
 
         internal IOnScreenOptimisingContainer FindParentOptimisingContainer() => FindClosestParent<IOnScreenOptimisingContainer>();
 
-        public override void Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
+        private static bool resetIsIntersecting(Drawable source, Invalidation invalidation)
         {
-            base.Invalidate(invalidation, source, shallPropagate);
+            var delayedSource = (DelayedLoadWrapper)source;
 
             // For every invalidation, we schedule a reset of IsIntersecting to the game.
             // This is done since UpdateSubTreeMasking() may not be invoked in the current frame, as a result of presence/masking changes anywhere in our super-tree.
             // It is important that this is scheduled such that it occurs on the NEXT frame, in order to give this wrapper a chance to load its contents.
             // For example, if a parent invalidated this wrapper every frame, IsIntersecting would be false by the time Update() is run and may only become true at the very end of the frame.
             // The scheduled delegate will be cancelled if this wrapper has its UpdateSubTreeMasking() invoked, as more accurate intersections can be computed there instead.
-            if (isIntersectingResetDelegate == null)
-                isIntersectingResetDelegate = Game?.Scheduler.AddDelayed(() => IsIntersecting = false, 0);
+            if (delayedSource.isIntersectingResetDelegate == null)
+                delayedSource.isIntersectingResetDelegate = delayedSource.Game?.Scheduler.AddDelayed(() => delayedSource.IsIntersecting = false, 0);
+
+            return true;
         }
 
         public override bool UpdateSubTreeMasking(Drawable source, RectangleF maskingBounds)

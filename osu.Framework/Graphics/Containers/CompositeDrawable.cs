@@ -24,6 +24,7 @@ using osu.Framework.Development;
 using osu.Framework.Extensions.ExceptionExtensions;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Layout;
 using osu.Framework.Utils;
 
 namespace osu.Framework.Graphics.Containers
@@ -48,6 +49,8 @@ namespace osu.Framework.Graphics.Containers
 
             internalChildren = new SortedList<Drawable>(new ChildComparer(this));
             aliveInternalChildren = new SortedList<Drawable>(new ChildComparer(this));
+
+            AddLayout(new LayoutDelegate(invalidateChildren));
         }
 
         [Resolved]
@@ -939,18 +942,13 @@ namespace osu.Framework.Graphics.Containers
                 childrenSizeDependencies.Invalidate();
         }
 
-        public override void Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
+        private static bool invalidateChildren(Drawable source, Invalidation invalidation)
         {
-            bool skip = (InvalidationState & invalidation) == invalidation;
+            var compositeSource = (CompositeDrawable)source;
 
-            base.Invalidate(invalidation, source, shallPropagate);
-
-            if (skip)
-                return;
-
-            for (int i = 0; i < internalChildren.Count; ++i)
+            for (int i = 0; i < compositeSource.internalChildren.Count; ++i)
             {
-                Drawable c = internalChildren[i];
+                Drawable c = compositeSource.internalChildren[i];
                 Debug.Assert(c != source);
 
                 Invalidation childInvalidation = invalidation;
@@ -969,8 +967,10 @@ namespace osu.Framework.Graphics.Containers
                 if (c.RelativeSizeAxes == Axes.None)
                     childInvalidation &= ~Invalidation.DrawSize;
 
-                c.Invalidate(childInvalidation, this);
+                c.Invalidate(childInvalidation, source);
             }
+
+            return true;
         }
 
         #endregion

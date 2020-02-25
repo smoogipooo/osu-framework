@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Shaders;
 using osu.Framework.Graphics.Textures;
 using osuTK;
 using osu.Framework.Graphics.OpenGL;
+using osu.Framework.Layout;
 using osu.Framework.Utils;
 using osu.Framework.Threading;
 using osuTK.Graphics;
@@ -32,6 +33,8 @@ namespace osu.Framework.Graphics.Audio
         public WaveformGraph()
         {
             texture = Texture.WhitePixel;
+
+            AddLayout(new LayoutDelegate(invalidateWaveform));
         }
 
         [BackgroundDependencyLoader]
@@ -139,12 +142,15 @@ namespace osu.Framework.Graphics.Audio
             }
         }
 
-        public override void Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
+        private static bool invalidateWaveform(Drawable source, Invalidation invalidation)
         {
-            base.Invalidate(invalidation, source, shallPropagate);
+            if ((invalidation & Invalidation.RequiredParentSizeToFit) == 0)
+                return false;
 
-            if ((invalidation & Invalidation.RequiredParentSizeToFit) > 0)
-                generate();
+            var waveformSource = (WaveformGraph)source;
+
+            waveformSource.generate();
+            return true;
         }
 
         private CancellationTokenSource cancelSource = new CancellationTokenSource();

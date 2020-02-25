@@ -253,6 +253,7 @@ namespace osu.Framework.Graphics.Containers
             sharedData = new BufferedContainerDrawNodeSharedData(formats, pixelSnapping);
 
             AddLayout(screenSpaceSizeBacking);
+            AddLayout(new LayoutDelegate(invalidateUpdateVersion));
         }
 
         [BackgroundDependencyLoader]
@@ -272,12 +273,15 @@ namespace osu.Framework.Graphics.Containers
         // We actually only care about Invalidation.MiscGeometry | Invalidation.DrawInfo, but must match the blanket invalidation logic in Drawable.Invalidate
         private readonly LayoutValue screenSpaceSizeBacking = new LayoutValue(Invalidation.Presence | Invalidation.RequiredParentSizeToFit | Invalidation.DrawInfo);
 
-        public override void Invalidate(Invalidation invalidation = Invalidation.All, Drawable source = null, bool shallPropagate = true)
+        private static bool invalidateUpdateVersion(Drawable source, Invalidation invalidation)
         {
-            base.Invalidate(invalidation, source, shallPropagate);
+            if ((invalidation & Invalidation.DrawNode) == 0)
+                return false;
 
-            if ((invalidation & Invalidation.DrawNode) > 0)
-                ++updateVersion;
+            var bufferedSource = (BufferedContainer<T>)source;
+
+            ++bufferedSource.updateVersion;
+            return true;
         }
 
         private long childrenUpdateVersion = -1;

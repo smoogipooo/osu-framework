@@ -6,7 +6,7 @@ using osu.Framework.Graphics;
 
 namespace osu.Framework.Layout
 {
-    public class LayoutValue : LayoutMember
+    public sealed class LayoutValue : LayoutMember
     {
         public LayoutValue(Invalidation invalidationType, InvalidationConditionDelegate invalidationCondition = null)
             : base(invalidationType, invalidationCondition)
@@ -16,7 +16,7 @@ namespace osu.Framework.Layout
         public new void Validate() => base.Validate();
     }
 
-    public class LayoutValue<T> : LayoutMember
+    public sealed class LayoutValue<T> : LayoutMember
     {
         public LayoutValue(Invalidation invalidationType, InvalidationConditionDelegate invalidationCondition = null)
             : base(invalidationType, invalidationCondition)
