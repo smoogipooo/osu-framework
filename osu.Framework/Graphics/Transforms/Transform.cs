@@ -26,8 +26,6 @@ namespace osu.Framework.Graphics.Transforms
         /// </summary>
         public bool Rewindable = true;
 
-        public Easing Easing;
-
         public abstract ITransformable TargetTransformable { get; }
 
         public double StartTime { get; internal set; }
@@ -95,5 +93,12 @@ namespace osu.Framework.Graphics.Transforms
         protected abstract void ReadIntoStartValue(T d);
 
         public override string ToString() => $"{Target.GetType().Name}.{TargetMember} {StartTime}-{EndTime}ms {StartValue} -> {EndValue}";
+    }
+
+    public abstract class Transform<TValue, TEasing, T> : Transform<TValue, T>
+        where T : class, ITransformable
+        where TEasing : IEasingFunction
+    {
+        public TEasing Easing { get; internal set; }
     }
 }

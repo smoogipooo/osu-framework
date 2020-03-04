@@ -7,6 +7,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Transforms;
 using osuTK;
 using osuTK.Graphics;
 
@@ -125,6 +126,63 @@ namespace osu.Framework.Utils
         }
 
         public static ColourInfo ValueAt(double time, ColourInfo startColour, ColourInfo endColour, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, startColour, endColour, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static EdgeEffectParameters ValueAt(double time, EdgeEffectParameters startParams, EdgeEffectParameters endParams, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, startParams, endParams, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static SRGBColour ValueAt(double time, SRGBColour startColour, SRGBColour endColour, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(startTime, startColour, endColour, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static Color4 ValueAt(double time, Color4 startColour, Color4 endColour, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, startColour, endColour, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static byte ValueAt(double time, byte val1, byte val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static sbyte ValueAt(double time, sbyte val1, sbyte val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static short ValueAt(double time, short val1, short val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static ushort ValueAt(double time, ushort val1, ushort val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static int ValueAt(double time, int val1, int val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static uint ValueAt(double time, uint val1, uint val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static long ValueAt(double time, long val1, long val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static ulong ValueAt(double time, ulong val1, ulong val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static float ValueAt(double time, float val1, float val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static decimal ValueAt(double time, decimal val1, decimal val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static double ValueAt(double time, double val1, double val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static Vector2 ValueAt(double time, Vector2 val1, Vector2 val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static RectangleF ValueAt(double time, RectangleF val1, RectangleF val2, double startTime, double endTime, Easing easing = Easing.None)
+            => Interpolation<DefaultEasingFunction>.ValueAt(time, val1, val2, startTime, endTime, new DefaultEasingFunction(easing));
+
+        public static double ApplyEasing(Easing easing, double time) => new DefaultEasingFunction(easing).Apply(time);
+    }
+
+    public static class Interpolation<TEasing>
+        where TEasing : IEasingFunction
+    {
+        public static ColourInfo ValueAt(double time, ColourInfo startColour, ColourInfo endColour, double startTime, double endTime, TEasing easing)
         {
             if (startColour.HasSingleColour && endColour.HasSingleColour)
                 return ValueAt(time, (Color4)startColour, (Color4)endColour, startTime, endTime, easing);
@@ -138,8 +196,8 @@ namespace osu.Framework.Utils
             };
         }
 
-        public static EdgeEffectParameters ValueAt(double time, EdgeEffectParameters startParams, EdgeEffectParameters endParams, double startTime, double endTime, Easing easing = Easing.None) =>
-            new EdgeEffectParameters
+        public static EdgeEffectParameters ValueAt(double time, EdgeEffectParameters startParams, EdgeEffectParameters endParams, double startTime, double endTime, TEasing easing)
+            => new EdgeEffectParameters
             {
                 Type = startParams.Type,
                 Hollow = startParams.Hollow,
@@ -149,10 +207,10 @@ namespace osu.Framework.Utils
                 Roundness = ValueAt(time, startParams.Roundness, endParams.Roundness, startTime, endTime, easing),
             };
 
-        public static SRGBColour ValueAt(double time, SRGBColour startColour, SRGBColour endColour, double startTime, double endTime, Easing easing = Easing.None) =>
-            ValueAt(time, (Color4)startColour, (Color4)endColour, startTime, endTime, easing);
+        public static SRGBColour ValueAt(double time, SRGBColour startColour, SRGBColour endColour, double startTime, double endTime, TEasing easing)
+            => ValueAt(time, (Color4)startColour, (Color4)endColour, startTime, endTime, easing);
 
-        public static Color4 ValueAt(double time, Color4 startColour, Color4 endColour, double startTime, double endTime, Easing easing = Easing.None)
+        public static Color4 ValueAt(double time, Color4 startColour, Color4 endColour, double startTime, double endTime, TEasing easing = default)
         {
             if (startColour == endColour)
                 return startColour;
@@ -163,7 +221,7 @@ namespace osu.Framework.Utils
             if (duration == 0 || current == 0)
                 return startColour;
 
-            float t = Math.Max(0, Math.Min(1, (float)ApplyEasing(easing, current / duration)));
+            float t = Math.Max(0, Math.Min(1, (float)easing.Apply(current / duration)));
 
             return new Color4(
                 startColour.R + t * (endColour.R - startColour.R),
@@ -172,37 +230,37 @@ namespace osu.Framework.Utils
                 startColour.A + t * (endColour.A - startColour.A));
         }
 
-        public static byte ValueAt(double time, byte val1, byte val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (byte)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
+        public static byte ValueAt(double time, byte val1, byte val2, double startTime, double endTime, TEasing easing)
+            => (byte)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
 
-        public static sbyte ValueAt(double time, sbyte val1, sbyte val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (sbyte)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
+        public static sbyte ValueAt(double time, sbyte val1, sbyte val2, double startTime, double endTime, TEasing easing)
+            => (sbyte)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
 
-        public static short ValueAt(double time, short val1, short val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (short)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
+        public static short ValueAt(double time, short val1, short val2, double startTime, double endTime, TEasing easing)
+            => (short)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
 
-        public static ushort ValueAt(double time, ushort val1, ushort val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (ushort)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
+        public static ushort ValueAt(double time, ushort val1, ushort val2, double startTime, double endTime, TEasing easing)
+            => (ushort)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
 
-        public static int ValueAt(double time, int val1, int val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (int)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
+        public static int ValueAt(double time, int val1, int val2, double startTime, double endTime, TEasing easing)
+            => (int)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
 
-        public static uint ValueAt(double time, uint val1, uint val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (uint)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
+        public static uint ValueAt(double time, uint val1, uint val2, double startTime, double endTime, TEasing easing)
+            => (uint)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
 
-        public static long ValueAt(double time, long val1, long val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (long)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
+        public static long ValueAt(double time, long val1, long val2, double startTime, double endTime, TEasing easing)
+            => (long)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
 
-        public static ulong ValueAt(double time, ulong val1, ulong val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (ulong)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
+        public static ulong ValueAt(double time, ulong val1, ulong val2, double startTime, double endTime, TEasing easing)
+            => (ulong)Math.Round(ValueAt(time, (double)val1, val2, startTime, endTime, easing));
 
-        public static float ValueAt(double time, float val1, float val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (float)ValueAt(time, (double)val1, val2, startTime, endTime, easing);
+        public static float ValueAt(double time, float val1, float val2, double startTime, double endTime, TEasing easing)
+            => (float)ValueAt(time, (double)val1, val2, startTime, endTime, easing);
 
-        public static decimal ValueAt(double time, decimal val1, decimal val2, double startTime, double endTime, Easing easing = Easing.None) =>
-            (decimal)ValueAt(time, (double)val1, (double)val2, startTime, endTime, easing);
+        public static decimal ValueAt(double time, decimal val1, decimal val2, double startTime, double endTime, TEasing easing)
+            => (decimal)ValueAt(time, (double)val1, (double)val2, startTime, endTime, easing);
 
-        public static double ValueAt(double time, double val1, double val2, double startTime, double endTime, Easing easing = Easing.None)
+        public static double ValueAt(double time, double val1, double val2, double startTime, double endTime, TEasing easing)
         {
             if (val1 == val2)
                 return val1;
@@ -215,11 +273,11 @@ namespace osu.Framework.Utils
             if (duration == 0)
                 return val2;
 
-            double t = ApplyEasing(easing, current / duration);
+            double t = easing.Apply(current / duration);
             return val1 + t * (val2 - val1);
         }
 
-        public static Vector2 ValueAt(double time, Vector2 val1, Vector2 val2, double startTime, double endTime, Easing easing = Easing.None)
+        public static Vector2 ValueAt(double time, Vector2 val1, Vector2 val2, double startTime, double endTime, TEasing easing)
         {
             float current = (float)(time - startTime);
             float duration = (float)(endTime - startTime);
@@ -227,11 +285,11 @@ namespace osu.Framework.Utils
             if (duration == 0 || current == 0)
                 return val1;
 
-            float t = (float)ApplyEasing(easing, current / duration);
+            float t = (float)easing.Apply(current / duration);
             return val1 + t * (val2 - val1);
         }
 
-        public static RectangleF ValueAt(double time, RectangleF val1, RectangleF val2, double startTime, double endTime, Easing easing = Easing.None)
+        public static RectangleF ValueAt(double time, RectangleF val1, RectangleF val2, double startTime, double endTime, TEasing easing = default)
         {
             float current = (float)(time - startTime);
             float duration = (float)(endTime - startTime);
@@ -239,7 +297,7 @@ namespace osu.Framework.Utils
             if (duration == 0 || current == 0)
                 return val1;
 
-            float t = (float)ApplyEasing(easing, current / duration);
+            float t = (float)easing.Apply(current / duration);
 
             return new RectangleF(
                 val1.X + t * (val2.X - val1.X),
@@ -247,180 +305,13 @@ namespace osu.Framework.Utils
                 val1.Width + t * (val2.Width - val1.Width),
                 val1.Height + t * (val2.X - val1.Height));
         }
-
-        #region Easing constants
-
-        private const double elastic_const = 2 * Math.PI / .3;
-        private const double elastic_const2 = .3 / 4;
-
-        private const double back_const = 1.70158;
-        private const double back_const2 = back_const * 1.525;
-
-        private const double bounce_const = 1 / 2.75;
-
-        // constants used to fix expo and elastic curves to start/end at 0/1
-        private static readonly double expo_offset = Math.Pow(2, -10);
-        private static readonly double elastic_offset_full = Math.Pow(2, -11);
-        private static readonly double elastic_offset_half = Math.Pow(2, -10) * Math.Sin((.5 - elastic_const2) * elastic_const);
-        private static readonly double elastic_offset_quarter = Math.Pow(2, -10) * Math.Sin((.25 - elastic_const2) * elastic_const);
-        private static readonly double in_out_elastic_offset = Math.Pow(2, -10) * Math.Sin((1 - elastic_const2 * 1.5) * elastic_const / 1.5);
-
-        #endregion
-
-        public static double ApplyEasing(Easing easing, double time)
-        {
-            switch (easing)
-            {
-                default:
-                    return time;
-
-                case Easing.In:
-                case Easing.InQuad:
-                    return time * time;
-
-                case Easing.Out:
-                case Easing.OutQuad:
-                    return time * (2 - time);
-
-                case Easing.InOutQuad:
-                    if (time < .5) return time * time * 2;
-
-                    return --time * time * -2 + 1;
-
-                case Easing.InCubic:
-                    return time * time * time;
-
-                case Easing.OutCubic:
-                    return --time * time * time + 1;
-
-                case Easing.InOutCubic:
-                    if (time < .5) return time * time * time * 4;
-
-                    return --time * time * time * 4 + 1;
-
-                case Easing.InQuart:
-                    return time * time * time * time;
-
-                case Easing.OutQuart:
-                    return 1 - --time * time * time * time;
-
-                case Easing.InOutQuart:
-                    if (time < .5) return time * time * time * time * 8;
-
-                    return --time * time * time * time * -8 + 1;
-
-                case Easing.InQuint:
-                    return time * time * time * time * time;
-
-                case Easing.OutQuint:
-                    return --time * time * time * time * time + 1;
-
-                case Easing.InOutQuint:
-                    if (time < .5) return time * time * time * time * time * 16;
-
-                    return --time * time * time * time * time * 16 + 1;
-
-                case Easing.InSine:
-                    return 1 - Math.Cos(time * Math.PI * .5);
-
-                case Easing.OutSine:
-                    return Math.Sin(time * Math.PI * .5);
-
-                case Easing.InOutSine:
-                    return .5 - .5 * Math.Cos(Math.PI * time);
-
-                case Easing.InExpo:
-                    return Math.Pow(2, 10 * (time - 1)) + expo_offset * (time - 1);
-
-                case Easing.OutExpo:
-                    return -Math.Pow(2, -10 * time) + 1 + expo_offset * time;
-
-                case Easing.InOutExpo:
-                    if (time < .5) return .5 * (Math.Pow(2, 20 * time - 10) + expo_offset * (2 * time - 1));
-
-                    return 1 - .5 * (Math.Pow(2, -20 * time + 10) + expo_offset * (-2 * time + 1));
-
-                case Easing.InCirc:
-                    return 1 - Math.Sqrt(1 - time * time);
-
-                case Easing.OutCirc:
-                    return Math.Sqrt(1 - --time * time);
-
-                case Easing.InOutCirc:
-                    if ((time *= 2) < 1) return .5 - .5 * Math.Sqrt(1 - time * time);
-
-                    return .5 * Math.Sqrt(1 - (time -= 2) * time) + .5;
-
-                case Easing.InElastic:
-                    return -Math.Pow(2, -10 + 10 * time) * Math.Sin((1 - elastic_const2 - time) * elastic_const) + elastic_offset_full * (1 - time);
-
-                case Easing.OutElastic:
-                    return Math.Pow(2, -10 * time) * Math.Sin((time - elastic_const2) * elastic_const) + 1 - elastic_offset_full * time;
-
-                case Easing.OutElasticHalf:
-                    return Math.Pow(2, -10 * time) * Math.Sin((.5 * time - elastic_const2) * elastic_const) + 1 - elastic_offset_half * time;
-
-                case Easing.OutElasticQuarter:
-                    return Math.Pow(2, -10 * time) * Math.Sin((.25 * time - elastic_const2) * elastic_const) + 1 - elastic_offset_quarter * time;
-
-                case Easing.InOutElastic:
-                    if ((time *= 2) < 1)
-                    {
-                        return -.5 * (Math.Pow(2, -10 + 10 * time) * Math.Sin((1 - elastic_const2 * 1.5 - time) * elastic_const / 1.5)
-                                      - in_out_elastic_offset * (1 - time));
-                    }
-
-                    return .5 * (Math.Pow(2, -10 * --time) * Math.Sin((time - elastic_const2 * 1.5) * elastic_const / 1.5)
-                                 - in_out_elastic_offset * time) + 1;
-
-                case Easing.InBack:
-                    return time * time * ((back_const + 1) * time - back_const);
-
-                case Easing.OutBack:
-                    return --time * time * ((back_const + 1) * time + back_const) + 1;
-
-                case Easing.InOutBack:
-                    if ((time *= 2) < 1) return .5 * time * time * ((back_const2 + 1) * time - back_const2);
-
-                    return .5 * ((time -= 2) * time * ((back_const2 + 1) * time + back_const2) + 2);
-
-                case Easing.InBounce:
-                    time = 1 - time;
-                    if (time < bounce_const)
-                        return 1 - 7.5625 * time * time;
-                    if (time < 2 * bounce_const)
-                        return 1 - (7.5625 * (time -= 1.5 * bounce_const) * time + .75);
-                    if (time < 2.5 * bounce_const)
-                        return 1 - (7.5625 * (time -= 2.25 * bounce_const) * time + .9375);
-
-                    return 1 - (7.5625 * (time -= 2.625 * bounce_const) * time + .984375);
-
-                case Easing.OutBounce:
-                    if (time < bounce_const)
-                        return 7.5625 * time * time;
-                    if (time < 2 * bounce_const)
-                        return 7.5625 * (time -= 1.5 * bounce_const) * time + .75;
-                    if (time < 2.5 * bounce_const)
-                        return 7.5625 * (time -= 2.25 * bounce_const) * time + .9375;
-
-                    return 7.5625 * (time -= 2.625 * bounce_const) * time + .984375;
-
-                case Easing.InOutBounce:
-                    if (time < .5) return .5 - .5 * ApplyEasing(Easing.OutBounce, 1 - time * 2);
-
-                    return ApplyEasing(Easing.OutBounce, (time - .5) * 2) * .5 + .5;
-
-                case Easing.OutPow10:
-                    return --time * Math.Pow(time, 10) + 1;
-            }
-        }
     }
 
-    internal static class Interpolation<TValue>
+    internal static class InterpolationCache<TValue>
     {
         public static readonly InterpolationFunc<TValue> FUNCTION;
 
-        static Interpolation()
+        static InterpolationCache()
         {
             const string interpolation_method = nameof(Interpolation.ValueAt);
 
@@ -430,7 +321,8 @@ namespace osu.Framework.Utils
 
             var valueAtMethod = typeof(Interpolation).GetMethod(interpolation_method, parameters)
                                 ?? typeof(TValue).GetMethod(interpolation_method, parameters)
-                                ?? throw new NotSupportedException($"Type {typeof(TValue)} has no interpolation function. Add a method with the name {interpolation_method} with the parameters of {nameof(InterpolationFunc<TValue>)} or interpolate the value manually.");
+                                ?? throw new NotSupportedException(
+                                    $"Type {typeof(TValue)} has no interpolation function. Add a method with the name {interpolation_method} with the parameters of {nameof(InterpolationFunc<TValue>)} or interpolate the value manually.");
 
             FUNCTION = (InterpolationFunc<TValue>)valueAtMethod.CreateDelegate(typeof(InterpolationFunc<TValue>));
         }
@@ -439,5 +331,32 @@ namespace osu.Framework.Utils
             => FUNCTION(time, startValue, endValue, startTime, endTime, easing);
     }
 
-    public delegate TValue InterpolationFunc<TValue>(double time, TValue startValue, TValue endValue, double startTime, double endTime, Easing easingType);
+    internal static class InterpolationCache<TValue, TEasing>
+        where TEasing : IEasingFunction
+    {
+        public static readonly InterpolationFunc<TValue, TEasing> FUNCTION;
+
+        static InterpolationCache()
+        {
+            const string interpolation_method = nameof(Interpolation<TEasing>.ValueAt);
+
+            var parameters = typeof(InterpolationFunc<TValue, TEasing>)
+                             .GetMethod(nameof(InterpolationFunc<TValue, TEasing>.Invoke))
+                             ?.GetParameters().Select(p => p.ParameterType).ToArray();
+
+            var valueAtMethod = typeof(Interpolation<TEasing>).GetMethod(interpolation_method, parameters)
+                                ?? typeof(TValue)?.GetMethod(interpolation_method)?.MakeGenericMethod(parameters[^1])
+                                ?? throw new NotSupportedException(
+                                    $"Type {typeof(TValue)} has no interpolation function. Add a method with the name {interpolation_method} with the parameters of {nameof(InterpolationFunc<TValue, TEasing>)} or interpolate the value manually.");
+
+            FUNCTION = (InterpolationFunc<TValue, TEasing>)valueAtMethod.CreateDelegate(typeof(InterpolationFunc<TValue, TEasing>));
+        }
+
+        public static TValue ValueAt(double time, TValue startValue, TValue endValue, double startTime, double endTime, TEasing easing)
+            => FUNCTION(time, startValue, endValue, startTime, endTime, easing);
+    }
+
+    public delegate TValue InterpolationFunc<TValue, in TEasing>(double time, TValue startValue, TValue endValue, double startTime, double endTime, TEasing easing) where TEasing : IEasingFunction;
+
+    public delegate TValue InterpolationFunc<TValue>(double time, TValue startValue, TValue endValue, double startTime, double endTime, Easing easing);
 }

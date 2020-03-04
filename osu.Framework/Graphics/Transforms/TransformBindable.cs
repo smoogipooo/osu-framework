@@ -6,18 +6,19 @@ using osu.Framework.Utils;
 
 namespace osu.Framework.Graphics.Transforms
 {
-    internal class TransformBindable<TValue, T> : Transform<TValue, T>
+    internal class TransformBindable<TValue, TEasing, T> : Transform<TValue, TEasing, T>
         where T : class, ITransformable
+        where TEasing : IEasingFunction
     {
         public override string TargetMember { get; }
 
         private readonly Bindable<TValue> targetBindable;
-        private readonly InterpolationFunc<TValue> interpolationFunc;
+        private readonly InterpolationFunc<TValue, TEasing> interpolationFunc;
 
-        public TransformBindable(Bindable<TValue> targetBindable, InterpolationFunc<TValue> interpolationFunc)
+        public TransformBindable(Bindable<TValue> targetBindable, InterpolationFunc<TValue, TEasing> interpolationFunc)
         {
             this.targetBindable = targetBindable;
-            this.interpolationFunc = interpolationFunc ?? Interpolation<TValue>.ValueAt;
+            this.interpolationFunc = interpolationFunc ?? InterpolationCache<TValue, TEasing>.ValueAt;
 
             TargetMember = $"{targetBindable.GetHashCode()}.Value";
         }
@@ -32,5 +33,14 @@ namespace osu.Framework.Graphics.Transforms
 
         protected override void Apply(T d, double time) => targetBindable.Value = valueAt(time);
         protected override void ReadIntoStartValue(T d) => StartValue = targetBindable.Value;
+    }
+
+    internal class TransformBindable<TValue, T> : TransformBindable<TValue, DefaultEasingFunction, T>
+        where T : class, ITransformable
+    {
+        public TransformBindable(Bindable<TValue> targetBindable, InterpolationFunc<TValue, DefaultEasingFunction> interpolationFunc)
+            : base(targetBindable, interpolationFunc)
+        {
+        }
     }
 }
