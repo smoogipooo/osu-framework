@@ -9,15 +9,15 @@ namespace osu.Framework.Graphics.Visualisation
 {
     internal class FlashyBox : Box
     {
-        private Drawable target;
-        private readonly Func<Drawable, Quad> getScreenSpaceQuad;
+        private IDrawable target;
+        private readonly Func<IDrawable, Quad> getScreenSpaceQuad;
 
-        public FlashyBox(Func<Drawable, Quad> getScreenSpaceQuad)
+        public FlashyBox(Func<IDrawable, Quad> getScreenSpaceQuad)
         {
             this.getScreenSpaceQuad = getScreenSpaceQuad;
         }
 
-        public Drawable Target
+        public IDrawable Target
         {
             set => target = value;
         }

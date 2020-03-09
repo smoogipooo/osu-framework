@@ -16,16 +16,15 @@ using osu.Framework.Graphics.OpenGL.Vertices;
 
 namespace osu.Framework.Graphics.Containers
 {
-    public partial class CompositeDrawable
+    public partial class CompositeDrawable<TDrawable>
+        where TDrawable : Drawable
     {
         /// <summary>
         /// A draw node responsible for rendering a <see cref="CompositeDrawable"/> and the <see cref="DrawNode"/>s of its children.
         /// </summary>
-        protected class CompositeDrawableDrawNode : DrawNode, ICompositeDrawNode
+        public class CompositeDrawableDrawNode : DrawNode, ICompositeDrawNode
         {
-            private static readonly float cos_45 = MathF.Cos(MathF.PI / 4);
-
-            protected new CompositeDrawable Source => (CompositeDrawable)base.Source;
+            protected new CompositeDrawable<TDrawable> Source => (CompositeDrawable<TDrawable>)base.Source;
 
             /// <summary>
             /// The <see cref="IShader"/> to use for rendering.
@@ -40,19 +39,7 @@ namespace osu.Framework.Graphics.Containers
             /// <summary>
             /// Information about how masking of children should be carried out.
             /// </summary>
-            private MaskingInfo? maskingInfo;
-
-            /// <summary>
-            /// The screen-space version of <see cref="OpenGL.MaskingInfo.MaskingRect"/>.
-            /// Used as cache of screen-space masking quads computed in previous frames.
-            /// Assign null to reset.
-            /// </summary>
-            private Quad? screenSpaceMaskingQuad;
-
-            /// <summary>
-            /// Information about how the edge effect should be rendered.
-            /// </summary>
-            private EdgeEffectParameters edgeEffect;
+            protected MaskingInfo? MaskingInfo;
 
             /// <summary>
             /// Whether to use a local vertex batch for rendering. If false, a parenting vertex batch will be used.
@@ -66,7 +53,7 @@ namespace osu.Framework.Graphics.Containers
 
             private int sourceChildrenCount;
 
-            public CompositeDrawableDrawNode(CompositeDrawable source)
+            public CompositeDrawableDrawNode(CompositeDrawable<TDrawable> source)
                 : base(source)
             {
             }
@@ -75,17 +62,13 @@ namespace osu.Framework.Graphics.Containers
             {
                 base.ApplyState();
 
-                if (!Source.Masking && (Source.BorderThickness != 0.0f || edgeEffect.Type != EdgeEffectType.None))
-                    throw new InvalidOperationException("Can not have border effects/edge effects if masking is disabled.");
-
                 Vector3 scale = DrawInfo.MatrixInverse.ExtractScale();
                 float blendRange = Source.MaskingSmoothness * (scale.X + scale.Y) / 2;
 
                 // Calculate a shrunk rectangle which is free from corner radius/smoothing/border effects
-                float shrinkage = Source.CornerRadius - Source.CornerRadius * cos_45 + blendRange + Source.borderThickness;
-                RectangleF shrunkDrawRectangle = Source.DrawRectangle.Shrink(shrinkage);
+                RectangleF shrunkDrawRectangle = Source.DrawRectangle.Shrink(blendRange);
 
-                maskingInfo = !Source.Masking
+                MaskingInfo = !Source.Masking
                     ? (MaskingInfo?)null
                     : new MaskingInfo
                     {
@@ -93,10 +76,6 @@ namespace osu.Framework.Graphics.Containers
                         MaskingRect = Source.DrawRectangle,
                         ConservativeScreenSpaceQuad = Quad.FromRectangle(shrunkDrawRectangle) * DrawInfo.Matrix,
                         ToMaskingSpace = DrawInfo.MatrixInverse,
-                        CornerRadius = Source.effectiveCornerRadius,
-                        CornerExponent = Source.CornerExponent,
-                        BorderThickness = Source.BorderThickness,
-                        BorderColour = Source.BorderColour,
                         // We are setting the linear blend range to the approximate size of a _pixel_ here.
                         // This results in the optimal trade-off between crispness and smoothness of the
                         // edges of the masked region according to sampling theory.
@@ -104,63 +83,12 @@ namespace osu.Framework.Graphics.Containers
                         AlphaExponent = 1,
                     };
 
-                edgeEffect = Source.EdgeEffect;
-                screenSpaceMaskingQuad = null;
                 Shader = Source.Shader;
                 forceLocalVertexBatch = Source.ForceLocalVertexBatch;
                 sourceChildrenCount = Source.internalChildren.Count;
             }
 
             public virtual bool AddChildDrawNodes => true;
-
-            private void drawEdgeEffect()
-            {
-                if (maskingInfo == null || edgeEffect.Type == EdgeEffectType.None || edgeEffect.Radius <= 0.0f || edgeEffect.Colour.Linear.A <= 0)
-                    return;
-
-                RectangleF effectRect = maskingInfo.Value.MaskingRect.Inflate(edgeEffect.Radius).Offset(edgeEffect.Offset);
-
-                if (!screenSpaceMaskingQuad.HasValue)
-                    screenSpaceMaskingQuad = Quad.FromRectangle(effectRect) * DrawInfo.Matrix;
-
-                MaskingInfo edgeEffectMaskingInfo = maskingInfo.Value;
-                edgeEffectMaskingInfo.MaskingRect = effectRect;
-                edgeEffectMaskingInfo.ScreenSpaceAABB = screenSpaceMaskingQuad.Value.AABB;
-                edgeEffectMaskingInfo.CornerRadius = maskingInfo.Value.CornerRadius + edgeEffect.Radius + edgeEffect.Roundness;
-                edgeEffectMaskingInfo.BorderThickness = 0;
-                // HACK HACK HACK. We abuse blend range to give us the linear alpha gradient of
-                // the edge effect along its radius using the same rounded-corners shader.
-                edgeEffectMaskingInfo.BlendRange = edgeEffect.Radius;
-                edgeEffectMaskingInfo.AlphaExponent = 2;
-                edgeEffectMaskingInfo.EdgeOffset = edgeEffect.Offset;
-                edgeEffectMaskingInfo.Hollow = edgeEffect.Hollow;
-                edgeEffectMaskingInfo.HollowCornerRadius = maskingInfo.Value.CornerRadius + edgeEffect.Radius;
-
-                GLWrapper.PushMaskingInfo(edgeEffectMaskingInfo);
-
-                GLWrapper.SetBlend(edgeEffect.Type == EdgeEffectType.Glow ? BlendingParameters.Additive : BlendingParameters.Mixture);
-
-                Shader.Bind();
-
-                ColourInfo colour = ColourInfo.SingleColour(edgeEffect.Colour);
-                colour.TopLeft.MultiplyAlpha(DrawColourInfo.Colour.TopLeft.Linear.A);
-                colour.BottomLeft.MultiplyAlpha(DrawColourInfo.Colour.BottomLeft.Linear.A);
-                colour.TopRight.MultiplyAlpha(DrawColourInfo.Colour.TopRight.Linear.A);
-                colour.BottomRight.MultiplyAlpha(DrawColourInfo.Colour.BottomRight.Linear.A);
-
-                DrawQuad(
-                    Texture.WhitePixel,
-                    screenSpaceMaskingQuad.Value,
-                    colour, null, null, null,
-                    // HACK HACK HACK. We re-use the unused vertex blend range to store the original
-                    // masking blend range when rendering edge effects. This is needed for smooth inner edges
-                    // with a hollow edge effect.
-                    new Vector2(maskingInfo.Value.BlendRange));
-
-                Shader.Unbind();
-
-                GLWrapper.PopMaskingInfo();
-            }
 
             private const int min_amount_children_to_warrant_batch = 8;
 
@@ -183,13 +111,11 @@ namespace osu.Framework.Graphics.Containers
                 if (quadBatch != null)
                     vertexAction = quadBatch.AddAction;
 
-                base.Draw(vertexAction);
+                DrawSelf(vertexAction);
 
-                drawEdgeEffect();
-
-                if (maskingInfo != null)
+                if (MaskingInfo != null)
                 {
-                    MaskingInfo info = maskingInfo.Value;
+                    MaskingInfo info = MaskingInfo.Value;
                     if (info.BorderThickness > 0)
                         info.BorderColour *= DrawColourInfo.Colour.AverageColour;
 
@@ -202,9 +128,11 @@ namespace osu.Framework.Graphics.Containers
                         Children[i].Draw(vertexAction);
                 }
 
-                if (maskingInfo != null)
+                if (MaskingInfo != null)
                     GLWrapper.PopMaskingInfo();
             }
+
+            protected virtual void DrawSelf(Action<TexturedVertex2D> vertexAction) => base.Draw(vertexAction);
 
             internal override void DrawOpaqueInteriorSubTree(DepthValue depthValue, Action<TexturedVertex2D> vertexAction)
             {
@@ -231,8 +159,8 @@ namespace osu.Framework.Graphics.Containers
                     if (quadBatch != null)
                         vertexAction = quadBatch.AddAction;
 
-                    if (maskingInfo != null)
-                        GLWrapper.PushMaskingInfo(maskingInfo.Value);
+                    if (MaskingInfo != null)
+                        GLWrapper.PushMaskingInfo(MaskingInfo.Value);
                 }
 
                 // We still need to invoke this method recursively for all children so their depth value is updated
@@ -245,7 +173,7 @@ namespace osu.Framework.Graphics.Containers
                 // Assume that if we can't increment the depth value, no child can, thus nothing will be drawn.
                 if (canIncrement)
                 {
-                    if (maskingInfo != null)
+                    if (MaskingInfo != null)
                         GLWrapper.PopMaskingInfo();
                 }
             }
@@ -258,6 +186,126 @@ namespace osu.Framework.Graphics.Containers
                 Children = null;
 
                 quadBatch?.Dispose();
+            }
+        }
+    }
+
+    public partial class CompositeDrawable
+    {
+        public new class CompositeDrawableDrawNode : CompositeDrawable<Drawable>.CompositeDrawableDrawNode
+        {
+            private static readonly float cos_45 = MathF.Cos(MathF.PI / 4);
+
+            protected new CompositeDrawable Source => (CompositeDrawable)base.Source;
+
+            /// <summary>
+            /// Information about how the edge effect should be rendered.
+            /// </summary>
+            private EdgeEffectParameters edgeEffect;
+
+            /// <summary>
+            /// The screen-space version of <see cref="OpenGL.MaskingInfo.MaskingRect"/>.
+            /// Used as cache of screen-space masking quads computed in previous frames.
+            /// Assign null to reset.
+            /// </summary>
+            private Quad? screenSpaceMaskingQuad;
+
+            public CompositeDrawableDrawNode(CompositeDrawable source)
+                : base(source)
+            {
+            }
+
+            public override void ApplyState()
+            {
+                base.ApplyState();
+
+                if (!Source.Masking && (Source.BorderThickness != 0.0f || edgeEffect.Type != EdgeEffectType.None))
+                    throw new InvalidOperationException("Can not have border effects/edge effects if masking is disabled.");
+
+                Vector3 scale = DrawInfo.MatrixInverse.ExtractScale();
+                float blendRange = Source.MaskingSmoothness * (scale.X + scale.Y) / 2;
+
+                // Calculate a shrunk rectangle which is free from corner radius/smoothing/border effects
+                float shrinkage = Source.CornerRadius - Source.CornerRadius * cos_45 + blendRange + Source.borderThickness;
+                RectangleF shrunkDrawRectangle = Source.DrawRectangle.Shrink(shrinkage);
+
+                MaskingInfo = !Source.Masking
+                    ? (MaskingInfo?)null
+                    : new MaskingInfo
+                    {
+                        ScreenSpaceAABB = Source.ScreenSpaceDrawQuad.AABB,
+                        MaskingRect = Source.DrawRectangle,
+                        ConservativeScreenSpaceQuad = Quad.FromRectangle(shrunkDrawRectangle) * DrawInfo.Matrix,
+                        ToMaskingSpace = DrawInfo.MatrixInverse,
+                        CornerRadius = Source.effectiveCornerRadius,
+                        CornerExponent = Source.CornerExponent,
+                        BorderThickness = Source.BorderThickness,
+                        BorderColour = Source.BorderColour,
+                        // We are setting the linear blend range to the approximate size of a _pixel_ here.
+                        // This results in the optimal trade-off between crispness and smoothness of the
+                        // edges of the masked region according to sampling theory.
+                        BlendRange = blendRange,
+                        AlphaExponent = 1,
+                    };
+
+                edgeEffect = Source.EdgeEffect;
+                screenSpaceMaskingQuad = null;
+            }
+
+            private void drawEdgeEffect()
+            {
+                if (MaskingInfo == null || edgeEffect.Type == EdgeEffectType.None || edgeEffect.Radius <= 0.0f || edgeEffect.Colour.Linear.A <= 0)
+                    return;
+
+                RectangleF effectRect = MaskingInfo.Value.MaskingRect.Inflate(edgeEffect.Radius).Offset(edgeEffect.Offset);
+
+                if (!screenSpaceMaskingQuad.HasValue)
+                    screenSpaceMaskingQuad = Quad.FromRectangle(effectRect) * DrawInfo.Matrix;
+
+                MaskingInfo edgeEffectMaskingInfo = MaskingInfo.Value;
+                edgeEffectMaskingInfo.MaskingRect = effectRect;
+                edgeEffectMaskingInfo.ScreenSpaceAABB = screenSpaceMaskingQuad.Value.AABB;
+                edgeEffectMaskingInfo.CornerRadius = MaskingInfo.Value.CornerRadius + edgeEffect.Radius + edgeEffect.Roundness;
+                edgeEffectMaskingInfo.BorderThickness = 0;
+                // HACK HACK HACK. We abuse blend range to give us the linear alpha gradient of
+                // the edge effect along its radius using the same rounded-corners shader.
+                edgeEffectMaskingInfo.BlendRange = edgeEffect.Radius;
+                edgeEffectMaskingInfo.AlphaExponent = 2;
+                edgeEffectMaskingInfo.EdgeOffset = edgeEffect.Offset;
+                edgeEffectMaskingInfo.Hollow = edgeEffect.Hollow;
+                edgeEffectMaskingInfo.HollowCornerRadius = MaskingInfo.Value.CornerRadius + edgeEffect.Radius;
+
+                GLWrapper.PushMaskingInfo(edgeEffectMaskingInfo);
+
+                GLWrapper.SetBlend(edgeEffect.Type == EdgeEffectType.Glow ? BlendingParameters.Additive : BlendingParameters.Mixture);
+
+                Shader.Bind();
+
+                ColourInfo colour = ColourInfo.SingleColour(edgeEffect.Colour);
+                colour.TopLeft.MultiplyAlpha(DrawColourInfo.Colour.TopLeft.Linear.A);
+                colour.BottomLeft.MultiplyAlpha(DrawColourInfo.Colour.BottomLeft.Linear.A);
+                colour.TopRight.MultiplyAlpha(DrawColourInfo.Colour.TopRight.Linear.A);
+                colour.BottomRight.MultiplyAlpha(DrawColourInfo.Colour.BottomRight.Linear.A);
+
+                DrawQuad(
+                    Texture.WhitePixel,
+                    screenSpaceMaskingQuad.Value,
+                    colour, null, null, null,
+                    // HACK HACK HACK. We re-use the unused vertex blend range to store the original
+                    // masking blend range when rendering edge effects. This is needed for smooth inner edges
+                    // with a hollow edge effect.
+                    new Vector2(MaskingInfo.Value.BlendRange));
+
+                Shader.Unbind();
+
+                GLWrapper.PopMaskingInfo();
+            }
+
+            protected override void DrawSelf(Action<TexturedVertex2D> vertexAction)
+            {
+                base.DrawSelf(vertexAction);
+
+                drawEdgeEffect();
             }
         }
     }

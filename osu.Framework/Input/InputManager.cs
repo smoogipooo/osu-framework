@@ -588,7 +588,7 @@ namespace osu.Framework.Input
             if (stillValid)
             {
                 //ensure we are visible
-                CompositeDrawable d = FocusedDrawable.Parent;
+                IDrawable d = FocusedDrawable.Parent;
 
                 while (d != null)
                 {
@@ -612,7 +612,7 @@ namespace osu.Framework.Input
 
         protected virtual void ChangeFocusFromClick(Drawable clickedDrawable)
         {
-            Drawable focusTarget = null;
+            IDrawable focusTarget = null;
 
             if (clickedDrawable != null)
             {
@@ -621,7 +621,7 @@ namespace osu.Framework.Input
                 if (!focusTarget.AcceptsFocus)
                 {
                     // search upwards from the clicked drawable until we find something to handle focus.
-                    Drawable previousFocused = FocusedDrawable;
+                    IDrawable previousFocused = FocusedDrawable;
 
                     while (focusTarget?.AcceptsFocus == false)
                         focusTarget = focusTarget.Parent;
@@ -630,7 +630,7 @@ namespace osu.Framework.Input
                     {
                         // we found a focusable target above us.
                         // now search upwards from previousFocused to check whether focusTarget is a common parent.
-                        Drawable search = previousFocused;
+                        IDrawable search = previousFocused;
                         while (search != null && search != focusTarget)
                             search = search.Parent;
 
@@ -641,7 +641,7 @@ namespace osu.Framework.Input
                 }
             }
 
-            ChangeFocus(focusTarget);
+            ChangeFocus(focusTarget as Drawable);
         }
 
         private void focusTopMostRequestingDrawable()

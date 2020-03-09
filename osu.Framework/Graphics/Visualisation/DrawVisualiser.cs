@@ -51,7 +51,7 @@ namespace osu.Framework.Graphics.Visualisation
                     },
                     GoUpOneParent = delegate
                     {
-                        Drawable lastHighlight = highlightedTarget?.Target;
+                        IDrawable lastHighlight = highlightedTarget?.Target;
 
                         var parent = Target?.Parent;
 
@@ -162,9 +162,9 @@ namespace osu.Framework.Graphics.Visualisation
         }
 
         private VisualisedDrawable targetVisualiser;
-        private Drawable target;
+        private IDrawable target;
 
-        public Drawable Target
+        public IDrawable Target
         {
             get => target;
             set
@@ -331,9 +331,9 @@ namespace osu.Framework.Graphics.Visualisation
             return base.OnClick(e);
         }
 
-        private readonly Dictionary<Drawable, VisualisedDrawable> visCache = new Dictionary<Drawable, VisualisedDrawable>();
+        private readonly Dictionary<IDrawable, VisualisedDrawable> visCache = new Dictionary<IDrawable, VisualisedDrawable>();
 
-        public VisualisedDrawable GetVisualiserFor(Drawable drawable)
+        public VisualisedDrawable GetVisualiserFor(IDrawable drawable)
         {
             if (visCache.TryGetValue(drawable, out var existing))
                 return existing;

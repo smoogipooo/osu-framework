@@ -232,7 +232,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         private long updateVersion;
 
-        protected override bool CanBeFlattened => false;
+        public override bool CanBeFlattened => false;
 
         public IShader TextureShader { get; private set; }
 

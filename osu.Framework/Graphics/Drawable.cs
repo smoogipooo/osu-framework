@@ -361,6 +361,8 @@ namespace osu.Framework.Graphics
         /// </summary>
         internal ulong ChildID { get; set; }
 
+        ulong IDrawable.ChildID => ChildID;
+
         /// <summary>
         /// Whether this drawable has been added to a parent <see cref="CompositeDrawable"/>. Note that this does NOT imply that
         /// <see cref="Parent"/> has been set.
@@ -1463,12 +1465,12 @@ namespace osu.Framework.Graphics
         /// <returns>The first parent <see cref="InputManager"/>.</returns>
         protected InputManager GetContainingInputManager() => FindClosestParent<InputManager>();
 
-        private CompositeDrawable parent;
+        private ICompositeDrawable parent;
 
         /// <summary>
         /// The parent of this drawable in the scene graph.
         /// </summary>
-        public CompositeDrawable Parent
+        public ICompositeDrawable Parent
         {
             get => parent;
             internal set
@@ -1507,7 +1509,7 @@ namespace osu.Framework.Graphics
         /// <returns>The first matching parent, or null if no parent of type <typeparamref name="T"/> is found.</returns>
         internal T FindClosestParent<T>() where T : class, IDrawable
         {
-            Drawable cursor = this;
+            IDrawable cursor = this;
 
             while ((cursor = cursor.Parent) != null)
             {
@@ -1726,7 +1728,7 @@ namespace osu.Framework.Graphics
         /// This is internally invoked by <see cref="LayoutMember"/>, and should not be invoked manually.
         /// </remarks>
         /// <param name="validationType">The <see cref="Invalidation"/> flags to validate with.</param>
-        internal void ValidateSuperTree(Invalidation validationType)
+        public void ValidateSuperTree(Invalidation validationType)
         {
             if (invalidationList.Validate(validationType))
                 Parent?.ValidateSuperTree(validationType);
@@ -2209,13 +2211,17 @@ namespace osu.Framework.Graphics
         /// Conservatively approximates whether there is a descendant which <see cref="RequestsNonPositionalInput"/> in the sub-tree rooted at this drawable
         /// to enable sub-tree skipping optimization for input handling.
         /// </summary>
-        internal bool RequestsNonPositionalInputSubTree;
+        internal bool RequestsNonPositionalInputSubTree { get; set; }
+
+        bool IDrawable.RequestsNonPositionalInputSubTree => RequestsNonPositionalInputSubTree;
 
         /// <summary>
         /// Conservatively approximates whether there is a descendant which <see cref="RequestsPositionalInput"/> in the sub-tree rooted at this drawable
         /// to enable sub-tree skipping optimization for input handling.
         /// </summary>
-        internal bool RequestsPositionalInputSubTree;
+        internal bool RequestsPositionalInputSubTree { get; set; }
+
+        bool IDrawable.RequestsPositionalInputSubTree => RequestsPositionalInputSubTree;
 
         /// <summary>
         /// Whether this <see cref="Drawable"/> handles non-positional input.

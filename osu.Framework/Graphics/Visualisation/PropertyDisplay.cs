@@ -52,7 +52,7 @@ namespace osu.Framework.Graphics.Visualisation
             });
         }
 
-        public void UpdateFrom(Drawable source)
+        public void UpdateFrom(IDrawable source)
         {
             Clear();
 

@@ -133,7 +133,7 @@ namespace osu.Framework.Tests.Visual.Drawables
 
         private class NonFlattenedContainer : Container
         {
-            protected override bool CanBeFlattened => false;
+            public override bool CanBeFlattened => false;
         }
 
         private class DisposalMarker : IDisposable

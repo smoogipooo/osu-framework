@@ -21,7 +21,7 @@ namespace osu.Framework.Graphics.Visualisation
     {
         private const int line_height = 12;
 
-        public Drawable Target { get; }
+        public IDrawable Target { get; }
 
         private bool isHighlighted;
 
@@ -38,7 +38,7 @@ namespace osu.Framework.Graphics.Visualisation
             }
         }
 
-        public Action<Drawable> RequestTarget;
+        public Action<IDrawable> RequestTarget;
         public Action<VisualisedDrawable> HighlightTarget;
 
         private Box background;
@@ -56,7 +56,7 @@ namespace osu.Framework.Graphics.Visualisation
         [Resolved]
         private TreeContainer tree { get; set; }
 
-        public VisualisedDrawable(Drawable d)
+        public VisualisedDrawable(IDrawable d)
         {
             Target = d;
         }
@@ -168,8 +168,11 @@ namespace osu.Framework.Graphics.Visualisation
 
         private void attachEvents()
         {
-            Target.Invalidated += onInvalidated;
-            Target.OnDispose += onDispose;
+            if (Target is Drawable d)
+            {
+                d.Invalidated += onInvalidated;
+                d.OnDispose += onDispose;
+            }
 
             if (Target is CompositeDrawable da)
             {
@@ -184,8 +187,11 @@ namespace osu.Framework.Graphics.Visualisation
 
         private void detachEvents()
         {
-            Target.Invalidated -= onInvalidated;
-            Target.OnDispose -= onDispose;
+            if (Target is Drawable d)
+            {
+                d.Invalidated -= onInvalidated;
+                d.OnDispose -= onDispose;
+            }
 
             if (Target is CompositeDrawable da)
             {
@@ -229,14 +235,15 @@ namespace osu.Framework.Graphics.Visualisation
             visualiser.RequestTarget = d => RequestTarget?.Invoke(d);
             visualiser.HighlightTarget = d => HighlightTarget?.Invoke(d);
 
-            visualiser.Depth = visualiser.Target.Depth;
+            if (visualiser.Target is Drawable drawableTarget)
+                visualiser.Depth = drawableTarget.Depth;
 
             flow.Add(visualiser);
         }
 
         void IContainVisualisedDrawables.RemoveVisualiser(VisualisedDrawable visualiser) => flow.Remove(visualiser);
 
-        public VisualisedDrawable FindVisualisedDrawable(Drawable drawable)
+        public VisualisedDrawable FindVisualisedDrawable(IDrawable drawable)
         {
             if (drawable == Target)
                 return this;

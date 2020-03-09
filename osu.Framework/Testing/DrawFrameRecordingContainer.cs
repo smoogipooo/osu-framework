@@ -39,7 +39,7 @@ namespace osu.Framework.Testing
             }
         }
 
-        protected override bool CanBeFlattened => false;
+        public override bool CanBeFlattened => false;
 
         internal override DrawNode GenerateDrawNodeSubtree(ulong frame, int treeIndex, bool forceNewDrawNode)
         {

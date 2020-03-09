@@ -1,10 +1,12 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Framework.Graphics.Colour;
 using osuTK;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Transforms;
+using osu.Framework.Layout;
 using osu.Framework.Timing;
 
 namespace osu.Framework.Graphics
@@ -23,6 +25,12 @@ namespace osu.Framework.Graphics
         /// </summary>
         Vector2 DrawSize { get; }
 
+        public float DrawWidth { get; }
+
+        public float DrawHeight { get; }
+
+        Vector2 DrawPosition { get; }
+
         /// <summary>
         /// Contains a linear transformation, colour information, and blending information
         /// of this drawable.
@@ -34,15 +42,21 @@ namespace osu.Framework.Graphics
         /// </summary>
         DrawColourInfo DrawColourInfo { get; }
 
+        ColourInfo Colour { get; }
+
         /// <summary>
         /// The screen-space quad this drawable occupies.
         /// </summary>
         Quad ScreenSpaceDrawQuad { get; }
 
+        RectangleF LayoutRectangle { get; }
+
+        Vector2 OriginPosition { get; }
+
         /// <summary>
         /// The parent of this drawable in the scene graph.
         /// </summary>
-        CompositeDrawable Parent { get; }
+        ICompositeDrawable Parent { get; }
 
         /// <summary>
         /// Whether this drawable is present for any sort of user-interaction.
@@ -50,6 +64,10 @@ namespace osu.Framework.Graphics
         /// and it will not affect layouting (e.g. autosizing and flow).
         /// </summary>
         bool IsPresent { get; }
+
+        bool IsAlive { get; }
+
+        ulong ChildID { get; }
 
         /// <summary>
         /// The clock of this drawable. Used for keeping track of time across frames.
@@ -64,6 +82,10 @@ namespace osu.Framework.Graphics
         /// <returns>The vector in other's coordinates.</returns>
         Vector2 ToSpaceOfOtherDrawable(Vector2 input, IDrawable other);
 
+        Vector2 ToScreenSpace(Vector2 input);
+
+        Quad ToScreenSpace(RectangleF input);
+
         /// <summary>
         /// Convert a position to the local coordinate system from either native or local to another drawable.
         /// This is *not* the same space as the Position member variable (use Parent.GetLocalPosition() in this case).
@@ -71,6 +93,12 @@ namespace osu.Framework.Graphics
         /// <param name="screenSpacePos">The input position.</param>
         /// <returns>The output position.</returns>
         Vector2 ToLocalSpace(Vector2 screenSpacePos);
+
+        bool RequestsNonPositionalInputSubTree { get; }
+
+        bool RequestsPositionalInputSubTree { get; }
+
+        bool AcceptsFocus { get; }
 
         /// <summary>
         /// Determines how this Drawable is blended with other already drawn Drawables.
@@ -88,7 +116,7 @@ namespace osu.Framework.Graphics
         bool IsDragged { get; }
 
         /// <summary>
-        /// Multiplicative alpha factor applied on top of <see cref="Colour.ColourInfo"/> and its existing
+        /// Multiplicative alpha factor applied on top of <see cref="ColourInfo"/> and its existing
         /// alpha channel(s).
         /// </summary>
         float Alpha { get; }
@@ -108,5 +136,9 @@ namespace osu.Framework.Graphics
         /// Incremented every time the <see cref="DrawNode"/> should be re-validated.
         /// </summary>
         long InvalidationID { get; }
+
+        bool Invalidate(Invalidation invalidation = Invalidation.All, InvalidationSource source = InvalidationSource.Self);
+
+        void ValidateSuperTree(Invalidation validationType);
     }
 }

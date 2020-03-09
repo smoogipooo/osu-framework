@@ -36,7 +36,8 @@ namespace osu.Framework.Graphics.Containers
     /// Additionally, <see cref="CompositeDrawable"/>s support various effects, such as masking, edge effect,
     /// padding, and automatic sizing depending on their children.
     /// </summary>
-    public abstract partial class CompositeDrawable : Drawable
+    public abstract partial class CompositeDrawable<TDrawable> : Drawable, ICompositeDrawable
+        where TDrawable : Drawable
     {
         #region Contruction and disposal
 
@@ -47,8 +48,8 @@ namespace osu.Framework.Graphics.Containers
         {
             schedulerAfterChildren = new Lazy<Scheduler>(() => new Scheduler(() => ThreadSafety.IsUpdateThread, Clock));
 
-            internalChildren = new SortedList<Drawable>(new ChildComparer(this));
-            aliveInternalChildren = new SortedList<Drawable>(new ChildComparer(this));
+            internalChildren = new SortedList<TDrawable>(new ChildComparer(this));
+            aliveInternalChildren = new SortedList<TDrawable>(new ChildComparer(this));
 
             AddLayout(childrenSizeDependencies);
         }
@@ -80,7 +81,7 @@ namespace osu.Framework.Graphics.Containers
 
         private CancellationTokenSource disposalCancellationSource;
 
-        private WeakList<Drawable> loadingComponents;
+        private WeakList<TDrawable> loadingComponents;
 
         private static readonly ThreadedTaskScheduler threaded_scheduler = new ThreadedTaskScheduler(4, nameof(LoadComponentsAsync));
 
@@ -100,7 +101,7 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="scheduler">The scheduler for <paramref name="onLoaded"/> to be invoked on. If null, the local scheduler will be used.</param>
         /// <returns>The task which is used for loading and callbacks.</returns>
         protected internal Task LoadComponentAsync<TLoadable>([NotNull] TLoadable component, Action<TLoadable> onLoaded = null, CancellationToken cancellation = default, Scheduler scheduler = null)
-            where TLoadable : Drawable
+            where TLoadable : TDrawable
         {
             if (component == null) throw new ArgumentNullException(nameof(component));
 
@@ -116,7 +117,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         /// <typeparam name="TLoadable">The type of the future future child or grand-child to be loaded.</typeparam>
         /// <param name="component">The child or grand-child to be loaded.</param>
-        protected void LoadComponent<TLoadable>(TLoadable component) where TLoadable : Drawable
+        protected void LoadComponent<TLoadable>(TLoadable component) where TLoadable : TDrawable
             => LoadComponents(component.Yield());
 
         /// <summary>
@@ -134,10 +135,10 @@ namespace osu.Framework.Graphics.Containers
         /// <returns>The task which is used for loading and callbacks.</returns>
         protected internal Task LoadComponentsAsync<TLoadable>(IEnumerable<TLoadable> components, Action<IEnumerable<TLoadable>> onLoaded = null, CancellationToken cancellation = default,
                                                                Scheduler scheduler = null)
-            where TLoadable : Drawable
+            where TLoadable : TDrawable
         {
             if (game == null)
-                throw new InvalidOperationException($"May not invoke {nameof(LoadComponentAsync)} prior to this {nameof(CompositeDrawable)} being loaded.");
+                throw new InvalidOperationException($"May not invoke {nameof(LoadComponentAsync)} prior to this {nameof(CompositeDrawable<TDrawable>)} being loaded.");
 
             if (IsDisposed)
                 throw new ObjectDisposedException(ToString());
@@ -151,7 +152,7 @@ namespace osu.Framework.Graphics.Containers
             deps.CacheValueAs(linkedSource.Token);
 
             if (loadingComponents == null)
-                loadingComponents = new WeakList<Drawable>();
+                loadingComponents = new WeakList<TDrawable>();
 
             foreach (var d in components)
             {
@@ -201,10 +202,10 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         /// <typeparam name="TLoadable">The type of the future future child or grand-child to be loaded.</typeparam>
         /// <param name="components">The children or grand-children to be loaded.</param>
-        protected void LoadComponents<TLoadable>(IEnumerable<TLoadable> components) where TLoadable : Drawable
+        protected void LoadComponents<TLoadable>(IEnumerable<TLoadable> components) where TLoadable : TDrawable
         {
             if (game == null)
-                throw new InvalidOperationException($"May not invoke {nameof(LoadComponent)} prior to this {nameof(CompositeDrawable)} being loaded.");
+                throw new InvalidOperationException($"May not invoke {nameof(LoadComponent)} prior to this {nameof(CompositeDrawable<TDrawable>)} being loaded.");
 
             if (IsDisposed)
                 throw new ObjectDisposedException(ToString());
@@ -213,7 +214,7 @@ namespace osu.Framework.Graphics.Containers
         }
 
         private void loadComponents<TLoadable>(ref IEnumerable<TLoadable> components, IReadOnlyDependencyContainer dependencies, bool isDirectAsyncContext, CancellationToken cancellation = default)
-            where TLoadable : Drawable
+            where TLoadable : TDrawable
         {
             foreach (var c in components)
             {
@@ -255,7 +256,7 @@ namespace osu.Framework.Graphics.Containers
         /// Loads a <see cref="Drawable"/> child. This will not throw in the event of the load being cancelled.
         /// </summary>
         /// <param name="child">The <see cref="Drawable"/> child to load.</param>
-        private void loadChild(Drawable child)
+        private void loadChild(TDrawable child)
         {
             try
             {
@@ -323,7 +324,7 @@ namespace osu.Framework.Graphics.Containers
         /// Gets or sets the only child in <see cref="InternalChildren"/>.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        protected internal Drawable InternalChild
+        protected internal TDrawable InternalChild
         {
             get
             {
@@ -339,16 +340,16 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        protected class ChildComparer : IComparer<Drawable>
+        protected class ChildComparer : IComparer<TDrawable>
         {
-            private readonly CompositeDrawable owner;
+            private readonly CompositeDrawable<TDrawable> owner;
 
-            public ChildComparer(CompositeDrawable owner)
+            public ChildComparer(CompositeDrawable<TDrawable> owner)
             {
                 this.owner = owner;
             }
 
-            public int Compare(Drawable x, Drawable y) => owner.Compare(x, y);
+            public int Compare(TDrawable x, TDrawable y) => owner.Compare(x, y);
         }
 
         /// <summary>
@@ -357,7 +358,7 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="x">The first child to compare.</param>
         /// <param name="y">The second child to compare.</param>
         /// <returns>-1 if <paramref name="x"/> comes before <paramref name="y"/>, and 1 otherwise.</returns>
-        protected virtual int Compare(Drawable x, Drawable y)
+        protected virtual int Compare(TDrawable x, TDrawable y)
         {
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -374,7 +375,7 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="x">The first child to compare.</param>
         /// <param name="y">The second child to compare.</param>
         /// <returns>-1 if <paramref name="x"/> comes before <paramref name="y"/>, and 1 otherwise.</returns>
-        protected int CompareReverseChildID(Drawable x, Drawable y)
+        protected int CompareReverseChildID(TDrawable x, TDrawable y)
         {
             if (x == null) throw new ArgumentNullException(nameof(x));
             if (y == null) throw new ArgumentNullException(nameof(y));
@@ -385,12 +386,12 @@ namespace osu.Framework.Graphics.Containers
             return y.ChildID.CompareTo(x.ChildID);
         }
 
-        private readonly SortedList<Drawable> internalChildren;
+        private readonly SortedList<TDrawable> internalChildren;
 
         /// <summary>
         /// This <see cref="CompositeDrawable"/> list of children. Assigning to this property will dispose all existing children of this <see cref="CompositeDrawable"/>.
         /// </summary>
-        protected internal IReadOnlyList<Drawable> InternalChildren
+        protected internal IReadOnlyList<TDrawable> InternalChildren
         {
             get => internalChildren;
             set => InternalChildrenEnumerable = value;
@@ -399,7 +400,7 @@ namespace osu.Framework.Graphics.Containers
         /// <summary>
         /// Replaces all internal children of this <see cref="CompositeDrawable"/> with the elements contained in the enumerable.
         /// </summary>
-        protected internal IEnumerable<Drawable> InternalChildrenEnumerable
+        protected internal IEnumerable<TDrawable> InternalChildrenEnumerable
         {
             set
             {
@@ -408,8 +409,8 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        private readonly SortedList<Drawable> aliveInternalChildren;
-        protected internal IReadOnlyList<Drawable> AliveInternalChildren => aliveInternalChildren;
+        private readonly SortedList<TDrawable> aliveInternalChildren;
+        protected internal IReadOnlyList<TDrawable> AliveInternalChildren => aliveInternalChildren;
 
         /// <summary>
         /// The index of a given child within <see cref="InternalChildren"/>.
@@ -418,7 +419,7 @@ namespace osu.Framework.Graphics.Containers
         /// If the child is found, its index. Otherwise, the negated index it would obtain
         /// if it were added to <see cref="InternalChildren"/>.
         /// </returns>
-        protected internal int IndexOfInternal(Drawable drawable)
+        protected internal int IndexOfInternal(TDrawable drawable)
         {
             int index = internalChildren.IndexOf(drawable);
 
@@ -431,14 +432,14 @@ namespace osu.Framework.Graphics.Containers
         /// <summary>
         /// Checks whether a given child is contained within <see cref="InternalChildren"/>.
         /// </summary>
-        protected internal bool ContainsInternal(Drawable drawable) => IndexOfInternal(drawable) >= 0;
+        protected internal bool ContainsInternal(TDrawable drawable) => IndexOfInternal(drawable) >= 0;
 
         /// <summary>
         /// Removes a given child from this <see cref="InternalChildren"/>.
         /// </summary>
         /// <param name="drawable">The <see cref="Drawable"/> to be removed.</param>
         /// <returns>False if <paramref name="drawable"/> was not a child of this <see cref="CompositeDrawable"/> and true otherwise.</returns>
-        protected internal virtual bool RemoveInternal(Drawable drawable)
+        protected internal virtual bool RemoveInternal(TDrawable drawable)
         {
             ensureChildMutationAllowed();
 
@@ -482,7 +483,7 @@ namespace osu.Framework.Graphics.Containers
 
             if (internalChildren.Count == 0) return;
 
-            foreach (Drawable t in internalChildren)
+            foreach (TDrawable t in internalChildren)
             {
                 if (t.IsAlive)
                     ChildDied?.Invoke(t);
@@ -514,7 +515,7 @@ namespace osu.Framework.Graphics.Containers
         /// <summary>
         /// Adds a child to <see cref="InternalChildren"/>.
         /// </summary>
-        protected internal virtual void AddInternal(Drawable drawable)
+        protected internal virtual void AddInternal(TDrawable drawable)
         {
             ensureChildMutationAllowed();
 
@@ -522,10 +523,10 @@ namespace osu.Framework.Graphics.Containers
                 throw new ObjectDisposedException(ToString(), "Disposed Drawables may not have children added.");
 
             if (drawable == null)
-                throw new ArgumentNullException(nameof(drawable), $"null {nameof(Drawable)}s may not be added to {nameof(CompositeDrawable)}.");
+                throw new ArgumentNullException(nameof(drawable), $"null {nameof(Drawable)}s may not be added to {nameof(CompositeDrawable<TDrawable>)}.");
 
             if (drawable == this)
-                throw new InvalidOperationException($"{nameof(CompositeDrawable)} may not be added to itself.");
+                throw new InvalidOperationException($"{nameof(CompositeDrawable<TDrawable>)} may not be added to itself.");
 
             // If the drawable's ChildId is not zero, then it was added to another parent even if it wasn't loaded
             if (drawable.ChildID != 0)
@@ -550,11 +551,11 @@ namespace osu.Framework.Graphics.Containers
 
         /// <summary>
         /// Adds a range of children to <see cref="InternalChildren"/>. This is equivalent to calling
-        /// <see cref="AddInternal(Drawable)"/> on each element of the range in order.
+        /// <see cref="AddInternal(TDrawable)"/> on each element of the range in order.
         /// </summary>
-        protected internal void AddRangeInternal(IEnumerable<Drawable> range)
+        protected internal void AddRangeInternal(IEnumerable<TDrawable> range)
         {
-            foreach (Drawable d in range)
+            foreach (TDrawable d in range)
                 AddInternal(d);
         }
 
@@ -563,7 +564,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         /// <param name="child">The child whose depth is to be changed.</param>
         /// <param name="newDepth">The new depth value to be set.</param>
-        protected internal void ChangeInternalChildDepth(Drawable child, float newDepth)
+        protected internal void ChangeInternalChildDepth(TDrawable child, float newDepth)
         {
             ensureChildMutationAllowed();
 
@@ -678,7 +679,7 @@ namespace osu.Framework.Graphics.Containers
         /// </summary>
         /// <param name="child">The child to check.</param>
         /// <returns>Whether the child's alive state has changed.</returns>
-        private ChildLifeStateChange checkChildLife(Drawable child)
+        private ChildLifeStateChange checkChildLife(TDrawable child)
         {
             ChildLifeStateChange state = ChildLifeStateChange.None;
 
@@ -728,7 +729,7 @@ namespace osu.Framework.Graphics.Containers
         /// Callers have to ensure that <paramref name="child"/> is of this <see cref="CompositeDrawable"/>'s non-alive <see cref="InternalChildren"/> and <see cref="LoadState"/> of the <paramref name="child"/> is at least <see cref="LoadState.Ready"/>.
         /// </remarks>
         /// <param name="child">The child of this <see cref="CompositeDrawable"/>> to make alive.</param>
-        protected void MakeChildAlive(Drawable child)
+        protected void MakeChildAlive(TDrawable child)
         {
             Debug.Assert(!child.IsAlive && child.LoadState >= LoadState.Ready);
 
@@ -736,14 +737,20 @@ namespace osu.Framework.Graphics.Containers
             // We can stop at the ancestor which has the flag already set because further ancestors will also have the flag set.
             if (child.RequestsNonPositionalInputSubTree)
             {
-                for (var ancestor = this; ancestor != null && !ancestor.RequestsNonPositionalInputSubTree; ancestor = ancestor.Parent)
-                    ancestor.RequestsNonPositionalInputSubTree = true;
+                for (ICompositeDrawable ancestor = this; ancestor != null && !ancestor.RequestsNonPositionalInputSubTree; ancestor = ancestor.Parent)
+                {
+                    if (ancestor is Drawable drawable)
+                        drawable.RequestsNonPositionalInputSubTree = true;
+                }
             }
 
             if (child.RequestsPositionalInputSubTree)
             {
-                for (var ancestor = this; ancestor != null && !ancestor.RequestsPositionalInputSubTree; ancestor = ancestor.Parent)
-                    ancestor.RequestsPositionalInputSubTree = true;
+                for (ICompositeDrawable ancestor = this; ancestor != null && !ancestor.RequestsPositionalInputSubTree; ancestor = ancestor.Parent)
+                {
+                    if (ancestor is Drawable drawable)
+                        drawable.RequestsPositionalInputSubTree = true;
+                }
             }
 
             aliveInternalChildren.Add(child);
@@ -762,7 +769,7 @@ namespace osu.Framework.Graphics.Containers
         /// </remarks>
         /// <param name="child">The child of this <see cref="CompositeDrawable"/>> to make dead.</param>
         /// <returns>Whether <paramref name="child"/> has been removed by death.</returns>
-        protected bool MakeChildDead(Drawable child)
+        protected bool MakeChildDead(TDrawable child)
         {
             Debug.Assert(child.IsAlive);
 
@@ -792,7 +799,7 @@ namespace osu.Framework.Graphics.Containers
         {
             base.UnbindAllBindablesSubTree();
 
-            foreach (Drawable child in internalChildren)
+            foreach (TDrawable child in internalChildren)
                 child.UnbindAllBindablesSubTree();
         }
 
@@ -812,7 +819,7 @@ namespace osu.Framework.Graphics.Containers
                 return;
 
             base.UpdateClock(clock);
-            foreach (Drawable child in internalChildren)
+            foreach (TDrawable child in internalChildren)
                 child.UpdateClock(Clock);
 
             if (schedulerAfterChildren.IsValueCreated) schedulerAfterChildren.Value.UpdateClock(Clock);
@@ -990,7 +997,7 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="invalidation">The <see cref="Invalidation"/> to invalidate with.</param>
         /// <param name="axes">The position or size <see cref="Axes"/> that changed.</param>
         /// <param name="source">The source <see cref="Drawable"/>.</param>
-        internal void InvalidateChildrenSizeDependencies(Invalidation invalidation, Axes axes, Drawable source)
+        public void InvalidateChildrenSizeDependencies(Invalidation invalidation, Axes axes, Drawable source)
         {
             // Store the current state of the children size dependencies.
             // This state may be restored later if the invalidation proved to be unnecessary.
@@ -1036,7 +1043,7 @@ namespace osu.Framework.Graphics.Containers
         /// A flattened <see cref="CompositeDrawable"/> has its <see cref="DrawNode"/> merged into its parents'.
         /// In some cases, the <see cref="DrawNode"/> must always be generated and flattening should not occur.
         /// </summary>
-        protected virtual bool CanBeFlattened =>
+        public virtual bool CanBeFlattened =>
             // Masking composite DrawNodes define the masking area for their children
             !Masking
             // Proxied drawables have their DrawNodes drawn elsewhere in the scene graph
@@ -1054,9 +1061,9 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="j">The running index into the target List.</param>
         /// <param name="parentComposite">The <see cref="CompositeDrawable"/> whose children's <see cref="DrawNode"/>s to add.</param>
         /// <param name="target">The target list to fill with DrawNodes.</param>
-        private static void addFromComposite(ulong frame, int treeIndex, bool forceNewDrawNode, ref int j, CompositeDrawable parentComposite, List<DrawNode> target)
+        private static void addFromComposite(ulong frame, int treeIndex, bool forceNewDrawNode, ref int j, CompositeDrawable<TDrawable> parentComposite, List<DrawNode> target)
         {
-            SortedList<Drawable> children = parentComposite.aliveInternalChildren;
+            SortedList<TDrawable> children = parentComposite.aliveInternalChildren;
 
             for (int i = 0; i < children.Count; ++i)
             {
@@ -1073,7 +1080,7 @@ namespace osu.Framework.Graphics.Containers
                     if (drawable.IsMaskedAway)
                         continue;
 
-                    CompositeDrawable composite = drawable as CompositeDrawable;
+                    CompositeDrawable<TDrawable> composite = drawable as CompositeDrawable<TDrawable>;
 
                     if (composite?.CanBeFlattened == true)
                     {
@@ -1216,54 +1223,16 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        /// <summary>
-        /// Helper function for creating and adding a <see cref="Transform{TValue, T}"/> that fades the current <see cref="EdgeEffect"/>.
-        /// </summary>
-        protected TransformSequence<CompositeDrawable> FadeEdgeEffectTo(float newAlpha, double duration = 0, Easing easing = Easing.None)
-        {
-            Color4 targetColour = EdgeEffect.Colour;
-            targetColour.A = newAlpha;
-            return FadeEdgeEffectTo(targetColour, duration, easing);
-        }
-
-        /// <summary>
-        /// Helper function for creating and adding a <see cref="Transform{TValue, T}"/> that fades the current <see cref="EdgeEffect"/>.
-        /// </summary>
-        protected TransformSequence<CompositeDrawable> FadeEdgeEffectTo(Color4 newColour, double duration = 0, Easing easing = Easing.None)
-        {
-            var effect = EdgeEffect;
-            effect.Colour = newColour;
-            return TweenEdgeEffectTo(effect, duration, easing);
-        }
-
-        /// <summary>
-        /// Helper function for creating and adding a <see cref="Transform{TValue, T}"/> that tweens the current <see cref="EdgeEffect"/>.
-        /// </summary>
-        protected TransformSequence<CompositeDrawable> TweenEdgeEffectTo(EdgeEffectParameters newParams, double duration = 0, Easing easing = Easing.None) =>
-            this.TransformTo(nameof(EdgeEffect), newParams, duration, easing);
-
         #endregion
 
         #region Interaction / Input
-
-        public override bool Contains(Vector2 screenSpacePos)
-        {
-            float cRadius = effectiveCornerRadius;
-            float cExponent = CornerExponent;
-
-            // Select a cheaper contains method when we don't need rounded edges.
-            if (cRadius == 0.0f)
-                return base.Contains(screenSpacePos);
-
-            return DrawRectangle.Shrink(cRadius).DistanceExponentiated(ToLocalSpace(screenSpacePos), cExponent) <= Math.Pow(cRadius, cExponent);
-        }
 
         /// <summary>
         /// Check whether a child should be considered for inclusion in <see cref="BuildNonPositionalInputQueue"/> and <see cref="BuildPositionalInputQueue"/>
         /// </summary>
         /// <param name="child">The drawable to be evaluated.</param>
         /// <returns>Whether or not the specified drawable should be considered when building input queues.</returns>
-        protected virtual bool ShouldBeConsideredForInput(Drawable child) => true;
+        protected virtual bool ShouldBeConsideredForInput(TDrawable child) => true;
 
         internal override bool BuildNonPositionalInputQueue(List<Drawable> queue, bool allowBlocking = true)
         {
@@ -1352,154 +1321,9 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        private float cornerRadius;
-
-        /// <summary>
-        /// Determines how large of a radius is masked away around the corners.
-        /// Only has an effect when <see cref="Masking"/> is true.
-        /// </summary>
-        public float CornerRadius
-        {
-            get => cornerRadius;
-            protected set
-            {
-                if (cornerRadius == value)
-                    return;
-
-                cornerRadius = value;
-                Invalidate(Invalidation.DrawNode);
-            }
-        }
-
-        private float cornerExponent = 2f;
-
-        /// <summary>
-        /// Determines how gentle the curve of the corner straightens. A value of 2 (default) results in
-        /// circular arcs, a value of 2.5 results in something closer to apple's "continuous corner".
-        /// Values between 2 and 10 result in varying degrees of "continuousness", where larger values are smoother.
-        /// Values between 1 and 2 result in a "flatter" appearance than round corners.
-        /// Values between 0 and 1 result in a concave, round corner as opposed to a convex round corner,
-        /// where a value of 0.5 is a circular concave arc.
-        /// Only has an effect when <see cref="Masking"/> is true and <see cref="CornerRadius"/> is non-zero.
-        /// </summary>
-        public float CornerExponent
-        {
-            get => cornerExponent;
-            protected set
-            {
-                if (!Precision.DefinitelyBigger(value, 0) || value > 10)
-                    throw new ArgumentOutOfRangeException(nameof(CornerExponent), $"{nameof(CornerExponent)} may not be <=0 or >10 for numerical correctness.");
-
-                if (cornerExponent == value)
-                    return;
-
-                cornerExponent = value;
-                Invalidate(Invalidation.DrawNode);
-            }
-        }
-
-        // This _hacky_ modification of the corner radius (obtained from playing around) ensures that the corner remains at roughly
-        // equal size (perceptually) compared to the circular arc as the CornerExponent is adjusted within the range ~2-5.
-        private float effectiveCornerRadius => CornerRadius * 0.8f * CornerExponent / 2 + 0.2f * CornerRadius;
-
-        private float borderThickness;
-
-        /// <summary>
-        /// Determines how thick of a border to draw around the inside of the masked region.
-        /// Only has an effect when <see cref="Masking"/> is true.
-        /// The border only is drawn on top of children using a sprite shader.
-        /// </summary>
-        /// <remarks>
-        /// Drawing borders is optimized heavily into our sprite shaders. As a consequence
-        /// borders are only drawn correctly on top of quad-shaped children using our sprite
-        /// shaders.
-        /// </remarks>
-        public float BorderThickness
-        {
-            get => borderThickness;
-            protected set
-            {
-                if (borderThickness == value)
-                    return;
-
-                borderThickness = value;
-                Invalidate(Invalidation.DrawNode);
-            }
-        }
-
-        private SRGBColour borderColour = Color4.Black;
-
-        /// <summary>
-        /// Determines the color of the border controlled by <see cref="BorderThickness"/>.
-        /// Only has an effect when <see cref="Masking"/> is true.
-        /// </summary>
-        public SRGBColour BorderColour
-        {
-            get => borderColour;
-            protected set
-            {
-                if (borderColour.Equals(value))
-                    return;
-
-                borderColour = value;
-                Invalidate(Invalidation.DrawNode);
-            }
-        }
-
-        private EdgeEffectParameters edgeEffect;
-
-        /// <summary>
-        /// Determines an edge effect of this <see cref="CompositeDrawable"/>.
-        /// Edge effects are e.g. glow or a shadow.
-        /// Only has an effect when <see cref="Masking"/> is true.
-        /// </summary>
-        public EdgeEffectParameters EdgeEffect
-        {
-            get => edgeEffect;
-            protected set
-            {
-                if (edgeEffect.Equals(value))
-                    return;
-
-                edgeEffect = value;
-                Invalidate(Invalidation.DrawNode);
-            }
-        }
-
         #endregion
 
         #region Sizing
-
-        public override RectangleF BoundingBox
-        {
-            get
-            {
-                float cRadius = CornerRadius;
-                if (cRadius == 0.0f)
-                    return base.BoundingBox;
-
-                RectangleF drawRect = LayoutRectangle.Shrink(cRadius);
-
-                // Inflate bounding box in parent space by the half-size of the bounding box of the
-                // ellipse obtained by transforming the unit circle into parent space.
-                Vector2 offset = ToParentSpace(Vector2.Zero);
-                Vector2 u = ToParentSpace(new Vector2(cRadius, 0)) - offset;
-                Vector2 v = ToParentSpace(new Vector2(0, cRadius)) - offset;
-                Vector2 inflation = new Vector2(
-                    MathF.Sqrt(u.X * u.X + v.X * v.X),
-                    MathF.Sqrt(u.Y * u.Y + v.Y * v.Y)
-                );
-
-                RectangleF result = ToParentSpace(drawRect).AABBFloat.Inflate(inflation);
-                // The above algorithm will return incorrect results if the rounded corners are not fully visible.
-                // To limit bad behavior we at least enforce here, that the bounding box with rounded corners
-                // is never larger than the bounding box without.
-                if (DrawSize.X < CornerRadius * 2 || DrawSize.Y < CornerRadius * 2)
-                    result.Intersect(base.BoundingBox);
-
-                return result;
-            }
-        }
 
         private MarginPadding padding;
 
@@ -1518,7 +1342,7 @@ namespace osu.Framework.Graphics.Containers
 
                 padding = value;
 
-                foreach (Drawable c in internalChildren)
+                foreach (TDrawable c in internalChildren)
                     c.Invalidate(c.InvalidationFromParentSize | Invalidation.MiscGeometry);
             }
         }
@@ -1554,7 +1378,7 @@ namespace osu.Framework.Graphics.Containers
 
                 relativeChildSize = value;
 
-                foreach (Drawable c in internalChildren)
+                foreach (TDrawable c in internalChildren)
                     c.Invalidate(c.InvalidationFromParentSize);
             }
         }
@@ -1577,7 +1401,7 @@ namespace osu.Framework.Graphics.Containers
 
                 relativeChildOffset = value;
 
-                foreach (Drawable c in internalChildren)
+                foreach (TDrawable c in internalChildren)
                     c.Invalidate(c.InvalidationFromParentSize & ~Invalidation.DrawSize);
             }
         }
@@ -1593,7 +1417,7 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="newSize">The coordinate space to tween to.</param>
         /// <param name="duration">The tween duration.</param>
         /// <param name="easing">The tween easing.</param>
-        protected TransformSequence<CompositeDrawable> TransformRelativeChildSizeTo(Vector2 newSize, double duration = 0, Easing easing = Easing.None) =>
+        protected TransformSequence<CompositeDrawable<TDrawable>> TransformRelativeChildSizeTo(Vector2 newSize, double duration = 0, Easing easing = Easing.None) =>
             this.TransformTo(nameof(RelativeChildSize), newSize, duration, easing);
 
         /// <summary>
@@ -1602,7 +1426,7 @@ namespace osu.Framework.Graphics.Containers
         /// <param name="newOffset">The coordinate space to tween to.</param>
         /// <param name="duration">The tween duration.</param>
         /// <param name="easing">The tween easing.</param>
-        protected TransformSequence<CompositeDrawable> TransformRelativeChildOffsetTo(Vector2 newOffset, double duration = 0, Easing easing = Easing.None) =>
+        protected TransformSequence<CompositeDrawable<TDrawable>> TransformRelativeChildOffsetTo(Vector2 newOffset, double duration = 0, Easing easing = Easing.None) =>
             this.TransformTo(nameof(RelativeChildOffset), newOffset, duration, easing);
 
         public override Axes RelativeSizeAxes
@@ -1734,7 +1558,7 @@ namespace osu.Framework.Graphics.Containers
                 Vector2 maxBoundSize = Vector2.Zero;
 
                 // Find the maximum width/height of children
-                foreach (Drawable c in aliveInternalChildren)
+                foreach (TDrawable c in aliveInternalChildren)
                 {
                     if (!c.IsPresent)
                         continue;
@@ -1827,7 +1651,7 @@ namespace osu.Framework.Graphics.Containers
             }
         }
 
-        private class AutoSizeTransform : TransformCustom<Vector2, CompositeDrawable>
+        private class AutoSizeTransform : TransformCustom<Vector2, CompositeDrawable<TDrawable>>
         {
             public AutoSizeTransform()
                 : base(nameof(baseSize))
@@ -1845,5 +1669,210 @@ namespace osu.Framework.Graphics.Containers
             {
             }
         }
+    }
+
+    public abstract partial class CompositeDrawable : CompositeDrawable<Drawable>
+    {
+        /// <summary>
+        /// Helper function for creating and adding a <see cref="Transform{TValue, T}"/> that fades the current <see cref="EdgeEffect"/>.
+        /// </summary>
+        protected TransformSequence<CompositeDrawable> FadeEdgeEffectTo(float newAlpha, double duration = 0, Easing easing = Easing.None)
+        {
+            Color4 targetColour = EdgeEffect.Colour;
+            targetColour.A = newAlpha;
+            return FadeEdgeEffectTo(targetColour, duration, easing);
+        }
+
+        /// <summary>
+        /// Helper function for creating and adding a <see cref="Transform{TValue, T}"/> that fades the current <see cref="EdgeEffect"/>.
+        /// </summary>
+        protected TransformSequence<CompositeDrawable> FadeEdgeEffectTo(Color4 newColour, double duration = 0, Easing easing = Easing.None)
+        {
+            var effect = EdgeEffect;
+            effect.Colour = newColour;
+            return TweenEdgeEffectTo(effect, duration, easing);
+        }
+
+        /// <summary>
+        /// Helper function for creating and adding a <see cref="Transform{TValue, T}"/> that tweens the current <see cref="EdgeEffect"/>.
+        /// </summary>
+        protected TransformSequence<CompositeDrawable> TweenEdgeEffectTo(EdgeEffectParameters newParams, double duration = 0, Easing easing = Easing.None) =>
+            this.TransformTo(nameof(EdgeEffect), newParams, duration, easing);
+
+        public override bool Contains(Vector2 screenSpacePos)
+        {
+            float cRadius = effectiveCornerRadius;
+            float cExponent = CornerExponent;
+
+            // Select a cheaper contains method when we don't need rounded edges.
+            if (cRadius == 0.0f)
+                return base.Contains(screenSpacePos);
+
+            return DrawRectangle.Shrink(cRadius).DistanceExponentiated(ToLocalSpace(screenSpacePos), cExponent) <= Math.Pow(cRadius, cExponent);
+        }
+
+        private float cornerRadius;
+
+        /// <summary>
+        /// Determines how large of a radius is masked away around the corners.
+        /// Only has an effect when <see cref="CompositeDrawable{TDrawable}.Masking"/> is true.
+        /// </summary>
+        public float CornerRadius
+        {
+            get => cornerRadius;
+            protected set
+            {
+                if (cornerRadius == value)
+                    return;
+
+                cornerRadius = value;
+                Invalidate(Invalidation.DrawNode);
+            }
+        }
+
+        private float cornerExponent = 2f;
+
+        /// <summary>
+        /// Determines how gentle the curve of the corner straightens. A value of 2 (default) results in
+        /// circular arcs, a value of 2.5 results in something closer to apple's "continuous corner".
+        /// Values between 2 and 10 result in varying degrees of "continuousness", where larger values are smoother.
+        /// Values between 1 and 2 result in a "flatter" appearance than round corners.
+        /// Values between 0 and 1 result in a concave, round corner as opposed to a convex round corner,
+        /// where a value of 0.5 is a circular concave arc.
+        /// Only has an effect when <see cref="CompositeDrawable{TDrawable}.Masking"/> is true and <see cref="CornerRadius"/> is non-zero.
+        /// </summary>
+        public float CornerExponent
+        {
+            get => cornerExponent;
+            protected set
+            {
+                if (!Precision.DefinitelyBigger(value, 0) || value > 10)
+                    throw new ArgumentOutOfRangeException(nameof(CornerExponent), $"{nameof(CornerExponent)} may not be <=0 or >10 for numerical correctness.");
+
+                if (cornerExponent == value)
+                    return;
+
+                cornerExponent = value;
+                Invalidate(Invalidation.DrawNode);
+            }
+        }
+
+        // This _hacky_ modification of the corner radius (obtained from playing around) ensures that the corner remains at roughly
+        // equal size (perceptually) compared to the circular arc as the CornerExponent is adjusted within the range ~2-5.
+        private float effectiveCornerRadius => CornerRadius * 0.8f * CornerExponent / 2 + 0.2f * CornerRadius;
+
+        private float borderThickness;
+
+        /// <summary>
+        /// Determines how thick of a border to draw around the inside of the masked region.
+        /// Only has an effect when <see cref="CompositeDrawable{TDrawable}.Masking"/> is true.
+        /// The border only is drawn on top of children using a sprite shader.
+        /// </summary>
+        /// <remarks>
+        /// Drawing borders is optimized heavily into our sprite shaders. As a consequence
+        /// borders are only drawn correctly on top of quad-shaped children using our sprite
+        /// shaders.
+        /// </remarks>
+        public float BorderThickness
+        {
+            get => borderThickness;
+            protected set
+            {
+                if (borderThickness == value)
+                    return;
+
+                borderThickness = value;
+                Invalidate(Invalidation.DrawNode);
+            }
+        }
+
+        private SRGBColour borderColour = Color4.Black;
+
+        /// <summary>
+        /// Determines the color of the border controlled by <see cref="BorderThickness"/>.
+        /// Only has an effect when <see cref="CompositeDrawable{TDrawable}.Masking"/> is true.
+        /// </summary>
+        public SRGBColour BorderColour
+        {
+            get => borderColour;
+            protected set
+            {
+                if (borderColour.Equals(value))
+                    return;
+
+                borderColour = value;
+                Invalidate(Invalidation.DrawNode);
+            }
+        }
+
+        private EdgeEffectParameters edgeEffect;
+
+        /// <summary>
+        /// Determines an edge effect of this <see cref="CompositeDrawable"/>.
+        /// Edge effects are e.g. glow or a shadow.
+        /// Only has an effect when <see cref="CompositeDrawable{TDrawable}.Masking"/> is true.
+        /// </summary>
+        public EdgeEffectParameters EdgeEffect
+        {
+            get => edgeEffect;
+            protected set
+            {
+                if (edgeEffect.Equals(value))
+                    return;
+
+                edgeEffect = value;
+                Invalidate(Invalidation.DrawNode);
+            }
+        }
+
+        public override RectangleF BoundingBox
+        {
+            get
+            {
+                float cRadius = CornerRadius;
+                if (cRadius == 0.0f)
+                    return base.BoundingBox;
+
+                RectangleF drawRect = LayoutRectangle.Shrink(cRadius);
+
+                // Inflate bounding box in parent space by the half-size of the bounding box of the
+                // ellipse obtained by transforming the unit circle into parent space.
+                Vector2 offset = ToParentSpace(Vector2.Zero);
+                Vector2 u = ToParentSpace(new Vector2(cRadius, 0)) - offset;
+                Vector2 v = ToParentSpace(new Vector2(0, cRadius)) - offset;
+                Vector2 inflation = new Vector2(
+                    MathF.Sqrt(u.X * u.X + v.X * v.X),
+                    MathF.Sqrt(u.Y * u.Y + v.Y * v.Y)
+                );
+
+                RectangleF result = ToParentSpace(drawRect).AABBFloat.Inflate(inflation);
+                // The above algorithm will return incorrect results if the rounded corners are not fully visible.
+                // To limit bad behavior we at least enforce here, that the bounding box with rounded corners
+                // is never larger than the bounding box without.
+                if (DrawSize.X < CornerRadius * 2 || DrawSize.Y < CornerRadius * 2)
+                    result.Intersect(base.BoundingBox);
+
+                return result;
+            }
+        }
+
+        protected override DrawNode CreateDrawNode() => new CompositeDrawableDrawNode(this);
+    }
+
+    public interface ICompositeDrawable : IDrawable
+    {
+        bool CanBeFlattened { get; }
+
+        Vector2 RelativeChildOffset { get; }
+
+        Vector2 RelativeToAbsoluteFactor { get; }
+
+        Axes AutoSizeAxes { get; }
+
+        Vector2 ChildSize { get; }
+
+        Vector2 ChildOffset { get; }
+
+        void InvalidateChildrenSizeDependencies(Invalidation invalidation, Axes axes, Drawable source);
     }
 }

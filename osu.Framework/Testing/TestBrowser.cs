@@ -399,7 +399,7 @@ namespace osu.Framework.Testing
         {
             if (CurrentTest?.Parent != null)
             {
-                testContentContainer.Remove(CurrentTest.Parent);
+                testContentContainer.Remove(CurrentTest.Parent as Drawable);
                 CurrentTest.Dispose();
             }
 
@@ -449,7 +449,7 @@ namespace osu.Framework.Testing
             if (CurrentTest != newTest)
             {
                 // There could have been multiple loads fired after us. In such a case we want to silently remove ourselves.
-                testContentContainer.Remove(newTest.Parent);
+                testContentContainer.Remove(newTest.Parent as Drawable);
                 return;
             }
 

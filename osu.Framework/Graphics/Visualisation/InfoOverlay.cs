@@ -10,9 +10,9 @@ namespace osu.Framework.Graphics.Visualisation
 {
     internal class InfoOverlay : Container<FlashyBox>
     {
-        private Drawable target;
+        private IDrawable target;
 
-        public Drawable Target
+        public IDrawable Target
         {
             get => target;
             set
@@ -56,7 +56,7 @@ namespace osu.Framework.Graphics.Visualisation
                     Colour = Color4.Blue,
                     Alpha = 0.5f,
                 },
-                childShape = new FlashyBox(delegate(Drawable d)
+                childShape = new FlashyBox(delegate(IDrawable d)
                 {
                     if (!(d is CompositeDrawable c))
                         return d.ScreenSpaceDrawQuad;
