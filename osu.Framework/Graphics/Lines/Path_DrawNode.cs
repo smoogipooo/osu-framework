@@ -208,10 +208,10 @@ namespace osu.Framework.Graphics.Lines
                 if (texture?.Available != true || segments.Count == 0)
                     return;
 
-                GLWrapper.PushDepthInfo(DepthInfo.Default);
+                PushDepthInfo(DepthInfo.Default);
 
                 // Blending is removed to allow for correct blending between the wedges of the path.
-                GLWrapper.SetBlend(BlendingParameters.None);
+                SetBlend(BlendingParameters.None);
 
                 pathShader.Bind();
 
@@ -222,7 +222,7 @@ namespace osu.Framework.Graphics.Lines
 
                 pathShader.Unbind();
 
-                GLWrapper.PopDepthInfo();
+                PopDepthInfo();
             }
 
             protected override void Dispose(bool isDisposing)

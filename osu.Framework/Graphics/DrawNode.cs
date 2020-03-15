@@ -10,6 +10,7 @@ using osu.Framework.Graphics.OpenGL.Buffers;
 using osu.Framework.Graphics.OpenGL.Textures;
 using osu.Framework.Graphics.OpenGL.Vertices;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Rendering.Intents;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Threading;
 using osu.Framework.Utils;
@@ -75,10 +76,7 @@ namespace osu.Framework.Graphics
             InvalidationID = Source.InvalidationID;
         }
 
-        internal void DrawSubTree(Action<TexturedVertex2D> vertexAction)
-        {
-            Draw(vertexAction);
-        }
+        protected virtual bool UseDeferredRenderer => false;
 
         /// <summary>
         /// Draws this <see cref="DrawNode"/> to the screen.
@@ -89,11 +87,14 @@ namespace osu.Framework.Graphics
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
         public virtual void Draw(Action<TexturedVertex2D> vertexAction)
         {
-            GLWrapper.SetBlend(DrawColourInfo.Blending);
+            if (!UseDeferredRenderer)
+                GLWrapper.Renderer.Flush();
+
+            SetBlend(DrawColourInfo.Blending);
 
             // This is the back-to-front (BTF) pass. The back-buffer depth test function used is GL_LESS.
             // The depth test will fail for samples that overlap the opaque interior of this <see cref="DrawNode"/> and any <see cref="DrawNode"/>s above this one.
-            GLWrapper.SetDrawDepth(drawDepth);
+            SetDrawDepth(drawDepth);
         }
 
         /// <summary>
@@ -137,8 +138,8 @@ namespace osu.Framework.Graphics
         /// <param name="vertexAction">The action to be performed on each vertex of the draw node in order to draw it if required. This is primarily used by textured sprites.</param>
         protected virtual void DrawOpaqueInterior(Action<TexturedVertex2D> vertexAction)
         {
-            GLWrapper.SetBlend(DrawColourInfo.Blending);
-            GLWrapper.SetDrawDepth(drawDepth);
+            SetBlend(DrawColourInfo.Blending);
+            SetDrawDepth(drawDepth);
         }
 
         /// <summary>
@@ -302,5 +303,43 @@ namespace osu.Framework.Graphics
             Source = null;
             IsDisposed = true;
         }
+
+        #region Intents
+
+        protected void SetBlend(BlendingParameters parameters) => GLWrapper.Renderer.Add(new SetBlendIntent(parameters));
+
+        protected void PushMaskingInfo(MaskingInfo maskingInfo, bool overwritePreviousScissor = false) => GLWrapper.Renderer.Add(new PushMaskingIntent(maskingInfo, overwritePreviousScissor));
+
+        protected void PopMaskingInfo() => GLWrapper.Renderer.Add(new PopMaskingIntent());
+
+        protected void PushDepthInfo(DepthInfo depthInfo) => GLWrapper.Renderer.Add(new PushDepthIntent(depthInfo));
+
+        protected void PopDepthInfo() => GLWrapper.Renderer.Add(new PopDepthIntent());
+
+        protected void PushOrtho(RectangleF ortho) => GLWrapper.Renderer.Add(new PushOrthoIntent(ortho));
+
+        protected void PopOrtho() => GLWrapper.Renderer.Add(new PopOrthoIntent());
+
+        protected void PushViewport(RectangleI viewport) => GLWrapper.Renderer.Add(new PushViewportIntent(viewport));
+
+        protected void PopViewport() => GLWrapper.Renderer.Add(new PopViewportIntent());
+
+        protected void PushScissor(RectangleI scissor) => GLWrapper.Renderer.Add(new PushScissorIntent(scissor));
+
+        protected void PopScissor() => GLWrapper.Renderer.Add(new PopScissorIntent());
+
+        protected void PushScissorOffset(Vector2I offset) => GLWrapper.Renderer.Add(new PushScissorOffsetIntent(offset));
+
+        protected void PopScissorOffset() => GLWrapper.Renderer.Add(new PopScissorOffsetIntent());
+
+        protected void PushScissorState(bool shouldScissor) => GLWrapper.Renderer.Add(new PushScissorStateIntent(shouldScissor));
+
+        protected void PopScissorState() => GLWrapper.Renderer.Add(new PopScissorStateIntent());
+
+        protected void Clear(ClearInfo clearInfo) => GLWrapper.Renderer.Add(new ClearIntent(clearInfo));
+
+        internal void SetDrawDepth(float drawDepth) => GLWrapper.Renderer.Add(new DrawDepthIntent(drawDepth));
+
+        #endregion
     }
 }

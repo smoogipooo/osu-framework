@@ -93,12 +93,12 @@ namespace osu.Framework.Graphics
                     {
                         // We need to draw children as if they were zero-based to the top-left of the texture.
                         // We can do this by adding a translation component to our (orthogonal) projection matrix.
-                        GLWrapper.PushOrtho(screenSpaceDrawRectangle);
-                        GLWrapper.Clear(new ClearInfo(backgroundColour));
+                        PushOrtho(screenSpaceDrawRectangle);
+                        Clear(new ClearInfo(backgroundColour));
 
                         Child.Draw(vertexAction);
 
-                        GLWrapper.PopOrtho();
+                        PopOrtho();
                     }
 
                     PopulateContents();
@@ -153,7 +153,7 @@ namespace osu.Framework.Graphics
             // in the frame buffer and helps with cached buffers being re-used.
             RectangleI screenSpaceMaskingRect = new RectangleI((int)Math.Floor(screenSpaceDrawRectangle.X), (int)Math.Floor(screenSpaceDrawRectangle.Y), (int)frameBufferSize.X + 1, (int)frameBufferSize.Y + 1);
 
-            GLWrapper.PushMaskingInfo(new MaskingInfo
+            PushMaskingInfo(new MaskingInfo
             {
                 ScreenSpaceAABB = screenSpaceMaskingRect,
                 MaskingRect = screenSpaceDrawRectangle,
@@ -163,19 +163,19 @@ namespace osu.Framework.Graphics
             }, true);
 
             // Match viewport to FrameBuffer such that we don't draw unnecessary pixels.
-            GLWrapper.PushViewport(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
-            GLWrapper.PushScissor(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
-            GLWrapper.PushScissorOffset(screenSpaceMaskingRect.Location);
+            PushViewport(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
+            PushScissor(new RectangleI(0, 0, (int)frameBufferSize.X, (int)frameBufferSize.Y));
+            PushScissorOffset(screenSpaceMaskingRect.Location);
 
             return new ValueInvokeOnDisposal(returnViewport);
         }
 
         private void returnViewport()
         {
-            GLWrapper.PopScissorOffset();
-            GLWrapper.PopViewport();
-            GLWrapper.PopScissor();
-            GLWrapper.PopMaskingInfo();
+            PopScissorOffset();
+            PopViewport();
+            PopScissor();
+            PopMaskingInfo();
         }
 
         protected override void Dispose(bool isDisposing)

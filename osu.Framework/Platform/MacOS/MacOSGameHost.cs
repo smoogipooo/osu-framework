@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osuTK;
-using osuTK.Graphics.OpenGL;
 
 namespace osu.Framework.Platform.MacOS
 {
@@ -25,14 +24,14 @@ namespace osu.Framework.Platform.MacOS
 
         public override Clipboard GetClipboard() => new MacOSClipboard();
 
-        protected override void Swap()
-        {
-            base.Swap();
-
-            // It has been reported that this helps performance on macOS (https://github.com/ppy/osu/issues/7447)
-            if (Window.VSync != VSyncMode.On)
-                GL.Finish();
-        }
+        // protected override void Swap()
+        // {
+        //     base.Swap();
+        //
+        //     // It has been reported that this helps performance on macOS (https://github.com/ppy/osu/issues/7447)
+        //     if (Window.VSync != VSyncMode.On)
+        //         GL.Finish();
+        // }
 
         public override IEnumerable<KeyBinding> PlatformKeyBindings => new[]
         {

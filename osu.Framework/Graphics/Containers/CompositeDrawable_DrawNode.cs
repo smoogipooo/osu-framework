@@ -136,9 +136,9 @@ namespace osu.Framework.Graphics.Containers
                 edgeEffectMaskingInfo.Hollow = edgeEffect.Hollow;
                 edgeEffectMaskingInfo.HollowCornerRadius = maskingInfo.Value.CornerRadius + edgeEffect.Radius;
 
-                GLWrapper.PushMaskingInfo(edgeEffectMaskingInfo);
+                PushMaskingInfo(edgeEffectMaskingInfo);
 
-                GLWrapper.SetBlend(edgeEffect.Type == EdgeEffectType.Glow ? BlendingParameters.Additive : BlendingParameters.Mixture);
+                SetBlend(edgeEffect.Type == EdgeEffectType.Glow ? BlendingParameters.Additive : BlendingParameters.Mixture);
 
                 Shader.Bind();
 
@@ -159,7 +159,7 @@ namespace osu.Framework.Graphics.Containers
 
                 Shader.Unbind();
 
-                GLWrapper.PopMaskingInfo();
+                PopMaskingInfo();
             }
 
             private const int min_amount_children_to_warrant_batch = 8;
@@ -193,7 +193,7 @@ namespace osu.Framework.Graphics.Containers
                     if (info.BorderThickness > 0)
                         info.BorderColour *= DrawColourInfo.Colour.AverageColour;
 
-                    GLWrapper.PushMaskingInfo(info);
+                    PushMaskingInfo(info);
                 }
 
                 if (Children != null)
@@ -203,7 +203,7 @@ namespace osu.Framework.Graphics.Containers
                 }
 
                 if (maskingInfo != null)
-                    GLWrapper.PopMaskingInfo();
+                    PopMaskingInfo();
             }
 
             internal override void DrawOpaqueInteriorSubTree(DepthValue depthValue, Action<TexturedVertex2D> vertexAction)
@@ -232,7 +232,7 @@ namespace osu.Framework.Graphics.Containers
                         vertexAction = quadBatch.AddAction;
 
                     if (maskingInfo != null)
-                        GLWrapper.PushMaskingInfo(maskingInfo.Value);
+                        PushMaskingInfo(maskingInfo.Value);
                 }
 
                 // We still need to invoke this method recursively for all children so their depth value is updated
@@ -246,7 +246,7 @@ namespace osu.Framework.Graphics.Containers
                 if (canIncrement)
                 {
                     if (maskingInfo != null)
-                        GLWrapper.PopMaskingInfo();
+                        PopMaskingInfo();
                 }
             }
 

@@ -24,6 +24,8 @@ using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
+using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.Intents;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;
@@ -327,6 +329,9 @@ namespace osu.Framework.Platform
             if (Root == null)
                 return;
 
+            IRenderer renderer = new ImmediateOpenGLRenderer(Window);
+            GLWrapper.Renderer = renderer;
+
             while (ExecutionState > ExecutionState.Stopping)
             {
                 using (var buffer = DrawRoots.Get(UsageType.Read))
@@ -339,32 +344,35 @@ namespace osu.Framework.Platform
                     }
 
                     using (drawMonitor.BeginCollecting(PerformanceCollectionType.GLReset))
+                    {
                         GLWrapper.Reset(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+                        renderer.BeginFrame(new Vector2(Window.ClientSize.Width, Window.ClientSize.Height));
+                    }
 
                     if (!bypassFrontToBackPass.Value)
                     {
                         var depthValue = new DepthValue();
 
-                        GLWrapper.PushDepthInfo(DepthInfo.Default);
+                        renderer.Add(new PushDepthIntent(DepthInfo.Default));
 
                         // Front pass
                         buffer.Object.DrawOpaqueInteriorSubTree(depthValue, null);
 
-                        GLWrapper.PopDepthInfo();
+                        renderer.Add(new PopDepthIntent());
 
                         // The back pass doesn't write depth, but needs to depth test properly
-                        GLWrapper.PushDepthInfo(new DepthInfo(true, false));
+                        renderer.Add(new PushDepthIntent(new DepthInfo(true, false)));
                     }
                     else
                     {
                         // Disable depth testing
-                        GLWrapper.PushDepthInfo(new DepthInfo());
+                        renderer.Add(new PushDepthIntent(new DepthInfo()));
                     }
 
                     // Back pass
-                    buffer.Object.DrawSubTree(null);
+                    buffer.Object.Draw(null);
 
-                    GLWrapper.PopDepthInfo();
+                    renderer.Add(new PopDepthIntent());
 
                     lastDrawFrameId = buffer.FrameId;
                     break;
@@ -374,22 +382,7 @@ namespace osu.Framework.Platform
             GLWrapper.FlushCurrentBatch();
 
             using (drawMonitor.BeginCollecting(PerformanceCollectionType.SwapBuffer))
-            {
-                Swap();
-            }
-        }
-
-        /// <summary>
-        /// Swap the buffers.
-        /// </summary>
-        protected virtual void Swap()
-        {
-            Window.SwapBuffers();
-
-            if (Window.VSync == VSyncMode.On)
-                // without glFinish, vsync is basically unplayable due to the extra latency introduced.
-                // we will likely want to give the user control over this in the future as an advanced setting.
-                GL.Finish();
+                renderer.FinishFrame();
         }
 
         /// <summary>
