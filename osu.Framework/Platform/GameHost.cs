@@ -26,6 +26,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Graphics.Rendering;
 using osu.Framework.Graphics.Rendering.Intents;
+using osu.Framework.Graphics.Rendering.OpenGL;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Handlers;

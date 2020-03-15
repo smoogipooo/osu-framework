@@ -3,7 +3,7 @@
 
 using osu.Framework.Platform;
 
-namespace osu.Framework.Graphics.Rendering
+namespace osu.Framework.Graphics.Rendering.OpenGL
 {
     /// <summary>
     /// An <see cref="IRenderer"/> that immediately flushes intents.

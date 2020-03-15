@@ -17,6 +17,7 @@ using osu.Framework.Statistics;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Rendering;
+using osu.Framework.Graphics.Rendering.OpenGL;
 using osu.Framework.Platform;
 using osu.Framework.Timing;
 using GameWindow = osu.Framework.Platform.GameWindow;

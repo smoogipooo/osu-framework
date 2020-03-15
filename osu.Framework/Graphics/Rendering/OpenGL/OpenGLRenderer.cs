@@ -14,7 +14,7 @@ using osuTK;
 using osuTK.Graphics;
 using osuTK.Graphics.ES30;
 
-namespace osu.Framework.Graphics.Rendering
+namespace osu.Framework.Graphics.Rendering.OpenGL
 {
     public abstract class OpenGLRenderer : IRenderer
     {
