@@ -75,6 +75,11 @@ namespace osu.Framework.Graphics
             InvalidationID = Source.InvalidationID;
         }
 
+        internal void DrawSubTree(Action<TexturedVertex2D> vertexAction)
+        {
+            Draw(vertexAction);
+        }
+
         /// <summary>
         /// Draws this <see cref="DrawNode"/> to the screen.
         /// </summary>
