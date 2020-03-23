@@ -156,7 +156,7 @@ namespace osu.Framework.Graphics
             GLWrapper.PushMaskingInfo(new MaskingInfo
             {
                 ScreenSpaceAABB = screenSpaceMaskingRect,
-                MaskingRect = screenSpaceDrawRectangle,
+                MaskingQuad = screenSpaceDrawRectangle,
                 ToMaskingSpace = Matrix3.Identity,
                 BlendRange = 1,
                 AlphaExponent = 1,

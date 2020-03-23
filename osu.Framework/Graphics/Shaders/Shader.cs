@@ -67,16 +67,19 @@ namespace osu.Framework.Graphics.Shaders
 
             for (int i = 0; i < uniformCount; i++)
             {
-                GL.GetActiveUniform(this, i, 100, out _, out _, out ActiveUniformType type, out string uniformName);
+                GL.GetActiveUniform(this, i, 100, out _, out int count, out ActiveUniformType type, out string uniformName);
 
-                IUniform createUniform<T>(string name)
+                uniformName = uniformName.Replace("[0]", string.Empty);
+
+                IUniform createUniform<T>()
                     where T : struct, IEquatable<T>
                 {
-                    int location = GL.GetUniformLocation(this, name);
+                    int location = GL.GetUniformLocation(this, uniformName);
 
-                    if (GlobalPropertyManager.CheckGlobalExists(name)) return new GlobalUniform<T>(this, name, location);
+                    if (GlobalPropertyManager.CheckGlobalExists(uniformName))
+                        return new GlobalUniform<T>(this, uniformName, location, count);
 
-                    return new Uniform<T>(this, name, location);
+                    return new Uniform<T>(this, uniformName, location);
                 }
 
                 IUniform uniform;
@@ -84,39 +87,39 @@ namespace osu.Framework.Graphics.Shaders
                 switch (type)
                 {
                     case ActiveUniformType.Bool:
-                        uniform = createUniform<bool>(uniformName);
+                        uniform = createUniform<bool>();
                         break;
 
                     case ActiveUniformType.Float:
-                        uniform = createUniform<float>(uniformName);
+                        uniform = createUniform<float>();
                         break;
 
                     case ActiveUniformType.Int:
-                        uniform = createUniform<int>(uniformName);
+                        uniform = createUniform<int>();
                         break;
 
                     case ActiveUniformType.FloatMat3:
-                        uniform = createUniform<Matrix3>(uniformName);
+                        uniform = createUniform<Matrix3>();
                         break;
 
                     case ActiveUniformType.FloatMat4:
-                        uniform = createUniform<Matrix4>(uniformName);
+                        uniform = createUniform<Matrix4>();
                         break;
 
                     case ActiveUniformType.FloatVec2:
-                        uniform = createUniform<Vector2>(uniformName);
+                        uniform = createUniform<Vector2>();
                         break;
 
                     case ActiveUniformType.FloatVec3:
-                        uniform = createUniform<Vector3>(uniformName);
+                        uniform = createUniform<Vector3>();
                         break;
 
                     case ActiveUniformType.FloatVec4:
-                        uniform = createUniform<Vector4>(uniformName);
+                        uniform = createUniform<Vector4>();
                         break;
 
                     case ActiveUniformType.Sampler2D:
-                        uniform = createUniform<int>(uniformName);
+                        uniform = createUniform<int>();
                         break;
 
                     default:

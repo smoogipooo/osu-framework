@@ -9,7 +9,7 @@ namespace osu.Framework.Graphics.Shaders
     internal enum GlobalProperty
     {
         ProjMatrix,
-        MaskingRect,
+        MaskingQuad,
         ToMaskingSpace,
         CornerRadius,
         CornerExponent,

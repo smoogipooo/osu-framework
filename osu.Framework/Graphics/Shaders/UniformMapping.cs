@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace osu.Framework.Graphics.Shaders
 {
@@ -12,30 +13,21 @@ namespace osu.Framework.Graphics.Shaders
     internal class UniformMapping<T> : IUniformMapping
         where T : struct, IEquatable<T>
     {
-        private T val;
-
-        public T Value
-        {
-            get => val;
-            set
-            {
-                if (value.Equals(val))
-                    return;
-
-                val = value;
-
-                for (int i = 0; i < LinkedUniforms.Count; i++)
-                    LinkedUniforms[i].UpdateValue(this);
-            }
-        }
-
         public List<GlobalUniform<T>> LinkedUniforms = new List<GlobalUniform<T>>();
 
         public string Name { get; }
 
+        public readonly T[] Value;
+
         public UniformMapping(string name)
+            : this(name, 1)
+        {
+        }
+
+        public UniformMapping(string name, int count)
         {
             Name = name;
+            Value = new T[count];
         }
 
         public void LinkShaderUniform(IUniform uniform)
@@ -52,17 +44,24 @@ namespace osu.Framework.Graphics.Shaders
             LinkedUniforms.Remove(typedUniform);
         }
 
-        public void UpdateValue(ref T newValue)
+        public void SetValue(ref T value)
         {
-            if (newValue.Equals(val))
-                return;
-
-            val = newValue;
+            Value[0] = value;
 
             for (int i = 0; i < LinkedUniforms.Count; i++)
                 LinkedUniforms[i].UpdateValue(this);
         }
 
-        public ref T GetValueByRef() => ref val;
+        public void SetValue(in ReadOnlySpan<T> span)
+        {
+            Debug.Assert(span.Length == Value.Length);
+
+            span.CopyTo(Value);
+
+            for (int i = 0; i < LinkedUniforms.Count; i++)
+                LinkedUniforms[i].UpdateValue(this);
+        }
+
+        public ref T GetValueByRef() => ref Value[0];
     }
 }

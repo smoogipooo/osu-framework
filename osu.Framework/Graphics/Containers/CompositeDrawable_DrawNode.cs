@@ -90,7 +90,7 @@ namespace osu.Framework.Graphics.Containers
                     : new MaskingInfo
                     {
                         ScreenSpaceAABB = Source.ScreenSpaceDrawQuad.AABB,
-                        MaskingRect = Source.DrawRectangle,
+                        MaskingQuad = Source.MaskingQuad,
                         ConservativeScreenSpaceQuad = Quad.FromRectangle(shrunkDrawRectangle) * DrawInfo.Matrix,
                         ToMaskingSpace = DrawInfo.MatrixInverse,
                         CornerRadius = Source.effectiveCornerRadius,
@@ -118,13 +118,13 @@ namespace osu.Framework.Graphics.Containers
                 if (maskingInfo == null || edgeEffect.Type == EdgeEffectType.None || edgeEffect.Radius <= 0.0f || edgeEffect.Colour.Linear.A <= 0)
                     return;
 
-                RectangleF effectRect = maskingInfo.Value.MaskingRect.Inflate(edgeEffect.Radius).Offset(edgeEffect.Offset);
+                RectangleF effectRect = maskingInfo.Value.MaskingQuad.AABBFloat.Inflate(edgeEffect.Radius).Offset(edgeEffect.Offset);
 
                 if (!screenSpaceMaskingQuad.HasValue)
                     screenSpaceMaskingQuad = Quad.FromRectangle(effectRect) * DrawInfo.Matrix;
 
                 MaskingInfo edgeEffectMaskingInfo = maskingInfo.Value;
-                edgeEffectMaskingInfo.MaskingRect = effectRect;
+                edgeEffectMaskingInfo.MaskingQuad = effectRect;
                 edgeEffectMaskingInfo.ScreenSpaceAABB = screenSpaceMaskingQuad.Value.AABB;
                 edgeEffectMaskingInfo.CornerRadius = maskingInfo.Value.CornerRadius + edgeEffect.Radius + edgeEffect.Roundness;
                 edgeEffectMaskingInfo.BorderThickness = 0;

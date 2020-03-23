@@ -199,7 +199,7 @@ namespace osu.Framework.Graphics.OpenGL
             PushMaskingInfo(new MaskingInfo
             {
                 ScreenSpaceAABB = new RectangleI(0, 0, (int)size.X, (int)size.Y),
-                MaskingRect = new RectangleF(0, 0, size.X, size.Y),
+                MaskingQuad = new RectangleF(0, 0, size.X, size.Y),
                 ToMaskingSpace = Matrix3.Identity,
                 BlendRange = 1,
                 AlphaExponent = 1,
@@ -532,7 +532,7 @@ namespace osu.Framework.Graphics.OpenGL
                 scissor.Height = -scissor.Height;
             }
 
-            GL.Scissor(scissor.X, Viewport.Height - scissor.Bottom, scissor.Width, scissor.Height);
+            // GL.Scissor(scissor.X, Viewport.Height - scissor.Bottom, scissor.Width, scissor.Height);
         }
 
         private static readonly Stack<Vector2I> scissor_offset_stack = new Stack<Vector2I>();
@@ -620,11 +620,7 @@ namespace osu.Framework.Graphics.OpenGL
         {
             FlushCurrentBatch();
 
-            GlobalPropertyManager.Set(GlobalProperty.MaskingRect, new Vector4(
-                maskingInfo.MaskingRect.Left,
-                maskingInfo.MaskingRect.Top,
-                maskingInfo.MaskingRect.Right,
-                maskingInfo.MaskingRect.Bottom));
+            GlobalPropertyManager.Set(GlobalProperty.MaskingQuad, maskingInfo.MaskingQuad.GetVertices());
 
             GlobalPropertyManager.Set(GlobalProperty.ToMaskingSpace, maskingInfo.ToMaskingSpace);
 
@@ -862,39 +858,40 @@ namespace osu.Framework.Graphics.OpenGL
             switch (uniform)
             {
                 case IUniformWithValue<bool> b:
-                    GL.Uniform1(uniform.Location, b.GetValue() ? 1 : 0);
+                    int res = b.GetValueByRef() ? 1 : 0;
+                    GL.Uniform1(uniform.Location, uniform.Count, ref res);
                     break;
 
                 case IUniformWithValue<int> i:
-                    GL.Uniform1(uniform.Location, i.GetValue());
+                    GL.Uniform1(uniform.Location, uniform.Count, ref i.GetValueByRef());
                     break;
 
                 case IUniformWithValue<float> f:
-                    GL.Uniform1(uniform.Location, f.GetValue());
+                    GL.Uniform1(uniform.Location, uniform.Count, ref f.GetValueByRef());
                     break;
 
                 case IUniformWithValue<Vector2> v2:
-                    GL.Uniform2(uniform.Location, ref v2.GetValueByRef());
+                    GL.Uniform2(uniform.Location, uniform.Count, ref v2.GetValueByRef().X);
                     break;
 
                 case IUniformWithValue<Vector3> v3:
-                    GL.Uniform3(uniform.Location, ref v3.GetValueByRef());
+                    GL.Uniform3(uniform.Location, uniform.Count, ref v3.GetValueByRef().X);
                     break;
 
                 case IUniformWithValue<Vector4> v4:
-                    GL.Uniform4(uniform.Location, ref v4.GetValueByRef());
+                    GL.Uniform4(uniform.Location, uniform.Count, ref v4.GetValueByRef().X);
                     break;
 
                 case IUniformWithValue<Matrix2> m2:
-                    GL.UniformMatrix2(uniform.Location, false, ref m2.GetValueByRef());
+                    GL.UniformMatrix2(uniform.Location, uniform.Count, false, ref m2.GetValueByRef().Row0.X);
                     break;
 
                 case IUniformWithValue<Matrix3> m3:
-                    GL.UniformMatrix3(uniform.Location, false, ref m3.GetValueByRef());
+                    GL.UniformMatrix3(uniform.Location, uniform.Count, false, ref m3.GetValueByRef().Row0.X);
                     break;
 
                 case IUniformWithValue<Matrix4> m4:
-                    GL.UniformMatrix4(uniform.Location, false, ref m4.GetValueByRef());
+                    GL.UniformMatrix4(uniform.Location, uniform.Count, false, ref m4.GetValueByRef().Row0.X);
                     break;
             }
         }
@@ -903,7 +900,7 @@ namespace osu.Framework.Graphics.OpenGL
     public struct MaskingInfo : IEquatable<MaskingInfo>
     {
         public RectangleI ScreenSpaceAABB;
-        public RectangleF MaskingRect;
+        public Quad MaskingQuad;
 
         public Quad ConservativeScreenSpaceQuad;
 
@@ -932,7 +929,7 @@ namespace osu.Framework.Graphics.OpenGL
 
         public static bool operator ==(in MaskingInfo left, in MaskingInfo right) =>
             left.ScreenSpaceAABB == right.ScreenSpaceAABB &&
-            left.MaskingRect == right.MaskingRect &&
+            left.MaskingQuad.Equals(right.MaskingQuad) &&
             left.ToMaskingSpace == right.ToMaskingSpace &&
             left.CornerRadius == right.CornerRadius &&
             left.CornerExponent == right.CornerExponent &&

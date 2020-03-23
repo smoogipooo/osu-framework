@@ -20,7 +20,7 @@ namespace osu.Framework.Graphics.Shaders
             global_properties = new IUniformMapping[values.Length];
 
             global_properties[(int)GlobalProperty.ProjMatrix] = new UniformMapping<Matrix4>("g_ProjMatrix");
-            global_properties[(int)GlobalProperty.MaskingRect] = new UniformMapping<Vector4>("g_MaskingRect");
+            global_properties[(int)GlobalProperty.MaskingQuad] = new UniformMapping<Vector2>("g_MaskingQuad", 4);
             global_properties[(int)GlobalProperty.ToMaskingSpace] = new UniformMapping<Matrix3>("g_ToMaskingSpace");
             global_properties[(int)GlobalProperty.CornerRadius] = new UniformMapping<float>("g_CornerRadius");
             global_properties[(int)GlobalProperty.CornerExponent] = new UniformMapping<float>("g_CornerExponent");
@@ -46,7 +46,19 @@ namespace osu.Framework.Graphics.Shaders
         public static void Set<T>(GlobalProperty property, T value)
             where T : struct, IEquatable<T>
         {
-            ((UniformMapping<T>)global_properties[(int)property]).UpdateValue(ref value);
+            ((UniformMapping<T>)global_properties[(int)property]).SetValue(ref value);
+        }
+
+        /// <summary>
+        /// Sets a uniform for all shaders that contain this property.
+        /// <para>Any future-initialized shaders will also have this uniform set.</para>
+        /// </summary>
+        /// <param name="property">The uniform.</param>
+        /// <param name="span">The uniform value.</param>
+        public static void Set<T>(GlobalProperty property, ReadOnlySpan<T> span)
+            where T : struct, IEquatable<T>
+        {
+            ((UniformMapping<T>)global_properties[(int)property]).SetValue(span);
         }
 
         public static void Register(Shader shader)

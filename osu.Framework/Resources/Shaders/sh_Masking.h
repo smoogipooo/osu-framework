@@ -6,7 +6,7 @@ varying mediump vec2 v_BlendRange;
 
 uniform highp float g_CornerRadius;
 uniform highp float g_CornerExponent;
-uniform highp vec4 g_MaskingRect;
+
 uniform highp float g_BorderThickness;
 uniform lowp vec4 g_BorderColour;
 
@@ -19,17 +19,31 @@ uniform highp vec2 g_EdgeOffset;
 uniform bool g_DiscardInner;
 uniform highp float g_InnerCornerRadius;
 
+// ccw order
+uniform highp vec2 g_MaskingQuad[4];
+
+highp float distToLine(vec2 pt1, vec2 pt2, vec2 testPt)
+{
+  vec2 lineDir = pt2 - pt1;
+  vec2 perpDir = vec2(lineDir.y, -lineDir.x);
+  vec2 dirToPt1 = pt1 - testPt;
+  return abs(dot(normalize(perpDir), dirToPt1));
+}
+
 highp float distanceFromRoundedRect(highp vec2 offset, highp float radius)
 {
 	highp vec2 maskingPosition = v_MaskingPosition + offset;
 
 	// Compute offset distance from masking rect in masking space.
-	highp vec2 topLeftOffset = g_MaskingRect.xy - maskingPosition;
-	highp vec2 bottomRightOffset = maskingPosition - g_MaskingRect.zw;
+	highp vec2 topLeftOffset = g_MaskingQuad[0] - maskingPosition;
+    highp vec2 bottomLeftOffset = vec2(g_MaskingQuad[1].x - maskingPosition.x, maskingPosition.y - g_MaskingQuad[1].y);
+	highp vec2 bottomRightOffset = maskingPosition - g_MaskingQuad[2];
+    highp vec2 topRightOffset = vec2(maskingPosition.x - g_MaskingQuad[3].x, g_MaskingQuad[3].y - maskingPosition.y);
 
-	highp vec2 distanceFromShrunkRect = max(
-		bottomRightOffset + vec2(radius),
-		topLeftOffset + vec2(radius));
+    highp vec2 distanceFromShrunkRect = max(
+        max(topLeftOffset, bottomLeftOffset),
+        max(bottomRightOffset, topRightOffset)
+    ) + vec2(radius);
 
 	highp float maxDist = max(distanceFromShrunkRect.x, distanceFromShrunkRect.y);
 

@@ -1244,6 +1244,8 @@ namespace osu.Framework.Graphics.Containers
 
         #endregion
 
+        protected virtual Quad MaskingQuad => DrawRectangle;
+
         #region Interaction / Input
 
         public override bool Contains(Vector2 screenSpacePos)

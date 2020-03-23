@@ -12,17 +12,19 @@ namespace osu.Framework.Graphics.Shaders
         public Shader Owner { get; }
         public int Location { get; }
         public string Name { get; }
+        public int Count { get; }
 
         /// <summary>
         /// Non-null denotes a pending global change. Must be a field to allow for reference access.
         /// </summary>
         public UniformMapping<T> PendingChange;
 
-        public GlobalUniform(Shader owner, string name, int uniformLocation)
+        public GlobalUniform(Shader owner, string name, int uniformLocation, int count)
         {
             Owner = owner;
             Name = name;
             Location = uniformLocation;
+            Count = count;
         }
 
         internal void UpdateValue(UniformMapping<T> global)
@@ -42,6 +44,5 @@ namespace osu.Framework.Graphics.Shaders
         }
 
         ref T IUniformWithValue<T>.GetValueByRef() => ref PendingChange.GetValueByRef();
-        T IUniformWithValue<T>.GetValue() => PendingChange.Value;
     }
 }
