@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using NUnit.Framework;
-using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -115,7 +114,6 @@ namespace osu.Framework.Tests.Visual.Drawables
                             Child = buffered = new BufferedContainer
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                BackgroundColour = Color4.White.Opacity(0),
                                 Children = new[]
                                 {
                                     blended = new Box
@@ -173,7 +171,6 @@ namespace osu.Framework.Tests.Visual.Drawables
                             Child = new BufferedContainer
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                BackgroundColour = Color4.White.Opacity(0),
                                 EffectColour = Color4.Transparent, // The effect is always drawn, but we only want to see the drawn original's colour
                                 DrawOriginal = true,
                                 Children = new[]
@@ -201,6 +198,47 @@ namespace osu.Framework.Tests.Visual.Drawables
             });
 
             AddAssert($"contents blended using {mode.ToString()}", () => blended.DrawColourInfo.Blending == parameters);
+        }
+
+        [Test]
+        public void TestBufferedContainerAdditiveEffectMixedOriginal()
+        {
+            AddStep("create test", () =>
+            {
+                Child = new Container
+                {
+                    Size = new Vector2(200),
+                    Children = new Drawable[]
+                    {
+                        new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = Color4.Red
+                        },
+                        new BufferedContainer
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            RelativeSizeAxes = Axes.Both,
+                            EffectBlending = BlendingParameters.Additive,
+                            BlurSigma = new Vector2(10),
+                            DrawOriginal = true,
+                            Children = new[]
+                            {
+                                new Box
+                                {
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                    RelativeSizeAxes = Axes.Both,
+                                    Size = new Vector2(0.5f),
+                                    Alpha = 0.4f,
+                                    Colour = Color4.Lime
+                                },
+                            }
+                        }
+                    }
+                };
+            });
         }
 
         public enum TestBlendMode
