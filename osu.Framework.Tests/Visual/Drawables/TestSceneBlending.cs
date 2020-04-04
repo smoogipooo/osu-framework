@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using NUnit.Framework;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -90,6 +91,7 @@ namespace osu.Framework.Tests.Visual.Drawables
         {
             BlendingParameters parameters = mode == TestBlendMode.Mixture ? BlendingParameters.Mixture : BlendingParameters.Additive;
 
+            BufferedContainer buffered = null;
             Drawable blended = null;
 
             AddStep("create test", () =>
@@ -102,22 +104,35 @@ namespace osu.Framework.Tests.Visual.Drawables
                         new Box
                         {
                             RelativeSizeAxes = Axes.Both,
-                            Colour = Color4.Orange
+                            Colour = Color4.Yellow
                         },
-                        new BufferedContainer
+                        new Container
                         {
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,
-                            Size = new Vector2(50),
-                            BackgroundColour = Color4.Transparent,
+                            Size = new Vector2(100),
                             Blending = parameters,
-                            Child = new Container
+                            Child = buffered = new BufferedContainer
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Child = blended = new Box
+                                BackgroundColour = Color4.White.Opacity(0),
+                                Children = new[]
                                 {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Alpha = 0.5f,
+                                    blended = new Box
+                                    {
+                                        RelativeSizeAxes = Axes.Both,
+                                        Alpha = 0.5f,
+                                        Colour = Color4.Cyan
+                                    },
+                                    new Box
+                                    {
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
+                                        RelativeSizeAxes = Axes.Both,
+                                        Size = new Vector2(0.5f),
+                                        Alpha = 0.5f,
+                                        Colour = Color4.Magenta
+                                    },
                                 }
                             }
                         }
@@ -125,7 +140,8 @@ namespace osu.Framework.Tests.Visual.Drawables
                 };
             });
 
-            AddAssert("contents mix-blended", () => blended.DrawColourInfo.Blending == BlendingParameters.Mixture);
+            AddAssert($"contents blended using {mode.ToString()}", () => blended.DrawColourInfo.Blending == parameters);
+            AddAssert($"effect blended using: {mode.ToString()}", () => buffered.DrawEffectBlending == parameters);
         }
 
         [TestCase(TestBlendMode.Mixture)]
@@ -146,24 +162,37 @@ namespace osu.Framework.Tests.Visual.Drawables
                         new Box
                         {
                             RelativeSizeAxes = Axes.Both,
-                            Colour = Color4.Orange
+                            Colour = Color4.Yellow
                         },
-                        new BufferedContainer
+                        new Container
                         {
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,
-                            Size = new Vector2(50),
-                            BackgroundColour = Color4.Transparent,
+                            Size = new Vector2(100),
                             Blending = parameters,
-                            EffectColour = Color4.Transparent, // Disable the effect frame buffer
-                            DrawOriginal = true,
-                            Child = new Container
+                            Child = new BufferedContainer
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Child = blended = new Box
+                                BackgroundColour = Color4.White.Opacity(0),
+                                EffectColour = Color4.Transparent, // The effect is always drawn, but we only want to see the drawn original's colour
+                                DrawOriginal = true,
+                                Children = new[]
                                 {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Alpha = 0.5f,
+                                    blended = new Box
+                                    {
+                                        RelativeSizeAxes = Axes.Both,
+                                        Alpha = 0.5f,
+                                        Colour = Color4.Cyan
+                                    },
+                                    new Box
+                                    {
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
+                                        RelativeSizeAxes = Axes.Both,
+                                        Size = new Vector2(0.5f),
+                                        Alpha = 0.5f,
+                                        Colour = Color4.Magenta
+                                    },
                                 }
                             }
                         }
@@ -171,7 +200,7 @@ namespace osu.Framework.Tests.Visual.Drawables
                 };
             });
 
-            AddAssert("contents mix-blended", () => blended.DrawColourInfo.Blending == BlendingParameters.Mixture);
+            AddAssert($"contents blended using {mode.ToString()}", () => blended.DrawColourInfo.Blending == parameters);
         }
 
         public enum TestBlendMode
