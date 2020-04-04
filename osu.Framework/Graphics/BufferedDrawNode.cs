@@ -128,6 +128,7 @@ namespace osu.Framework.Graphics
         /// </summary>
         protected virtual void DrawContents()
         {
+            GLWrapper.SetBlend(DrawColourInfo.Blending);
             DrawFrameBuffer(SharedData.MainBuffer, DrawRectangle, DrawColourInfo.Colour);
         }
 

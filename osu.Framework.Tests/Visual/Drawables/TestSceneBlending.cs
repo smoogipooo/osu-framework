@@ -13,7 +13,7 @@ namespace osu.Framework.Tests.Visual.Drawables
     public class TestSceneBlending : FrameworkTestScene
     {
         [Test]
-        public void TestBlendSelf()
+        public void TestAdditiveSelf()
         {
             Drawable blended = null;
 
@@ -45,7 +45,7 @@ namespace osu.Framework.Tests.Visual.Drawables
         }
 
         [Test]
-        public void TestBlendThroughMultipleParents()
+        public void TestAdditiveThroughMultipleParents()
         {
             Drawable blended = null;
 
@@ -82,6 +82,102 @@ namespace osu.Framework.Tests.Visual.Drawables
             });
 
             AddAssert("blended additively", () => blended.DrawColourInfo.Blending == BlendingParameters.Additive);
+        }
+
+        [TestCase(TestBlendMode.Mixture)]
+        [TestCase(TestBlendMode.Additive)]
+        public void TestBufferedContainerEffect(TestBlendMode mode)
+        {
+            BlendingParameters parameters = mode == TestBlendMode.Mixture ? BlendingParameters.Mixture : BlendingParameters.Additive;
+
+            Drawable blended = null;
+
+            AddStep("create test", () =>
+            {
+                Child = new Container
+                {
+                    Size = new Vector2(200),
+                    Children = new Drawable[]
+                    {
+                        new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = Color4.Orange
+                        },
+                        new BufferedContainer
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Size = new Vector2(50),
+                            BackgroundColour = Color4.Transparent,
+                            Blending = parameters,
+                            Child = new Container
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Child = blended = new Box
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    Alpha = 0.5f,
+                                }
+                            }
+                        }
+                    }
+                };
+            });
+
+            AddAssert("contents mix-blended", () => blended.DrawColourInfo.Blending == BlendingParameters.Mixture);
+        }
+
+        [TestCase(TestBlendMode.Mixture)]
+        [TestCase(TestBlendMode.Additive)]
+        public void TestBufferedContainerOriginal(TestBlendMode mode)
+        {
+            BlendingParameters parameters = mode == TestBlendMode.Mixture ? BlendingParameters.Mixture : BlendingParameters.Additive;
+
+            Drawable blended = null;
+
+            AddStep("create test", () =>
+            {
+                Child = new Container
+                {
+                    Size = new Vector2(200),
+                    Children = new Drawable[]
+                    {
+                        new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = Color4.Orange
+                        },
+                        new BufferedContainer
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Size = new Vector2(50),
+                            BackgroundColour = Color4.Transparent,
+                            Blending = parameters,
+                            EffectColour = Color4.Transparent, // Disable the effect frame buffer
+                            DrawOriginal = true,
+                            Child = new Container
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Child = blended = new Box
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    Alpha = 0.5f,
+                                }
+                            }
+                        }
+                    }
+                };
+            });
+
+            AddAssert("contents mix-blended", () => blended.DrawColourInfo.Blending == BlendingParameters.Mixture);
+        }
+
+        public enum TestBlendMode
+        {
+            Mixture,
+            Additive
         }
     }
 }

@@ -330,10 +330,7 @@ namespace osu.Framework.Graphics.Containers
             get
             {
                 BlendingParameters blending = EffectBlending;
-
-                blending.CopyFromParent(Blending);
-                blending.ApplyDefaultToInherited();
-
+                blending.CopyFromParent(base.DrawColourInfo.Blending);
                 return blending;
             }
         }
@@ -346,8 +343,8 @@ namespace osu.Framework.Graphics.Containers
 
         public DrawColourInfo? FrameBufferDrawColour => base.DrawColourInfo;
 
-        // Children should not receive the true colour to avoid colour doubling when the frame-buffers are rendered to the back-buffer.
-        public override DrawColourInfo DrawColourInfo => new DrawColourInfo(Color4.White, base.DrawColourInfo.Blending);
+        // Children should not receive the true colour and blending to avoid effect doubling when the frame-buffers are rendered to the back-buffer.
+        public override DrawColourInfo DrawColourInfo => new DrawColourInfo(Color4.White, BlendingParameters.Mixture);
 
         protected override void Dispose(bool isDisposing)
         {
