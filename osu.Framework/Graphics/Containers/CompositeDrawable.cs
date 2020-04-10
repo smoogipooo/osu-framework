@@ -966,6 +966,11 @@ namespace osu.Framework.Graphics.Containers
             if (source == InvalidationSource.Child)
                 return anyInvalidated;
 
+            // DrawNode invalidations should not propagate to children.
+            invalidation &= ~Invalidation.DrawNode;
+            if (invalidation == Invalidation.None)
+                return anyInvalidated;
+
             IReadOnlyList<Drawable> targetChildren = aliveInternalChildren;
 
             // Non-layout flags must be propagated to all children. As such, it is simplest + quickest to propagate all other relevant flags along with them.
