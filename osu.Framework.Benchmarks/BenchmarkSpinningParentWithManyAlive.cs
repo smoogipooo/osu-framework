@@ -14,7 +14,10 @@ namespace osu.Framework.Benchmarks
     {
         [Test]
         [Benchmark]
-        public void RunFrame() => RunSingleFrame();
+        public void RunFrame()
+        {
+                RunSingleFrame();
+        }
 
         protected override Game CreateGame() => new TestGame();
 
@@ -28,7 +31,8 @@ namespace osu.Framework.Benchmarks
                 {
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
-                    RelativeSizeAxes = Axes.Both,
+                    Size = new Vector2(200),
+                    Masking = true
                 };
 
                 for (int i = 0; i < 10000; i++)
