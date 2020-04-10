@@ -977,16 +977,17 @@ namespace osu.Framework.Graphics.Containers
             if ((invalidation & ~Invalidation.Layout) > 0)
                 targetChildren = internalChildren;
 
+            if ((invalidation & Invalidation.RequiredParentSizeToFit) > 0)
+                invalidation |= Invalidation.DrawInfo;
+
+            // Other geometry things like rotation, shearing, etc don't affect child properties.
+            invalidation &= ~Invalidation.MiscGeometry;
+
             for (int i = 0; i < targetChildren.Count; ++i)
             {
                 Drawable c = targetChildren[i];
 
                 Invalidation childInvalidation = invalidation;
-                if ((invalidation & Invalidation.RequiredParentSizeToFit) > 0)
-                    childInvalidation |= Invalidation.DrawInfo;
-
-                // Other geometry things like rotation, shearing, etc don't affect child properties.
-                childInvalidation &= ~Invalidation.MiscGeometry;
 
                 // Relative positioning can however affect child geometry.
                 if (c.RelativePositionAxes != Axes.None && (invalidation & Invalidation.DrawSize) > 0)
