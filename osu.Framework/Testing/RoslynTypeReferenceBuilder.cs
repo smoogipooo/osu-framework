@@ -19,6 +19,7 @@ namespace osu.Framework.Testing
 {
     public class RoslynTypeReferenceBuilder : ITypeReferenceBuilder
     {
+        private readonly Assembly entryAssembly;
         private readonly Logger logger;
 
         private readonly Dictionary<TypeReference, IReadOnlyCollection<TypeReference>> referenceMap = new Dictionary<TypeReference, IReadOnlyCollection<TypeReference>>();
@@ -28,8 +29,9 @@ namespace osu.Framework.Testing
 
         private Solution solution;
 
-        public RoslynTypeReferenceBuilder()
+        public RoslynTypeReferenceBuilder(Assembly entryAssembly)
         {
+            this.entryAssembly = entryAssembly;
             logger = Logger.GetLogger("dynamic-compilation");
             logger.OutputToListeners = false;
         }
@@ -428,7 +430,7 @@ namespace osu.Framework.Testing
         /// <returns>The <see cref="Project"/> containing the currently-executing test.</returns>
         private Project findTestProject()
         {
-            var executingAssembly = Assembly.GetEntryAssembly()?.GetName().Name;
+            var executingAssembly = entryAssembly.GetName().Name;
             return solution.Projects.FirstOrDefault(p => p.AssemblyName == executingAssembly);
         }
 

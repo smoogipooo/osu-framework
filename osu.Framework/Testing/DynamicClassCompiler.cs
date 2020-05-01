@@ -46,7 +46,7 @@ namespace osu.Framework.Testing
             var di = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
 
 #if NETCOREAPP
-            referenceBuilder = new RoslynTypeReferenceBuilder();
+            referenceBuilder = new RoslynTypeReferenceBuilder(Assembly.GetEntryAssembly());
 #else
             referenceBuilder = new EmptyTypeReferenceBuilder();
 #endif
