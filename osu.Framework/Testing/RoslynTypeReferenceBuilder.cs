@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.MSBuild;
 using Microsoft.CodeAnalysis.Text;
 using osu.Framework.Logging;
@@ -215,6 +216,7 @@ namespace osu.Framework.Testing
         private async Task<HashSet<TypeReference>> getReferencedTypesAsync(SemanticModel semanticModel)
         {
             var result = new HashSet<TypeReference>();
+            var seenSymbols = new HashSet<string>();
 
             var root = await semanticModel.SyntaxTree.GetRootAsync();
 
@@ -235,14 +237,49 @@ namespace osu.Framework.Testing
             // Find all the named type symbols in the syntax tree, and mark + recursively iterate through them.
             foreach (var node in descendantNodes)
             {
+                string syntaxString;
+
+                switch (node.Kind())
+                {
+                    case SyntaxKind.GenericName:
+                        syntaxString = ((GenericNameSyntax)node).Identifier.ToString();
+                        break;
+
+                    case SyntaxKind.AsExpression:
+                    case SyntaxKind.IdentifierName:
+                        syntaxString = node.ToString();
+                        break;
+
+                    case SyntaxKind.InvocationExpression:
+                        syntaxString = ((InvocationExpressionSyntax)node).Expression.ToString();
+                        break;
+
+                    case SyntaxKind.CastExpression:
+                        syntaxString = ((CastExpressionSyntax)node).Type.ToString();
+                        break;
+
+                    case SyntaxKind.ObjectCreationExpression:
+                        syntaxString = ((ObjectCreationExpressionSyntax)node).Type.ToString();
+                        break;
+
+                    default:
+                        continue;
+                }
+
+                if (hasAlreadyVisited(syntaxString))
+                    continue;
+
                 switch (node.Kind())
                 {
                     case SyntaxKind.GenericName:
                     case SyntaxKind.IdentifierName:
                     {
-
                         if (semanticModel.GetSymbolInfo(node).Symbol is INamedTypeSymbol t)
+                        {
                             addTypeSymbol(t);
+                            markVisited(syntaxString);
+                        }
+
                         break;
                     }
 
@@ -251,13 +288,21 @@ namespace osu.Framework.Testing
                     case SyntaxKind.ObjectCreationExpression:
                     {
                         if (semanticModel.GetTypeInfo(node).Type is INamedTypeSymbol t)
+                        {
                             addTypeSymbol(t);
+                            markVisited(syntaxString);
+                        }
+
                         break;
                     }
                 }
             }
 
             return result;
+
+            bool hasAlreadyVisited(string syntaxString) => seenSymbols.Contains(syntaxString);
+
+            void markVisited(string syntaxString) => seenSymbols.Add(syntaxString);
 
             void addTypeSymbol(INamedTypeSymbol typeSymbol)
             {
