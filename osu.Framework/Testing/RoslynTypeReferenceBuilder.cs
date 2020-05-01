@@ -217,12 +217,19 @@ namespace osu.Framework.Testing
             var result = new HashSet<TypeReference>();
 
             var root = await semanticModel.SyntaxTree.GetRootAsync();
+
             var descendantNodes = root.DescendantNodes(n =>
             {
                 var kind = n.Kind();
 
                 return kind != SyntaxKind.UsingDirective
-                       && kind != SyntaxKind.NamespaceKeyword;
+                       && kind != SyntaxKind.NamespaceKeyword
+                       && kind != SyntaxKind.VariableDeclarator
+                       && kind != SyntaxKind.ElementAccessExpression
+                       && kind != SyntaxKind.DocumentationCommentExteriorTrivia
+                       && kind != SyntaxKind.MultiLineDocumentationCommentTrivia
+                       && kind != SyntaxKind.SingleLineDocumentationCommentTrivia
+                       && kind != SyntaxKind.EndOfDocumentationCommentToken;
             });
 
             // Find all the named type symbols in the syntax tree, and mark + recursively iterate through them.
@@ -233,15 +240,13 @@ namespace osu.Framework.Testing
                     case SyntaxKind.GenericName:
                     case SyntaxKind.IdentifierName:
                     {
+
                         if (semanticModel.GetSymbolInfo(node).Symbol is INamedTypeSymbol t)
                             addTypeSymbol(t);
                         break;
                     }
 
                     case SyntaxKind.AsExpression:
-                    case SyntaxKind.IsExpression:
-                    case SyntaxKind.SizeOfExpression:
-                    case SyntaxKind.TypeOfExpression:
                     case SyntaxKind.CastExpression:
                     case SyntaxKind.ObjectCreationExpression:
                     {
