@@ -226,7 +226,6 @@ namespace osu.Framework.Testing
 
                 return kind != SyntaxKind.UsingDirective
                        && kind != SyntaxKind.NamespaceKeyword
-                       && kind != SyntaxKind.VariableDeclarator
                        && kind != SyntaxKind.ElementAccessExpression
                        && kind != SyntaxKind.DocumentationCommentExteriorTrivia
                        && kind != SyntaxKind.MultiLineDocumentationCommentTrivia
@@ -274,6 +273,9 @@ namespace osu.Framework.Testing
                     case SyntaxKind.GenericName:
                     case SyntaxKind.IdentifierName:
                     {
+                        if (node.Parent.Kind() == SyntaxKind.VariableDeclarator)
+                            continue;
+
                         if (semanticModel.GetSymbolInfo(node).Symbol is INamedTypeSymbol t)
                         {
                             addTypeSymbol(t);
