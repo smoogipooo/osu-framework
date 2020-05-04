@@ -1,7 +1,12 @@
 clone_depth: 1
-skip_tags: true
 version: '{build}'
 image: Visual Studio 2019
 test: off
+skip_non_tags: true
 build_script:
-  - cmd: PowerShell -Version 2.0 $env:APPVEYOR_BUILD_FOLDER\osu.Framework.Templates\build.ps1
+  - cmd: PowerShell -Version 2.0 %APPVEYOR_BUILD_FOLDER%\osu.Framework.Templates\build.ps1 -Target Deploy
+deploy:
+  - provider: Environment
+    name: nuget
+  - provider: Environment
+    name: github

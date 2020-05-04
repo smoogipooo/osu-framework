@@ -138,18 +138,12 @@ Task("Publish")
             AppVeyor.UploadArtifact(artifact);
     });
 
-Task("Build")
+Task("Deploy")
     .IsDependentOn("Clean")
     .IsDependentOn("DetermineAppveyorBuildProperties")
     .IsDependentOn("CodeFileSanity")
     .IsDependentOn("DotnetFormat")
     .IsDependentOn("InspectCode")
-    .IsDependentOn("DetermineAppveyorDeployProperties")
-    .IsDependentOn("PackTemplates")
-    .IsDependentOn("Publish");
-
-Task("DeployTemplates")
-    .IsDependentOn("Clean")
     .IsDependentOn("DetermineAppveyorDeployProperties")
     .IsDependentOn("PackTemplates")
     .IsDependentOn("Publish");
