@@ -5,7 +5,7 @@ test: off
 skip_non_tags: true
 build_script:
   - cmd: cd %APPVEYOR_BUILD_FOLDER%\osu.Framework.Templates # We're building from a subdirectory
-  - cmd: PowerShell -Version 2.0 .\build.ps1 -Target Deploy
+  - cmd: PowerShell -Version 2.0 .\build.ps1
 deploy:
   - provider: Environment
     name: nuget

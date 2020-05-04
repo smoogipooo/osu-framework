@@ -8,7 +8,7 @@ var nVikaToolPath = GetFiles("./tools/NVika.MSBuild.*/tools/NVika.exe").First();
 // ARGUMENTS
 ///////////////////////////////////////////////////////////////////////////////
 
-var target = Argument("target", "Build");
+var target = Argument("target", "Deploy");
 var configuration = Argument("configuration", "Debug");
 var version = "0.0.0";
 
