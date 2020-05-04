@@ -4,4 +4,4 @@ version: '{build}'
 image: Visual Studio 2019
 test: off
 build_script:
-  - cmd: PowerShell -Version 2.0 .\build.ps1
+  - cmd: PowerShell -Version 2.0 $env:APPVEYOR_BUILD_FOLDER\osu.Framework.Templates\build.ps1
