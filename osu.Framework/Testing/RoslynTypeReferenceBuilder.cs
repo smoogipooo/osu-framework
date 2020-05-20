@@ -337,9 +337,19 @@ namespace osu.Framework.Testing
         {
             logger.Add("Retrieving referenced files...");
 
+            // Mark the graph joining both endpoints.
             foreach (var s in changedSources)
                 markNodesContainingEndPoints(directedGraph[testType], directedGraph[s]);
 
+            // Print the reference graph from the test type downwards.
+            logger.Add("Top-down graph:");
+            printChildReferenceGraphRecursively(directedGraph[testType]);
+
+            logger.Add("Bottom-up graph:");
+            foreach (var s in changedSources)
+                printParentReferenceGraphRecursively(directedGraph[s]);
+
+            // Build the list of referenced files.
             var result = new HashSet<string>();
 
             foreach (var n in directedGraph.Values)
@@ -355,10 +365,6 @@ namespace osu.Framework.Testing
                         result.Add(syntaxTree.FilePath);
                 }
             }
-
-            logger.Add("Found referenced files:");
-            foreach (var f in result)
-                logger.Add(f);
 
             return result;
         }
@@ -407,6 +413,42 @@ namespace osu.Framework.Testing
                     }
                 }
             }
+        }
+
+        private void printChildReferenceGraphRecursively(DirectedTypeNode testNode, HashSet<DirectedTypeNode> seenTypes = null, int depth = 0)
+        {
+            seenTypes ??= new HashSet<DirectedTypeNode>();
+            if (seenTypes.Contains(testNode))
+                return;
+
+            seenTypes.Add(testNode);
+
+            if (!testNode.MarkedAsChild || !testNode.MarkedAsParent)
+                return;
+
+            // A '.' is prepended since the logger trims lines.
+            logger.Add($"{(depth > 0 ? $".{new string(' ', depth * 2 - 1)}| " : string.Empty)} : {testNode}");
+
+            foreach (var n in testNode.Children)
+                printChildReferenceGraphRecursively(n, seenTypes, depth + 1);
+        }
+
+        private void printParentReferenceGraphRecursively(DirectedTypeNode node, HashSet<DirectedTypeNode> seenTypes = null, int depth = 0)
+        {
+            seenTypes ??= new HashSet<DirectedTypeNode>();
+            if (seenTypes.Contains(node))
+                return;
+
+            seenTypes.Add(node);
+
+            if (!node.MarkedAsChild || !node.MarkedAsParent)
+                return;
+
+            // A '.' is prepended since the logger trims lines.
+            logger.Add($"{(depth > 0 ? $".{new string(' ', depth * 2 - 1)}| " : string.Empty)} : {node}");
+
+            foreach (var n in node.Parents)
+                printChildReferenceGraphRecursively(n, seenTypes, depth + 1);
         }
 
         private bool typeInheritsFromGame(TypeReference reference)
