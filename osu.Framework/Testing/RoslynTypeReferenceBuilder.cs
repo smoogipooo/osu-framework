@@ -52,7 +52,7 @@ namespace osu.Framework.Testing
 
             var directedGraph = getDirectedGraph();
 
-            return getReferencedFiles(getTypesFromFile(changedFile), directedGraph);
+            return getReferencedFiles(await getTestTypeReference(testType), getTypesFromFile(changedFile), directedGraph);
         }
 
         public async Task<IReadOnlyCollection<string>> GetReferencedAssemblies(Type testType, string changedFile) => await Task.Run(() =>
@@ -106,12 +106,6 @@ namespace osu.Framework.Testing
 
             logger.Add("Building reference map...");
 
-            var compiledTestProject = await compileProjectAsync(findTestProject());
-            var compiledTestType = compiledTestProject.GetTypeByMetadataName(testType.FullName);
-
-            if (compiledTestType == null)
-                throw new InvalidOperationException("Failed to retrieve test type from the solution.");
-
             if (referenceMap.Count > 0)
             {
                 logger.Add("Attempting to use cache...");
@@ -154,7 +148,7 @@ namespace osu.Framework.Testing
             if (referenceMap.Count == 0)
             {
                 // We have no cache available, so we must rebuild the whole map.
-                await buildReferenceMapRecursiveAsync(TypeReference.FromSymbol(compiledTestType));
+                await buildReferenceMapRecursiveAsync(await getTestTypeReference(testType));
             }
         }
 
@@ -308,12 +302,18 @@ namespace osu.Framework.Testing
 
             var result = new Dictionary<TypeReference, DirectedTypeNode>();
 
-            // Traverse through the reference map and assign parents to all children referenced types.
+            // Traverse through the reference map and assign parents/children to referenced types.
             foreach (var kvp in referenceMap)
             {
                 var parentNode = getNode(kvp.Key);
+
                 foreach (var typeRef in kvp.Value)
-                    getNode(typeRef).Parents.Add(parentNode);
+                {
+                    var childNode = getNode(typeRef);
+
+                    childNode.Parents.Add(parentNode);
+                    parentNode.Children.Add(childNode);
+                }
             }
 
             return result;
@@ -329,89 +329,84 @@ namespace osu.Framework.Testing
         /// <summary>
         /// Traverses a directed graph to find all direct and indirect references to a set of <see cref="TypeReference"/>s. References are returned as file names.
         /// </summary>
-        /// <param name="sources">The <see cref="TypeReference"/>s to search from.</param>
+        /// <param name="testType">The <see cref="TypeReference"/> corresponding to the test type.</param>
+        /// <param name="changedSources">The <see cref="TypeReference"/>s corresponding to the changed files.</param>
         /// <param name="directedGraph">The directed graph generated through <see cref="getDirectedGraph"/>.</param>
-        /// <returns>All files containing direct or indirect references to the given <paramref name="sources"/>.</returns>
-        private HashSet<string> getReferencedFiles(IEnumerable<TypeReference> sources, IReadOnlyDictionary<TypeReference, DirectedTypeNode> directedGraph)
+        /// <returns>All files containing direct or indirect references to the given <paramref name="changedSources"/>.</returns>
+        private HashSet<string> getReferencedFiles(TypeReference testType, IEnumerable<TypeReference> changedSources, IReadOnlyDictionary<TypeReference, DirectedTypeNode> directedGraph)
         {
             logger.Add("Retrieving referenced files...");
 
-            // Iterate through the graph and find the "expansion factor" at each node. The expansion factor is a count of how many nodes it or any of its parents have opened up.
-            // As a node opens up more nodes, a successful re-compilation becomes increasingly improbable as integral parts of the game may start getting touched,
-            // so the maximal expansion factor must be constrained to increase the probability of a successful re-compilation.
-            foreach (var s in sources)
-                computeExpansionFactors(directedGraph[s]);
+            foreach (var s in changedSources)
+                markNodesContainingEndPoints(directedGraph[testType], directedGraph[s]);
 
             var result = new HashSet<string>();
 
-            foreach (var s in sources)
+            foreach (var n in directedGraph.Values)
             {
-                var node = directedGraph[s];
+                if (!n.MarkedAsParent || !n.MarkedAsChild)
+                    continue;
 
-                // This shouldn't be super tight (e.g. log_2), but tight enough that a significant number of nodes do get excluded.
-                double range = Math.Log(node.ExpansionFactor, 1.25d);
-
-                var exclusionRange = (
-                    min: range,
-                    max: node.ExpansionFactor - range);
-
-                // This covers for two cases: max < min, and relaxes the expansion for small hierarchies (100 intermediate nodes).
-                if (Math.Abs(exclusionRange.max - exclusionRange.min) < 100)
-                    exclusionRange = (double.MaxValue, double.MaxValue);
-
-                getReferencedFilesRecursive(directedGraph[s], result, exclusionRange);
+                // Add all the current type's locations to the resulting set.
+                foreach (var location in n.Reference.Symbol.Locations)
+                {
+                    var syntaxTree = location.SourceTree;
+                    if (syntaxTree != null)
+                        result.Add(syntaxTree.FilePath);
+                }
             }
+
+            logger.Add("Found referenced files:");
+            foreach (var f in result)
+                logger.Add(f);
 
             return result;
         }
 
-        private bool computeExpansionFactors(DirectedTypeNode node, HashSet<DirectedTypeNode> seenTypes = null)
+        /// <summary>
+        /// Sets <see cref="DirectedTypeNode.MarkedAsParent"/> and <see cref="DirectedTypeNode.MarkedAsChild"/> for nodes in the graph joining two endpoints.
+        /// </summary>
+        /// <param name="topEndPoint">The endpoint at the top of the graph.</param>
+        /// <param name="bottomEndPoint">The endpoint at the bottom of the graph.</param>
+        private void markNodesContainingEndPoints(DirectedTypeNode topEndPoint, DirectedTypeNode bottomEndPoint)
         {
-            seenTypes ??= new HashSet<DirectedTypeNode>();
-            if (seenTypes.Contains(node))
-                return false;
+            // The graph joining the two endpoints may be thought of as a diamond-graph with a complex set of central nodes that may be joined to either one or both of the endpoints.
+            // We need to find every node in the graph that is joined to _both_ endpoints.
 
-            seenTypes.Add(node);
+            // Since cycles exist, a recursive iteration will run into edge cases that will incorrectly mark nodes in attempts to avoid infinite-recursion.
+            // Instead, a "flow" algorithm is devised which iterates once through all parents (recursively) of bottomEndPoint, and a second time over all children (recursively) from topEndPoint.
 
-            node.ExpansionFactor = (ulong)node.Parents.Count;
+            // Both iterations are guaranteed to converge to the other endpoint and will at some point have stepped over all central nodes joined by both endpoints.
 
-            foreach (var p in node.Parents)
+            // MarkA: All parents of bottomEndPoint (recursively).
+            mark(bottomEndPoint, n => n.Parents, n => n.MarkedAsParent = true);
+
+            // MarkB: All children of topEndPoint (recursively).
+            mark(topEndPoint, n => n.Children, n => n.MarkedAsChild = true);
+
+            static void mark(DirectedTypeNode endPoint, Func<DirectedTypeNode, List<DirectedTypeNode>> getNext, Action<DirectedTypeNode> setMark)
             {
-                if (computeExpansionFactors(p, seenTypes))
-                    node.ExpansionFactor += p.ExpansionFactor;
+                var seenNodes = new HashSet<DirectedTypeNode>();
+                var toMark = new Queue<DirectedTypeNode>();
+
+                seenNodes.Add(endPoint);
+                toMark.Enqueue(endPoint);
+
+                while (toMark.Count > 0)
+                {
+                    var node = toMark.Dequeue();
+                    setMark(node);
+
+                    foreach (var c in getNext(node))
+                    {
+                        if (seenNodes.Contains(c))
+                            continue;
+
+                        seenNodes.Add(c);
+                        toMark.Enqueue(c);
+                    }
+                }
             }
-
-            return true;
-        }
-
-        private void getReferencedFilesRecursive(DirectedTypeNode node, HashSet<string> result, (double min, double max) exclusionRange, HashSet<DirectedTypeNode> seenTypes = null,
-                                                 int level = 0)
-        {
-            // Expansion is allowed on either side of the non-expansion range, i.e. all values satisfying the condition (min < X < max) are discarded.
-            if (node.ExpansionFactor > exclusionRange.min && node.ExpansionFactor < exclusionRange.max)
-                return;
-
-            // A '.' is prepended since the logger trims lines.
-            logger.Add($"{(level > 0 ? $".{new string(' ', level * 2 - 1)}| " : string.Empty)} {node.ExpansionFactor}: {node}");
-
-            // Don't go through duplicate nodes (multiple references from different types).
-            seenTypes ??= new HashSet<DirectedTypeNode>();
-            if (seenTypes.Contains(node))
-                return;
-
-            seenTypes.Add(node);
-
-            // Add all the current type's locations to the resulting set.
-            foreach (var location in node.Reference.Symbol.Locations)
-            {
-                var syntaxTree = location.SourceTree;
-                if (syntaxTree != null)
-                    result.Add(syntaxTree.FilePath);
-            }
-
-            // Follow through the process for all parents.
-            foreach (var p in node.Parents)
-                getReferencedFilesRecursive(p, result, exclusionRange, seenTypes, level + 1);
         }
 
         private bool typeInheritsFromGame(TypeReference reference)
@@ -472,6 +467,23 @@ namespace osu.Framework.Testing
         /// <param name="fileName">The target filename.</param>
         /// <returns>The <see cref="Project"/> that contains <paramref name="fileName"/>.</returns>
         private Project getProjectFromFile(string fileName) => solution.Projects.FirstOrDefault(p => p.Documents.Any(d => d.FilePath == fileName));
+
+        /// <summary>
+        /// Retrieves the <see cref="TypeReference"/> corresponding to a test type.
+        /// </summary>
+        /// <param name="testType">The test type.</param>
+        /// <returns>The <see cref="TypedReference"/>.</returns>
+        /// <exception cref="InvalidOperationException">If the test type couldn't be retrieved.</exception>
+        private async Task<TypeReference> getTestTypeReference(Type testType)
+        {
+            var compiledTestProject = await compileProjectAsync(findTestProject());
+            var compiledTestType = compiledTestProject.GetTypeByMetadataName(testType.FullName);
+
+            if (compiledTestType == null)
+                throw new InvalidOperationException("Failed to retrieve test type from the solution.");
+
+            return TypeReference.FromSymbol(compiledTestType);
+        }
 
         /// <summary>
         /// Retrieves the project which contains the currently-executing test.
@@ -535,12 +547,26 @@ namespace osu.Framework.Testing
         private class DirectedTypeNode : IEquatable<DirectedTypeNode>
         {
             public readonly TypeReference Reference;
+
+            /// <summary>
+            /// Direct incoming references to this <see cref="DirectedTypeNode"/>.
+            /// </summary>
             public readonly List<DirectedTypeNode> Parents = new List<DirectedTypeNode>();
 
             /// <summary>
-            /// The number of nodes expanded by this <see cref="DirectedTypeNode"/> and all parents recursively.
+            /// Direct outgoing references from this <see cref="DirectedTypeNode"/>.
             /// </summary>
-            public ulong ExpansionFactor;
+            public readonly List<DirectedTypeNode> Children = new List<DirectedTypeNode>();
+
+            /// <summary>
+            /// Whether this <see cref="DirectedTypeNode"/> is a parent of a target node (see: <see cref="markNodesContainingEndPoints"/>).
+            /// </summary>
+            public bool MarkedAsParent;
+
+            /// <summary>
+            /// Whether this <see cref="DirectedTypeNode"/> is a child of a target node (see: <see cref="markNodesContainingEndPoints"/>).
+            /// </summary>
+            public bool MarkedAsChild;
 
             public DirectedTypeNode(TypeReference reference)
             {
