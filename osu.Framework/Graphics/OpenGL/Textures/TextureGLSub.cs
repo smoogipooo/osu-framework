@@ -13,7 +13,7 @@ namespace osu.Framework.Graphics.OpenGL.Textures
 {
     internal class TextureGLSub : TextureGL
     {
-        private readonly TextureGLSingle parent;
+        private readonly TextureGL parent;
         private RectangleI bounds;
 
         public override TextureGL Native => parent.Native;
@@ -21,7 +21,13 @@ namespace osu.Framework.Graphics.OpenGL.Textures
         public override int TextureId => parent.TextureId;
         public override bool Loaded => parent.Loaded;
 
-        public TextureGLSub(RectangleI bounds, TextureGLSingle parent)
+        internal override bool IsQueuedForUpload
+        {
+            get => parent.IsQueuedForUpload;
+            set => parent.IsQueuedForUpload = value;
+        }
+
+        public TextureGLSub(RectangleI bounds, TextureGL parent)
         {
             // If GLWrapper is not initialized at this point, it means we do not have OpenGL available
             // and thus will never draw anything. In this case it is fine if the parent texture is null.
@@ -93,9 +99,11 @@ namespace osu.Framework.Graphics.OpenGL.Textures
         public override void SetData(ITextureUpload upload)
         {
             if (upload.Bounds.Width > bounds.Width || upload.Bounds.Height > bounds.Height)
+            {
                 throw new ArgumentOutOfRangeException(
-                    $"Texture is too small to fit the requested upload. Texture size is {bounds.Width} x {bounds.Height}, upload size is {upload.Bounds.Width} x {upload.Bounds.Height}.",
-                    nameof(upload));
+                    nameof(upload),
+                    $"Texture is too small to fit the requested upload. Texture size is {bounds.Width} x {bounds.Height}, upload size is {upload.Bounds.Width} x {upload.Bounds.Height}.");
+            }
 
             if (upload.Bounds.IsEmpty)
                 upload.Bounds = bounds;
