@@ -444,6 +444,48 @@ namespace osu.Framework.Tests.Layout
             AddUntilStep("top-most parent is not masked away", () => !topMostParent.IsMaskedAway);
         }
 
+        /// <summary>
+        /// Tests a nested hierarchy of auto-sized containers, in which content is added after <see cref="Drawable.IsMaskedAway"/> becomes true.
+        /// The added content causes a layout transform, which eventually causes the full hierarchy to become visible on screen.
+        /// </summary>
+        [Test]
+        public void TestNestedAutoSizeWithLayoutDurationInitiallyMaskedAway()
+        {
+            Container topMostParent = null;
+            Container<Drawable> bottomMostParent = null;
+
+            AddStep("create test", () =>
+            {
+                Child = topMostParent = new Container
+                {
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y,
+                    Y = 1, // Definitely off-screen
+                    Anchor = Anchor.BottomCentre,
+                    Origin = Anchor.BottomCentre,
+                    Child = bottomMostParent = new FillFlowContainer
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        LayoutDuration = 1000,
+                        Anchor = Anchor.BottomCentre,
+                        Origin = Anchor.BottomCentre,
+                        Direction = FillDirection.Vertical,
+                    }
+                };
+            });
+
+            AddUntilStep("top-most parent is masked away", () => topMostParent.IsMaskedAway);
+
+            AddStep("add bottom-most child", () => bottomMostParent.Child = new Box
+            {
+                RelativeSizeAxes = Axes.X,
+                Height = 100
+            });
+
+            AddUntilStep("top-most parent is not masked away", () => !topMostParent.IsMaskedAway);
+        }
+
         private class TestBox1 : Box
         {
             public override bool RemoveWhenNotAlive => false;
