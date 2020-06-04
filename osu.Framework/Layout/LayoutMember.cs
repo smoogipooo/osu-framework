@@ -76,6 +76,8 @@ namespace osu.Framework.Layout
             Parent?.ValidateSuperTree(Invalidation);
             FrameStatistics.Increment(StatisticsCounterType.Refreshes);
         }
+
+        public override string ToString() => $"Valid: {IsValid}";
     }
 
     /// <summary>

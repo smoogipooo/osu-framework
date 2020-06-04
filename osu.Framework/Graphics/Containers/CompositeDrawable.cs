@@ -468,7 +468,7 @@ namespace osu.Framework.Graphics.Containers
             drawable.IsAlive = false;
 
             if (AutoSizeAxes != Axes.None)
-                Invalidate(Invalidation.RequiredParentSizeToFit, InvalidationSource.Child);
+                InvalidateChildrenSizeDependencies(Invalidation.RequiredParentSizeToFit, AutoSizeAxes, drawable);
 
             return true;
         }
@@ -506,7 +506,7 @@ namespace osu.Framework.Graphics.Containers
             RequestsPositionalInputSubTree = RequestsPositionalInput;
 
             if (AutoSizeAxes != Axes.None)
-                Invalidate(Invalidation.RequiredParentSizeToFit, InvalidationSource.Child);
+                InvalidateChildrenSizeDependencies(Invalidation.RequiredParentSizeToFit, AutoSizeAxes, null);
         }
 
         /// <summary>
@@ -549,7 +549,7 @@ namespace osu.Framework.Graphics.Containers
             internalChildren.Add(drawable);
 
             if (AutoSizeAxes != Axes.None)
-                Invalidate(Invalidation.RequiredParentSizeToFit, InvalidationSource.Child);
+                InvalidateChildrenSizeDependencies(Invalidation.RequiredParentSizeToFit, AutoSizeAxes, drawable);
         }
 
         /// <summary>
