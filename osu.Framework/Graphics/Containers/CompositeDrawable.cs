@@ -506,7 +506,7 @@ namespace osu.Framework.Graphics.Containers
             RequestsPositionalInputSubTree = RequestsPositionalInput;
 
             if (AutoSizeAxes != Axes.None)
-                InvalidateChildrenSizeDependencies(Invalidation.RequiredParentSizeToFit, AutoSizeAxes, null);
+                InvalidateChildrenSizeDependencies(Invalidation.RequiredParentSizeToFit, AutoSizeAxes, this);
         }
 
         /// <summary>
@@ -1014,16 +1014,42 @@ namespace osu.Framework.Graphics.Containers
         internal void InvalidateChildrenSizeDependencies(Invalidation invalidation, Axes axes, Drawable source)
         {
             // Store the current state of the children size dependencies.
-            // This state may be restored later if the invalidation proved to be unnecessary.
+            // This state may be restored later if the invalidation was proved to be unnecessary.
             bool wasValid = childrenSizeDependencies.IsValid;
 
-            // The invalidation still needs to occur as normal, since a derived CompositeDrawable may want to respond to children size invalidations.
+            // Invalidate ourselves as normal, since a derived CompositeDrawable may want to respond to children size invalidations.
             Invalidate(invalidation, InvalidationSource.Child);
 
-            // If all the changed axes were bypassed and an invalidation occurred, the children size dependencies can immediately be
-            // re-validated without a recomputation, as a recomputation would not change the auto-sized size.
-            if (wasValid && (axes & source.BypassAutoSizeAxes) == axes)
-                childrenSizeDependencies.Validate();
+            if (source != this)
+            {
+                // Exclude the axes which the child has bypassed.
+                axes &= ~source.BypassAutoSizeAxes;
+
+                // If all changed axes were bypassed by the child, then the LOCAL auto-size state will not change.
+                if (axes == 0)
+                {
+                    // If our local state will not change and it was previously valid, then the re-computation is stopped early by immediately re-validating.
+                    if (wasValid)
+                        childrenSizeDependencies.Validate();
+
+                    // Since our local state doesn't change, nothing more needs to be done.
+                    return;
+                }
+            }
+
+            // If we've reached here, then the local state MUST have been invalidated.
+
+            // Invalidations don't automatically propagate upwards by themselves (see: https://github.com/ppy/osu-framework/issues/3369), so we need to manually
+            // propagate to ensure that RequiresChildrenUpdate remains true throughout the hierarchy while auto-size computations are taking place.
+            // Without this, UpdateSubTree() will stop early for CompositeDrawable's that have IsMaskedAway = true.
+
+            // The above process stops when a CompositeDrawable is not auto-sizing on any of the changed axes.
+            axes &= AutoSizeAxes;
+            if (axes == 0)
+                return;
+
+            // Propagate the invalidation upwards.
+            Parent?.InvalidateChildrenSizeDependencies(invalidation, axes, this);
         }
 
         #endregion
@@ -1664,7 +1690,8 @@ namespace osu.Framework.Graphics.Containers
                     throw new InvalidOperationException("No axis can be relatively sized and automatically sized at the same time.");
 
                 autoSizeAxes = value;
-                childrenSizeDependencies.Invalidate();
+
+                InvalidateChildrenSizeDependencies(Invalidation.RequiredParentSizeToFit, AutoSizeAxes, this);
                 OnSizingChanged();
             }
         }
