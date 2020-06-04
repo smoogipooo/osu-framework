@@ -7,14 +7,12 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Layout;
-using osu.Framework.Testing;
 using osu.Framework.Tests.Visual;
 using osu.Framework.Utils;
 using osuTK;
 
 namespace osu.Framework.Tests.Layout
 {
-    [HeadlessTest]
     public class TestSceneContainerLayout : FrameworkTestScene
     {
         /// <summary>
@@ -403,6 +401,47 @@ namespace osu.Framework.Tests.Layout
             });
 
             AddAssert("child not invalidated", () => !invalidated);
+        }
+
+        /// <summary>
+        /// Tests a nested hierarchy of auto-sized containers, in which content is added after <see cref="Drawable.IsMaskedAway"/> becomes true,
+        /// which should cause the content to become visible on screen.
+        /// </summary>
+        [Test]
+        public void TestNestedAutoSizeWithInitiallyMaskedAway()
+        {
+            Container topMostParent = null;
+            Container<Drawable> bottomMostParent = null;
+
+            AddStep("create test", () =>
+            {
+                Child = topMostParent = new Container
+                {
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y,
+                    Y = 1, // Definitely off-screen
+                    Anchor = Anchor.BottomCentre,
+                    Origin = Anchor.BottomCentre,
+                    Child = bottomMostParent = new FillFlowContainer
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        Anchor = Anchor.BottomCentre,
+                        Origin = Anchor.BottomCentre,
+                        Direction = FillDirection.Vertical,
+                    }
+                };
+            });
+
+            AddUntilStep("top-most parent is masked away", () => topMostParent.IsMaskedAway);
+
+            AddStep("add bottom-most child", () => bottomMostParent.Child = new Box
+            {
+                RelativeSizeAxes = Axes.X,
+                Height = 100
+            });
+
+            AddUntilStep("top-most parent is not masked away", () => !topMostParent.IsMaskedAway);
         }
 
         private class TestBox1 : Box
