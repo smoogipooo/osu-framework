@@ -240,6 +240,8 @@ namespace osu.Framework.Platform
 
         private void unobservedExceptionHandler(object sender, UnobservedTaskExceptionEventArgs args)
         {
+            Debug.Assert(args.Exception != null);
+
             args.Exception.Data["unhandled"] = "unobserved";
             handleException(args.Exception);
         }
@@ -416,7 +418,7 @@ namespace osu.Framework.Platform
 
                 DrawThread.Scheduler.Add(() =>
                 {
-                    if (Window is SDLWindow win)
+                    if (Window is DesktopWindow win)
                         win.MakeCurrent();
                     else if (GraphicsContext.CurrentContext == null)
                         throw new GraphicsContextMissingException();
@@ -481,8 +483,6 @@ namespace osu.Framework.Platform
                 SixLabors.ImageSharp.Configuration.Default.MemoryAllocator = ArrayPoolMemoryAllocator.CreateWithModeratePooling();
             }
 
-            DebugUtils.HostAssembly = game.GetType().Assembly;
-
             if (ExecutionState != ExecutionState.Idle)
                 throw new InvalidOperationException("A game that has already been run cannot be restarted.");
 
@@ -510,13 +510,9 @@ namespace osu.Framework.Platform
                 Trace.Listeners.Add(new ThrowingTraceListener());
 
                 var assembly = DebugUtils.GetEntryAssembly();
-                string assemblyPath = DebugUtils.GetEntryPath();
 
                 Logger.GameIdentifier = Name;
-                Logger.VersionIdentifier = assembly.GetName().Version.ToString();
-
-                if (assemblyPath != null)
-                    Environment.CurrentDirectory = assemblyPath;
+                Logger.VersionIdentifier = assembly.GetName().Version?.ToString() ?? Logger.VersionIdentifier;
 
                 Dependencies.CacheAs(this);
 
@@ -534,6 +530,8 @@ namespace osu.Framework.Platform
                 {
                     Window.SetupWindow(Config);
                     Window.Title = $@"osu!framework (running ""{Name}"")";
+
+                    Window.Create();
 
                     IsActive.BindTo(Window.IsActive);
                 }
@@ -561,7 +559,7 @@ namespace osu.Framework.Platform
                 {
                     if (Window != null)
                     {
-                        if (Window is SDLWindow window)
+                        if (Window is DesktopWindow window)
                             window.Update += windowUpdate;
                         else
                             Window.UpdateFrame += (o, e) => windowUpdate();
