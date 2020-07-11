@@ -263,6 +263,14 @@ namespace osu.Framework.Graphics.Containers
             base.ClearInternal(disposeChildren);
         }
 
+        protected override void Dispose(bool isDisposing)
+        {
+            foreach (var child in InternalChildren)
+                child.LifetimeChanged -= childLifetimeChanged;
+
+            base.Dispose(isDisposing);
+        }
+
         /// <summary>
         /// Called when the clock is crossed child lifetime boundary.
         /// If child's lifetime is changed during this callback and that causes additional crossings,
