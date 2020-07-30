@@ -46,6 +46,7 @@ namespace osu.Framework.Testing
 
         public async Task<IReadOnlyCollection<string>> GetReferencedFiles(Type testType, string changedFile)
         {
+            referenceMap.Clear();
             clearCaches();
             updateFile(changedFile);
 
@@ -145,7 +146,7 @@ namespace osu.Framework.Testing
                     var semanticModel = await getSemanticModelAsync(syntaxTree);
                     var referencedTypes = await getReferencedTypesAsync(semanticModel);
 
-                    referenceMap[TypeReference.FromSymbol(t.Symbol)] = referencedTypes;
+                    referenceMap[TypeReference.FromSymbol(t.Symbol, t.Flags)] = referencedTypes;
 
                     foreach (var referenced in referencedTypes)
                         await buildReferenceMapRecursiveAsync(referenced);
@@ -180,6 +181,9 @@ namespace osu.Framework.Testing
 
                 foreach (var referenced in referencedTypes)
                 {
+                    if (referenced.Flags != ReferenceFlags.NewInstance)
+                        continue;
+
                     // We don't want to cycle over types that have already been explored.
                     if (!referenceMap.ContainsKey(referenced))
                     {
@@ -219,50 +223,99 @@ namespace osu.Framework.Testing
             var result = new HashSet<TypeReference>();
 
             var root = await semanticModel.SyntaxTree.GetRootAsync();
-            var descendantNodes = root.DescendantNodes(n =>
+
+            // Base classes (assume new instance).
+            foreach (var n in root.DescendantNodes().OfType<SimpleBaseTypeSyntax>().SelectMany(n => n.DescendantNodes()))
             {
-                var kind = n.Kind();
-
-                // Ignored:
-                // - Entire using lines.
-                // - Namespace names (not entire namespaces).
-                // - Entire static classes.
-
-                return kind != SyntaxKind.UsingDirective
-                       && kind != SyntaxKind.NamespaceKeyword
-                       && (kind != SyntaxKind.ClassDeclaration || ((ClassDeclarationSyntax)n).Modifiers.All(m => m.Kind() != SyntaxKind.StaticKeyword));
-            });
-
-            // Find all the named type symbols in the syntax tree, and mark + recursively iterate through them.
-            foreach (var node in descendantNodes)
-            {
-                switch (node.Kind())
+                switch (n.Kind())
                 {
                     case SyntaxKind.GenericName:
                     case SyntaxKind.IdentifierName:
-                    {
-                        if (semanticModel.GetSymbolInfo(node).Symbol is INamedTypeSymbol t)
-                            addTypeSymbol(t);
+                        if (semanticModel.GetSymbolInfo(n).Symbol is INamedTypeSymbol t)
+                            addTypeSymbol(t, ReferenceFlags.NewInstance);
                         break;
-                    }
+                }
+            }
 
+            // Object creations.
+            foreach (var n in root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>())
+            {
+                if (semanticModel.GetTypeInfo(n).Type is INamedTypeSymbol t)
+                    addTypeSymbol(t, ReferenceFlags.NewInstance);
+            }
+
+            // Variables.
+            foreach (var n in root.DescendantNodes().OfType<VariableDeclarationSyntax>().SelectMany(n => n.DescendantNodes()))
+            {
+                switch (n.Kind())
+                {
+                    case SyntaxKind.GenericName:
+                    case SyntaxKind.IdentifierName:
+                        if (semanticModel.GetSymbolInfo(n).Symbol is INamedTypeSymbol t)
+                            addTypeSymbol(t, ReferenceFlags.Reference);
+                        break;
+                }
+            }
+
+            // as/is.
+            foreach (var n in root.DescendantNodes().OfType<BinaryExpressionSyntax>())
+            {
+                switch (n.Kind())
+                {
                     case SyntaxKind.AsExpression:
                     case SyntaxKind.IsExpression:
-                    case SyntaxKind.SizeOfExpression:
-                    case SyntaxKind.TypeOfExpression:
-                    case SyntaxKind.CastExpression:
-                    case SyntaxKind.ObjectCreationExpression:
                     {
-                        if (semanticModel.GetTypeInfo(node).Type is INamedTypeSymbol t)
-                            addTypeSymbol(t);
+                        if (semanticModel.GetTypeInfo(n).Type is INamedTypeSymbol t)
+                            addTypeSymbol(t, ReferenceFlags.Reference);
+
                         break;
                     }
                 }
             }
 
+            // typeof().
+            foreach (var n in root.DescendantNodes().OfType<TypeOfExpressionSyntax>().SelectMany(n => n.DescendantNodes()))
+            {
+                if (semanticModel.GetTypeInfo(n).Type is INamedTypeSymbol t)
+                    addTypeSymbol(t, ReferenceFlags.Reference);
+            }
+
+            // Casts.
+            foreach (var n in root.DescendantNodes().OfType<CastExpressionSyntax>())
+            {
+                if (semanticModel.GetTypeInfo(n).Type is INamedTypeSymbol t)
+                    addTypeSymbol(t, ReferenceFlags.Reference);
+            }
+
+            // Method declaration.
+            foreach (var n in root.DescendantNodes().OfType<MethodDeclarationSyntax>().SelectMany(n => n.DescendantNodes(n2 => false)))
+            {
+                switch (n.Kind())
+                {
+                    case SyntaxKind.GenericName:
+                    case SyntaxKind.IdentifierName:
+                        if (semanticModel.GetSymbolInfo(n).Symbol is INamedTypeSymbol t)
+                            addTypeSymbol(t, ReferenceFlags.Reference);
+                        break;
+                }
+            }
+
+            // Method parameters.
+            foreach (var n in root.DescendantNodes().OfType<ParameterSyntax>().SelectMany(n => n.DescendantNodes()))
+            {
+                switch (n.Kind())
+                {
+                    case SyntaxKind.GenericName:
+                    case SyntaxKind.IdentifierName:
+                        if (semanticModel.GetSymbolInfo(n).Symbol is INamedTypeSymbol t)
+                            addTypeSymbol(t, ReferenceFlags.Reference);
+                        break;
+                }
+            }
+
             return result;
 
-            void addTypeSymbol(INamedTypeSymbol typeSymbol)
+            void addTypeSymbol(INamedTypeSymbol typeSymbol, ReferenceFlags flags)
             {
                 // Exclude types marked with the [ExcludeFromDynamicCompile] attribute
                 if (typeSymbol.GetAttributes().Any(attrib => attrib.AttributeClass?.Name.Contains(exclude_attribute_name) ?? false))
@@ -271,7 +324,7 @@ namespace osu.Framework.Testing
                     return;
                 }
 
-                var reference = TypeReference.FromSymbol(typeSymbol);
+                var reference = TypeReference.FromSymbol(typeSymbol, flags);
 
                 if (typeInheritsFromGame(reference))
                 {
@@ -469,10 +522,12 @@ namespace osu.Framework.Testing
         private readonly struct TypeReference : IEquatable<TypeReference>
         {
             public readonly INamedTypeSymbol Symbol;
+            public readonly ReferenceFlags Flags;
 
-            public TypeReference(INamedTypeSymbol symbol)
+            public TypeReference(INamedTypeSymbol symbol, ReferenceFlags flags = default)
             {
                 Symbol = symbol;
+                Flags = flags;
             }
 
             public bool Equals(TypeReference other)
@@ -488,7 +543,7 @@ namespace osu.Framework.Testing
 
             public override string ToString() => Symbol.ToString();
 
-            public static TypeReference FromSymbol(INamedTypeSymbol symbol) => new TypeReference(symbol);
+            public static TypeReference FromSymbol(INamedTypeSymbol symbol, ReferenceFlags flags = default) => new TypeReference(symbol, flags);
         }
 
         /// <summary>
@@ -511,6 +566,28 @@ namespace osu.Framework.Testing
             public override int GetHashCode() => Reference.GetHashCode();
 
             public override string ToString() => Reference.ToString();
+        }
+
+        /// <summary>
+        /// Approximately describe how a <see cref="TypeReference"/> is used by its parent in code.
+        /// </summary>
+        [Flags]
+        private enum ReferenceFlags
+        {
+            /// <summary>
+            /// The use of the <see cref="TypeReference"/> is unknown.
+            /// </summary>
+            Unknown = 0,
+
+            /// <summary>
+            /// The <see cref="TypeReference"/> is referenced by its parent.
+            /// </summary>
+            Reference = 1 << 0,
+
+            /// <summary>
+            /// The <see cref="TypeReference"/> is created as a new instance by its parent.
+            /// </summary>
+            NewInstance = 1 << 1
         }
     }
 }
