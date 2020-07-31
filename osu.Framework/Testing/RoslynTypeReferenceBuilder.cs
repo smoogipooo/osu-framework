@@ -225,7 +225,7 @@ namespace osu.Framework.Testing
             var root = await semanticModel.SyntaxTree.GetRootAsync();
 
             // Base classes (assume new instance).
-            foreach (var n in root.DescendantNodes().OfType<SimpleBaseTypeSyntax>().SelectMany(n => n.DescendantNodes()))
+            foreach (var n in root.DescendantNodes().OfType<BaseTypeSyntax>().SelectMany(n => n.DescendantNodes()))
             {
                 switch (n.Kind())
                 {
@@ -237,80 +237,24 @@ namespace osu.Framework.Testing
                 }
             }
 
+            //
+            foreach (var n in root.DescendantNodes().OfType<TypeSyntax>().SelectMany(n => n.DescendantNodes()))
+            {
+                switch (n.Kind())
+                {
+                    case SyntaxKind.GenericName:
+                    case SyntaxKind.IdentifierName:
+                        if (semanticModel.GetSymbolInfo(n).Symbol is INamedTypeSymbol t)
+                            addTypeSymbol(t, ReferenceFlags.Reference);
+                        break;
+                }
+            }
+
             // Object creations.
             foreach (var n in root.DescendantNodes().OfType<ObjectCreationExpressionSyntax>())
             {
                 if (semanticModel.GetTypeInfo(n).Type is INamedTypeSymbol t)
                     addTypeSymbol(t, ReferenceFlags.NewInstance);
-            }
-
-            // Variables.
-            foreach (var n in root.DescendantNodes().OfType<VariableDeclarationSyntax>().SelectMany(n => n.DescendantNodes()))
-            {
-                switch (n.Kind())
-                {
-                    case SyntaxKind.GenericName:
-                    case SyntaxKind.IdentifierName:
-                        if (semanticModel.GetSymbolInfo(n).Symbol is INamedTypeSymbol t)
-                            addTypeSymbol(t, ReferenceFlags.Reference);
-                        break;
-                }
-            }
-
-            // as/is.
-            foreach (var n in root.DescendantNodes().OfType<BinaryExpressionSyntax>())
-            {
-                switch (n.Kind())
-                {
-                    case SyntaxKind.AsExpression:
-                    case SyntaxKind.IsExpression:
-                    {
-                        if (semanticModel.GetTypeInfo(n).Type is INamedTypeSymbol t)
-                            addTypeSymbol(t, ReferenceFlags.Reference);
-
-                        break;
-                    }
-                }
-            }
-
-            // typeof().
-            foreach (var n in root.DescendantNodes().OfType<TypeOfExpressionSyntax>().SelectMany(n => n.DescendantNodes()))
-            {
-                if (semanticModel.GetTypeInfo(n).Type is INamedTypeSymbol t)
-                    addTypeSymbol(t, ReferenceFlags.Reference);
-            }
-
-            // Casts.
-            foreach (var n in root.DescendantNodes().OfType<CastExpressionSyntax>())
-            {
-                if (semanticModel.GetTypeInfo(n).Type is INamedTypeSymbol t)
-                    addTypeSymbol(t, ReferenceFlags.Reference);
-            }
-
-            // Method declaration.
-            foreach (var n in root.DescendantNodes().OfType<MethodDeclarationSyntax>().SelectMany(n => n.DescendantNodes(n2 => false)))
-            {
-                switch (n.Kind())
-                {
-                    case SyntaxKind.GenericName:
-                    case SyntaxKind.IdentifierName:
-                        if (semanticModel.GetSymbolInfo(n).Symbol is INamedTypeSymbol t)
-                            addTypeSymbol(t, ReferenceFlags.Reference);
-                        break;
-                }
-            }
-
-            // Method parameters.
-            foreach (var n in root.DescendantNodes().OfType<ParameterSyntax>().SelectMany(n => n.DescendantNodes()))
-            {
-                switch (n.Kind())
-                {
-                    case SyntaxKind.GenericName:
-                    case SyntaxKind.IdentifierName:
-                        if (semanticModel.GetSymbolInfo(n).Symbol is INamedTypeSymbol t)
-                            addTypeSymbol(t, ReferenceFlags.Reference);
-                        break;
-                }
             }
 
             return result;
