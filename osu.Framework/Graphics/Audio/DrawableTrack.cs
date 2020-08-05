@@ -83,7 +83,15 @@ namespace osu.Framework.Graphics.Audio
 
         public bool HasCompleted => track.HasCompleted;
 
-        public void Reset() => track.Reset();
+        public void Reset()
+        {
+            Volume.Value = 1;
+
+            ResetSpeedAdjustments();
+
+            Stop();
+            Seek(0);
+        }
 
         public void Restart() => track.Restart();
 
