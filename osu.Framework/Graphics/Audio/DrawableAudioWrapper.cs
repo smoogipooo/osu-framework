@@ -98,6 +98,8 @@ namespace osu.Framework.Graphics.Audio
         public void RemoveAdjustment(AdjustableProperty type, BindableNumber<double> adjustBindable)
             => adjustments.RemoveAdjustment(type, adjustBindable);
 
+        public void RemoveAllAdjustments(AdjustableProperty type) => adjustments.RemoveAllAdjustments(type);
+
         /// <summary>
         /// Smoothly adjusts <see cref="Volume"/> over time.
         /// </summary>

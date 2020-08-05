@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using osu.Framework.Audio;
 using osu.Framework.Audio.Track;
 using osu.Framework.Timing;
 
@@ -23,6 +24,15 @@ namespace osu.Framework.Graphics.Audio
             : base(track, disposeTrackOnDisposal)
         {
             this.track = track;
+        }
+
+        /// <summary>
+        /// Removes all speed adjustments applied to this track.
+        /// </summary>
+        public void ResetSpeedAdjustments()
+        {
+            RemoveAllAdjustments(AdjustableProperty.Frequency);
+            RemoveAllAdjustments(AdjustableProperty.Tempo);
         }
 
         public event Action Completed
@@ -76,8 +86,6 @@ namespace osu.Framework.Graphics.Audio
         public void Reset() => track.Reset();
 
         public void Restart() => track.Restart();
-
-        public void ResetSpeedAdjustments() => track.ResetSpeedAdjustments();
 
         public bool Seek(double seek) => track.Seek(seek);
 
