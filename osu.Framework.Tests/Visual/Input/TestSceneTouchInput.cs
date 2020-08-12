@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input;
 using osu.Framework.Input.Events;
+using osu.Framework.Input.StateChanges;
 using osu.Framework.Input.States;
 using osu.Framework.Testing;
 using osuTK;
@@ -177,12 +178,22 @@ namespace osu.Framework.Tests.Visual.Input
 
                 return true;
             });
+
+            // All touch events have been handled, mouse input should not be performed.
+            // For simplicity, let's check whether we received mouse events or not.
+            AddAssert("no mouse input performed", () => receptors.All(r => r.MouseEvents.Count == 0));
         }
 
         [Test]
         public void TestMouseInputAppliedFromLatestTouch()
         {
             InputReceptor firstReceptor = null, lastReceptor = null;
+
+            AddStep("setup receptors to receive mouse-from-touch", () =>
+            {
+                foreach (var r in receptors)
+                    r.HandleTouch = _ => false;
+            });
 
             AddStep("retrieve receptors", () =>
             {
@@ -313,12 +324,106 @@ namespace osu.Framework.Tests.Visual.Input
             }
         }
 
-        private class InputReceptor : CompositeDrawable
+        [Test]
+        public void TestMouseEventFromTouchIndication()
+        {
+            InputReceptor primaryReceptor = null;
+
+            AddStep("retrieve primary receptor", () => primaryReceptor = receptors[(int)TouchSource.Touch1]);
+            AddStep("setup receptors to discard mouse-from-touch events", () =>
+            {
+                primaryReceptor.HandleTouch = _ => false;
+                primaryReceptor.HandleMouse = e => !(e.CurrentState.Mouse.LastSource is ISourcedFromTouch);
+            });
+
+            AddStep("perform input on primary touch", () =>
+            {
+                InputManager.BeginTouch(new Touch(TouchSource.Touch1, getTouchDownPos(TouchSource.Touch1)));
+                InputManager.MoveTouchTo(new Touch(TouchSource.Touch1, getTouchMovePos(TouchSource.Touch1)));
+                InputManager.EndTouch(new Touch(TouchSource.Touch1, getTouchUpPos(TouchSource.Touch1)));
+            });
+            AddAssert("no mouse event received", () => primaryReceptor.MouseEvents.Count == 0);
+
+            AddStep("perform input on mouse", () =>
+            {
+                InputManager.MoveMouseTo(getTouchDownPos(TouchSource.Touch1));
+                InputManager.PressButton(MouseButton.Left);
+                InputManager.MoveMouseTo(getTouchMovePos(TouchSource.Touch1));
+                InputManager.ReleaseButton(MouseButton.Left);
+            });
+            AddAssert("all mouse events received", () =>
+            {
+                // mouse moved.
+                if (!(primaryReceptor.MouseEvents.TryDequeue(out var me1) && me1 is MouseMoveEvent))
+                    return false;
+
+                // left down.
+                if (!(primaryReceptor.MouseEvents.TryDequeue(out var me2) && me2 is MouseDownEvent))
+                    return false;
+
+                // mouse dragged with left.
+                if (!(primaryReceptor.MouseEvents.TryDequeue(out var me3) && me3 is MouseMoveEvent))
+                    return false;
+                if (!(primaryReceptor.MouseEvents.TryDequeue(out var me4) && me4 is DragEvent))
+                    return false;
+
+                // left up.
+                if (!(primaryReceptor.MouseEvents.TryDequeue(out var me5) && me5 is MouseUpEvent))
+                    return false;
+
+                return primaryReceptor.MouseEvents.Count == 0;
+            });
+        }
+
+        [Test]
+        public void TestMouseStillReleasedOnHierarchyInterference()
+        {
+            InputReceptor primaryReceptor = null;
+
+            AddStep("retrieve primary receptor", () => primaryReceptor = receptors[(int)TouchSource.Touch1]);
+            AddStep("setup handlers to receive mouse", () =>
+            {
+                primaryReceptor.HandleTouch = _ => false;
+            });
+
+            AddStep("begin touch", () => InputManager.BeginTouch(new Touch(TouchSource.Touch1, getTouchDownPos(TouchSource.Touch1))));
+            AddAssert("primary receptor received mouse", () =>
+            {
+                bool event1 = primaryReceptor.MouseEvents.Dequeue() is MouseMoveEvent;
+                bool event2 = primaryReceptor.MouseEvents.Dequeue() is MouseDownEvent;
+                return event1 && event2 && primaryReceptor.MouseEvents.Count == 0;
+            });
+
+            AddStep("add drawable", () => primaryReceptor.Add(new InputReceptor(TouchSource.Touch1)
+            {
+                RelativeSizeAxes = Axes.Both,
+                HandleTouch = _ => true,
+            }));
+
+            AddStep("end touch", () => InputManager.EndTouch(new Touch(TouchSource.Touch1, getTouchDownPos(TouchSource.Touch1))));
+            AddAssert("primary receptor received mouse", () =>
+            {
+                bool event1 = primaryReceptor.MouseEvents.Dequeue() is MouseUpEvent;
+                return event1 && primaryReceptor.MouseEvents.Count == 0;
+            });
+            AddAssert("child receptor received nothing", () =>
+                primaryReceptor.TouchEvents.Count == 0 &&
+                primaryReceptor.MouseEvents.Count == 0);
+        }
+
+        private class InputReceptor : Container
         {
             public readonly TouchSource AssociatedSource;
 
             public readonly Queue<TouchEvent> TouchEvents = new Queue<TouchEvent>();
             public readonly Queue<MouseEvent> MouseEvents = new Queue<MouseEvent>();
+
+            public Func<TouchEvent, bool> HandleTouch;
+            public Func<MouseEvent, bool> HandleMouse;
+
+            protected override Container<Drawable> Content => content;
+
+            private readonly Container content;
 
             public InputReceptor(TouchSource source)
             {
@@ -338,6 +443,10 @@ namespace osu.Framework.Tests.Visual.Input
                         Text = source.ToString(),
                         Colour = Color4.Black,
                     },
+                    content = new Container
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                    }
                 };
             }
 
@@ -346,19 +455,29 @@ namespace osu.Framework.Tests.Visual.Input
                 switch (e)
                 {
                     case TouchEvent te:
-                        TouchEvents.Enqueue(te);
-                        return !(e is TouchUpEvent);
+                        if (HandleTouch?.Invoke(te) != false)
+                        {
+                            TouchEvents.Enqueue(te);
+                            return true;
+                        }
+
+                        break;
 
                     case MouseDownEvent _:
                     case MouseMoveEvent _:
                     case DragEvent _:
                     case MouseUpEvent _:
-                        MouseEvents.Enqueue((MouseEvent)e);
-                        return !(e is MouseUpEvent);
+                        if (HandleMouse?.Invoke((MouseEvent)e) != false)
+                        {
+                            MouseEvents.Enqueue((MouseEvent)e);
+                            return true;
+                        }
+
+                        break;
 
                     // not worth enqueuing, just handle for receiving drag.
-                    case DragStartEvent _:
-                        return true;
+                    case DragStartEvent dse:
+                        return HandleMouse?.Invoke(dse) ?? true;
                 }
 
                 return false;
