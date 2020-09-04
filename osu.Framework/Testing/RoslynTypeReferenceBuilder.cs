@@ -264,7 +264,14 @@ namespace osu.Framework.Testing
 
             void addTypeSymbol(INamedTypeSymbol typeSymbol)
             {
-                // Exclude types marked with the [ExcludeFromDynamicCompile] attribute
+                // Enums, interfaces, and abstract classes typically break class isolation models and cause too many files to recompile.
+                if (typeSymbol.TypeKind == TypeKind.Enum || typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract)
+                {
+                    logger.Add($"Type {typeSymbol.Name} is an enum, interface, or abstract class and has been excluded.");
+                    return;
+                }
+
+                // Exclude types marked with the [ExcludeFromDynamicCompile] attribute.
                 if (typeSymbol.GetAttributes().Any(attrib => attrib.AttributeClass?.Name.Contains(exclude_attribute_name) ?? false))
                 {
                     logger.Add($"Type {typeSymbol.Name} referenced but marked for exclusion.");
