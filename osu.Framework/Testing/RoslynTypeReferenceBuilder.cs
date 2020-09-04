@@ -265,7 +265,7 @@ namespace osu.Framework.Testing
 
             void addTypeSymbol(INamedTypeSymbol typeSymbol)
             {
-                // Enums, interfaces, and abstract classes typically break class isolation models and cause too many files to recompile.
+                // Exclude enums, interfaces, and abstract classes as they typically break class isolation models and cause too many files to recompile.
                 if (typeSymbol.TypeKind == TypeKind.Enum || typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract)
                 {
                     logger.Add($"Type {typeSymbol.Name} is an enum, interface, or abstract class and has been excluded.");
