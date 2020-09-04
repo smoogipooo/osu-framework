@@ -26,17 +26,13 @@ namespace osu.Framework.Testing
         public event Action<Exception> CompilationFailed;
 
         private readonly List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
-        private readonly HashSet<string> requiredFiles = new HashSet<string>();
 
         private T target;
 
         public void SetRecompilationTarget(T target)
         {
             if (this.target?.GetType().Name != target?.GetType().Name)
-            {
-                requiredFiles.Clear();
                 referenceBuilder.Reset();
-            }
 
             this.target = target;
         }
@@ -125,74 +121,32 @@ namespace osu.Framework.Testing
 
                 CompilationStarted?.Invoke();
 
-                var newRequiredFiles = await referenceBuilder.GetReferencedFiles(targetType, changedFile);
-                foreach (var f in newRequiredFiles)
-                    requiredFiles.Add(f);
-
                 var requiredAssemblies = await referenceBuilder.GetReferencedAssemblies(targetType, changedFile);
 
-                var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-
-                // ReSharper disable once RedundantExplicitArrayCreation this doesn't compile when the array is empty
-                var parseOptions = new CSharpParseOptions(preprocessorSymbols: new string[]
-                {
-#if DEBUG
-                    "DEBUG",
-#endif
-#if TRACE
-                    "TRACE",
-#endif
-#if RELEASE
-                    "RELEASE",
-#endif
-                }, languageVersion: LanguageVersion.Latest);
-
                 var references = requiredAssemblies.Where(a => !string.IsNullOrEmpty(a))
-                                                   .Select(a => MetadataReference.CreateFromFile(a));
+                                                   .Select(a => MetadataReference.CreateFromFile(a))
+                                                   .ToArray();
 
-                // ensure we don't duplicate the dynamic suffix.
-                string assemblyNamespace = targetType.Assembly.GetName().Name?.Replace(".Dynamic", "");
+                Type type = null;
+                Exception exception = null;
 
-                string assemblyVersion = $"{++currentVersion}.0.*";
-                string dynamicNamespace = $"{assemblyNamespace}.Dynamic";
+                var files = new HashSet<string>();
 
-                var compilation = CSharpCompilation.Create(
-                    dynamicNamespace,
-                    requiredFiles.Select(file => CSharpSyntaxTree.ParseText(File.ReadAllText(file, Encoding.UTF8), parseOptions, file, encoding: Encoding.UTF8))
-                                 // Compile the assembly with a new version so that it replaces the existing one
-                                 .Append(CSharpSyntaxTree.ParseText($"using System.Reflection; [assembly: AssemblyVersion(\"{assemblyVersion}\")]", parseOptions)),
-                    references,
-                    options
-                );
-
-                using (var pdbStream = new MemoryStream())
-                using (var peStream = new MemoryStream())
+                foreach (var g in (await referenceBuilder.GetReferencedFiles(targetType, changedFile)).GroupBy(f => f.Priority))
                 {
-                    var compilationResult = compilation.Emit(peStream, pdbStream);
+                    foreach (var f in g.SelectMany(f => f.Paths).Distinct())
+                        files.Add(f);
 
-                    if (compilationResult.Success)
-                    {
-                        peStream.Seek(0, SeekOrigin.Begin);
-                        pdbStream.Seek(0, SeekOrigin.Begin);
-
-                        CompilationFinished?.Invoke(
-                            Assembly.Load(peStream.ToArray(), pdbStream.ToArray()).GetModules()[0].GetTypes().LastOrDefault(t => t.FullName == targetType.FullName)
-                        );
-                    }
+                    if (tryCompile(targetType, files, references, out var localType, out var localException))
+                        type = localType;
                     else
-                    {
-                        var exceptions = new List<Exception>();
+                        exception = localException;
+                }
 
-                        foreach (var diagnostic in compilationResult.Diagnostics)
-                        {
-                            if (diagnostic.Severity < DiagnosticSeverity.Error)
-                                continue;
-
-                            exceptions.Add(new InvalidOperationException(diagnostic.ToString()));
-                        }
-
-                        throw new AggregateException(exceptions.ToArray());
-                    }
+                if (type == null)
+                {
+                    Debug.Assert(exception != null);
+                    throw exception;
                 }
             }
             catch (Exception ex)
@@ -202,6 +156,70 @@ namespace osu.Framework.Testing
             finally
             {
                 isCompiling = false;
+            }
+        }
+
+        private bool tryCompile(Type targetType, IEnumerable<string> files, IEnumerable<PortableExecutableReference> assemblies, out Type result, out Exception exception)
+        {
+            var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+
+            // ReSharper disable once RedundantExplicitArrayCreation this doesn't compile when the array is empty
+            var parseOptions = new CSharpParseOptions(preprocessorSymbols: new string[]
+            {
+#if DEBUG
+                "DEBUG",
+#endif
+#if TRACE
+                "TRACE",
+#endif
+#if RELEASE
+                    "RELEASE",
+#endif
+            }, languageVersion: LanguageVersion.Latest);
+
+            // ensure we don't duplicate the dynamic suffix.
+            string assemblyNamespace = targetType.Assembly.GetName().Name?.Replace(".Dynamic", "");
+
+            string assemblyVersion = $"{++currentVersion}.0.*";
+            string dynamicNamespace = $"{assemblyNamespace}.Dynamic";
+
+            var compilation = CSharpCompilation.Create(
+                dynamicNamespace,
+                files.Select(file => CSharpSyntaxTree.ParseText(File.ReadAllText(file, Encoding.UTF8), parseOptions, file, encoding: Encoding.UTF8))
+                     // Compile the assembly with a new version so that it replaces the existing one
+                     .Append(CSharpSyntaxTree.ParseText($"using System.Reflection; [assembly: AssemblyVersion(\"{assemblyVersion}\")]", parseOptions)),
+                assemblies,
+                options
+            );
+
+            using (var pdbStream = new MemoryStream())
+            using (var peStream = new MemoryStream())
+            {
+                var compilationResult = compilation.Emit(peStream, pdbStream);
+
+                if (compilationResult.Success)
+                {
+                    peStream.Seek(0, SeekOrigin.Begin);
+                    pdbStream.Seek(0, SeekOrigin.Begin);
+
+                    result = Assembly.Load(peStream.ToArray(), pdbStream.ToArray()).GetModules()[0].GetTypes().LastOrDefault(t => t.FullName == targetType.FullName);
+                    exception = null;
+                    return true;
+                }
+
+                var exceptions = new List<Exception>();
+
+                foreach (var diagnostic in compilationResult.Diagnostics)
+                {
+                    if (diagnostic.Severity < DiagnosticSeverity.Error)
+                        continue;
+
+                    exceptions.Add(new InvalidOperationException(diagnostic.ToString()));
+                }
+
+                result = null;
+                exception = new AggregateException(exceptions.ToArray());
+                return false;
             }
         }
 

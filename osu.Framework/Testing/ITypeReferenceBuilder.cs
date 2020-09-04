@@ -21,7 +21,7 @@ namespace osu.Framework.Testing
         /// <param name="testType">The <see cref="Type"/>.</param>
         /// <param name="changedFile">The file.</param>
         /// <returns>The file names containing all types referenced between <paramref name="testType"/> and <paramref name="changedFile"/>.</returns>
-        Task<IReadOnlyCollection<string>> GetReferencedFiles(Type testType, string changedFile);
+        Task<IReadOnlyCollection<ReferencedFile>> GetReferencedFiles(Type testType, string changedFile);
 
         /// <summary>
         /// Retrieves all assemblies referenced by the type hierarchy joining a given <see cref="Type"/> to a given file.

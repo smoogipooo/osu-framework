@@ -11,8 +11,8 @@ namespace osu.Framework.Testing
     {
         public Task Initialise(string solutionFile) => Task.CompletedTask;
 
-        public async Task<IReadOnlyCollection<string>> GetReferencedFiles(Type testType, string changedFile)
-            => await Task.FromResult(Array.Empty<string>());
+        public async Task<IReadOnlyCollection<ReferencedFile>> GetReferencedFiles(Type testType, string changedFile)
+            => await Task.FromResult(Array.Empty<ReferencedFile>());
 
         public async Task<IReadOnlyCollection<string>> GetReferencedAssemblies(Type testType, string changedFile)
             => await Task.FromResult(Array.Empty<string>());

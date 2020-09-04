@@ -45,7 +45,7 @@ namespace osu.Framework.Testing
             solution = await MSBuildWorkspace.Create().OpenSolutionAsync(solutionFile);
         }
 
-        public async Task<IReadOnlyCollection<string>> GetReferencedFiles(Type testType, string changedFile)
+        public async Task<IReadOnlyCollection<ReferencedFile>> GetReferencedFiles(Type testType, string changedFile)
         {
             clearCaches();
             updateFile(changedFile);
@@ -359,42 +359,42 @@ namespace osu.Framework.Testing
         /// <param name="sources">The <see cref="TypeReference"/>s to search from.</param>
         /// <param name="directedGraph">The directed graph generated through <see cref="getDirectedGraph"/>.</param>
         /// <returns>All files containing direct or indirect references to the given <paramref name="sources"/>.</returns>
-        private HashSet<string> getReferencedFiles(IEnumerable<TypeReference> sources, IReadOnlyDictionary<TypeReference, DirectedTypeNode> directedGraph)
+        private IReadOnlyCollection<ReferencedFile> getReferencedFiles(IEnumerable<TypeReference> sources, IReadOnlyDictionary<TypeReference, DirectedTypeNode> directedGraph)
         {
             logger.Add("Retrieving referenced files...");
 
-            var result = new HashSet<string>();
-
             foreach (var s in sources)
-                getReferencedFilesRecursive(directedGraph[s], result);
+                updateShortestPath(directedGraph[s], 0);
 
-            return result;
+            return directedGraph.Values
+                                .Where(n => n.Reference.Symbol.Locations.Any(s => s.SourceTree != null))
+                                .OrderBy(n => n.ShortestLength).ThenBy(n => n.EarliestAppearance)
+                                .Select(n => new ReferencedFile(n.ShortestLength, n.Reference.Symbol.Locations.Select(l => l.SourceTree?.FilePath).Where(l => l != null).ToArray()))
+                                .ToArray();
         }
 
-        private void getReferencedFilesRecursive(DirectedTypeNode node, HashSet<string> result, HashSet<DirectedTypeNode> seenTypes = null,
-                                                 int level = 0)
+        private void updateShortestPath(DirectedTypeNode node, uint shortestPath)
         {
-            // A '.' is prepended since the logger trims lines.
-            logger.Add($"{(level > 0 ? $".{new string(' ', level * 2 - 1)}| " : string.Empty)}: {node}");
-
-            // Don't go through duplicate nodes (multiple references from different types).
-            seenTypes ??= new HashSet<DirectedTypeNode>();
-            if (seenTypes.Contains(node))
+            if (node.IsVisiting)
                 return;
 
-            seenTypes.Add(node);
+            node.IsVisiting = true;
 
-            // Add all the current type's locations to the resulting set.
-            foreach (var location in node.Reference.Symbol.Locations)
+            node.EarliestAppearance = Math.Min(node.EarliestAppearance, shortestPath);
+
+            if (node.Parents.Count == 0)
+                node.ShortestLength = Math.Min(node.ShortestLength, shortestPath);
+            else
             {
-                var syntaxTree = location.SourceTree;
-                if (syntaxTree != null)
-                    result.Add(syntaxTree.FilePath);
+                foreach (var p in node.Parents)
+                {
+                    if (shortestPath < p.ShortestLength - 1)
+                        updateShortestPath(p, shortestPath + 1);
+                    node.ShortestLength = Math.Min(node.ShortestLength, Math.Max(shortestPath, p.ShortestLength));
+                }
             }
 
-            // Follow through the process for all parents.
-            foreach (var p in node.Parents)
-                getReferencedFilesRecursive(p, result, seenTypes, level + 1);
+            node.IsVisiting = false;
         }
 
         private bool typeInheritsFromGame(TypeReference reference)
@@ -520,6 +520,22 @@ namespace osu.Framework.Testing
         {
             public readonly TypeReference Reference;
             public readonly List<DirectedTypeNode> Parents = new List<DirectedTypeNode>();
+
+            /// <summary>
+            /// Whether this node is currently being visited.
+            /// </summary>
+            public bool IsVisiting;
+
+            /// <summary>
+            /// The length of the shortest path joining the target and test types that contains this node.
+            /// </summary>
+            public uint ShortestLength = uint.MaxValue;
+
+            /// <summary>
+            /// How far this node is from the target type.
+            /// This value decreases along with <see cref="ShortestLength"/> but is stable w.r.t the topological order of the graph.
+            /// </summary>
+            public uint EarliestAppearance = uint.MaxValue;
 
             public DirectedTypeNode(TypeReference reference)
             {
