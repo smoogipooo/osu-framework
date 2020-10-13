@@ -211,6 +211,7 @@ namespace osu.Framework.Tests.Visual.Containers
                 container.UpdateSubTree();
             });
             AddAssert("both children processed", () => first.Processed && second.Processed);
+            AddStep("process single frame when children alive", () => container.UpdateSubTree());
         }
 
         [Test, Ignore("Takes too long. Unignore when you changed relevant code.")]
