@@ -3,42 +3,39 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace osu.Framework.Graphics.Containers
 {
     public class LifetimeManagementContainer : CompositeDrawable
     {
+        protected readonly LifetimeManager LifetimeManager = new LifetimeManager();
         private readonly Dictionary<Drawable, DrawableLifetimeEntry> drawableMap = new Dictionary<Drawable, DrawableLifetimeEntry>();
-        private readonly LifetimeManager lifetimeManager = new LifetimeManager();
 
         public LifetimeManagementContainer()
         {
-            lifetimeManager.OnBecomeAlive += onBecomeAlive;
-            lifetimeManager.OnBecomeDead += onBecomeDead;
-            lifetimeManager.OnBoundaryCrossed += onBoundaryCrossed;
+            LifetimeManager.OnBecomeAlive += OnBecomeAlive;
+            LifetimeManager.OnBecomeDead += OnBecomeDead;
+            LifetimeManager.OnBoundaryCrossed += OnBoundaryCrossed;
         }
 
         protected internal override void AddInternal(Drawable drawable)
         {
-            Trace.Assert(!drawable.RemoveWhenNotAlive, $"{nameof(RemoveWhenNotAlive)} is not supported for {nameof(LifetimeManagementContainer)}");
-
             var entry = new DrawableLifetimeEntry(drawable);
             drawableMap[drawable] = entry;
 
-            lifetimeManager.AddEntry(entry);
+            LifetimeManager.AddEntry(entry);
             base.AddInternal(drawable);
         }
 
         protected internal override bool RemoveInternal(Drawable drawable)
         {
             if (!drawableMap.TryGetValue(drawable, out var entry))
-                return false;
+                return base.RemoveInternal(drawable);
 
             entry.Dispose();
 
             drawableMap.Remove(drawable);
-            lifetimeManager.RemoveEntry(entry);
+            LifetimeManager.RemoveEntry(entry);
             base.RemoveInternal(drawable);
 
             return true;
@@ -50,22 +47,37 @@ namespace osu.Framework.Graphics.Containers
                 entry.Dispose();
 
             drawableMap.Clear();
-            lifetimeManager.ClearEntries();
+            LifetimeManager.ClearEntries();
             base.ClearInternal(disposeChildren);
         }
 
-        protected override bool CheckChildrenLife() => lifetimeManager.Update(Time.Current);
-
-        private void onBecomeAlive(LifetimeEntry entry) => MakeChildAlive(((DrawableLifetimeEntry)entry).Drawable);
-
-        private void onBecomeDead(LifetimeEntry entry)
+        /// <summary>
+        /// Forwards directly to to <see cref="CompositeDrawable.AddInternal"/> without tracking lifetime.
+        /// </summary>
+        protected internal virtual void AddInternalAlwaysAlive(Drawable drawable)
         {
-            bool removed = MakeChildDead(((DrawableLifetimeEntry)entry).Drawable);
-            Trace.Assert(!removed, $"{nameof(RemoveWhenNotAlive)} is not supported for children of {nameof(LifetimeManagementContainer)}");
+            base.AddInternal(drawable);
+            MakeChildAlive(drawable);
         }
 
-        private void onBoundaryCrossed(LifetimeEntry entry, LifetimeBoundaryKind kind, LifetimeBoundaryCrossingDirection direction)
-            => OnChildLifetimeBoundaryCrossed(new LifetimeBoundaryCrossedEvent(((DrawableLifetimeEntry)entry).Drawable, kind, direction));
+        protected override bool CheckChildrenLife() => LifetimeManager.Update(Time.Current);
+
+        protected virtual void OnBecomeAlive(LifetimeEntry entry)
+        {
+            var drawable = GetDrawableFor(entry);
+
+            if (drawable.Parent != this)
+                base.AddInternal(drawable);
+
+            MakeChildAlive(drawable);
+        }
+
+        protected virtual void OnBecomeDead(LifetimeEntry entry) => MakeChildDead(GetDrawableFor(entry));
+
+        protected virtual void OnBoundaryCrossed(LifetimeEntry entry, LifetimeBoundaryKind kind, LifetimeBoundaryCrossingDirection direction)
+            => OnChildLifetimeBoundaryCrossed(new LifetimeBoundaryCrossedEvent(GetDrawableFor(entry), kind, direction));
+
+        protected virtual Drawable GetDrawableFor(LifetimeEntry entry) => ((DrawableLifetimeEntry)entry).Drawable;
 
         /// <summary>
         /// Called when the clock is crossed child lifetime boundary.
