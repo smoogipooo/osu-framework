@@ -279,7 +279,7 @@ namespace osu.Framework.Graphics
 
     public class LifetimeEntry
     {
-        private double lifetimeStart;
+        private double lifetimeStart = double.MinValue;
 
         public double LifetimeStart
         {
@@ -296,7 +296,7 @@ namespace osu.Framework.Graphics
             }
         }
 
-        private double lifetimeEnd;
+        private double lifetimeEnd = double.MaxValue;
 
         public double LifetimeEnd
         {
