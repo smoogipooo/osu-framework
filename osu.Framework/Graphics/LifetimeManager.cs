@@ -107,13 +107,17 @@ namespace osu.Framework.Graphics
             }
         }
 
-        public bool Update(double time)
+        public bool Update(double time) => Update(time, time);
+
+        public bool Update(double startTime, double endTime)
         {
+            endTime = Math.Max(endTime, startTime);
+
             bool aliveChildrenChanged = false;
 
             // Check for newly-added entries.
             foreach (var entry in newEntries)
-                aliveChildrenChanged |= updateChildEntry(time, entry, true, true);
+                aliveChildrenChanged |= updateChildEntry(startTime, endTime, entry, true, true);
             newEntries.Clear();
 
             // Check for newly alive entries when time is increased.
@@ -124,11 +128,11 @@ namespace osu.Framework.Graphics
                 var entry = futureEntries.Min;
                 Debug.Assert(entry.State == LifetimeState.Future);
 
-                if (time < entry.LifetimeStart)
+                if (entry.LifetimeStart > startTime)
                     break;
 
                 futureEntries.Remove(entry);
-                aliveChildrenChanged |= updateChildEntry(time, entry, false, true);
+                aliveChildrenChanged |= updateChildEntry(startTime, endTime, entry, false, true);
             }
 
             // Check for newly alive entries when time is decreased.
@@ -139,18 +143,18 @@ namespace osu.Framework.Graphics
                 var entry = pastEntries.Max;
                 Debug.Assert(entry.State == LifetimeState.Past);
 
-                if (entry.LifetimeEnd <= time)
+                if (entry.LifetimeEnd <= endTime)
                     break;
 
                 pastEntries.Remove(entry);
-                aliveChildrenChanged |= updateChildEntry(time, entry, false, true);
+                aliveChildrenChanged |= updateChildEntry(startTime, endTime, entry, false, true);
             }
 
             // Checks for newly dead entries when time is increased/decreased.
             foreach (var entry in activeEntries)
             {
                 FrameStatistics.Increment(StatisticsCounterType.CCL);
-                aliveChildrenChanged |= updateChildEntry(time, entry, false, false);
+                aliveChildrenChanged |= updateChildEntry(startTime, endTime, entry, false, false);
             }
 
             // Remove all newly-dead entries.
@@ -165,21 +169,20 @@ namespace osu.Framework.Graphics
             return aliveChildrenChanged;
         }
 
-        private bool updateChildEntry(double time, LifetimeEntry entry, bool fromLifetimeChange, bool mutateActive)
+        private bool updateChildEntry(double startTime, double endTime, LifetimeEntry entry, bool fromLifetimeChange, bool mutateActive)
         {
             LifetimeState oldState = entry.State;
 
             Debug.Assert(!futureEntries.Contains(entry) && !pastEntries.Contains(entry));
             Debug.Assert(oldState != LifetimeState.Current || activeEntries.Contains(entry));
 
-            LifetimeState newState;
-
-            if (time < entry.LifetimeStart)
-                newState = LifetimeState.Future;
-            else if (time >= entry.LifetimeEnd)
-                newState = LifetimeState.Past;
-            else
-                newState = LifetimeState.Current;
+            LifetimeState newState = compareRanges((startTime, endTime), (entry.LifetimeStart, entry.LifetimeEnd)) switch
+            {
+                -1 => LifetimeState.Future,
+                0 => LifetimeState.Current,
+                1 => LifetimeState.Past,
+                _ => throw new InvalidOperationException("Invalid comparison")
+            };
 
             // If the state hasn't changed...
             if (newState == oldState)
@@ -218,6 +221,17 @@ namespace osu.Framework.Graphics
             enqueueEvents(entry, oldState, newState);
 
             return aliveEntriesChanged;
+        }
+
+        private int compareRanges((double start, double end) first, (double start, double end) second)
+        {
+            if (first.end > second.start)
+                return -1;
+
+            if (first.start >= second.end)
+                return 1;
+
+            return 0;
         }
 
         private void enqueueEvents(LifetimeEntry entry, LifetimeState oldState, LifetimeState newState)
