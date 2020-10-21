@@ -8,14 +8,14 @@ namespace osu.Framework.Graphics.Containers
 {
     public class LifetimeManagementContainer : CompositeDrawable
     {
-        protected readonly LifetimeManager LifetimeManager = new LifetimeManager();
+        private readonly LifetimeManager lifetimeManager = new LifetimeManager();
         private readonly Dictionary<Drawable, DrawableLifetimeEntry> drawableMap = new Dictionary<Drawable, DrawableLifetimeEntry>();
 
         public LifetimeManagementContainer()
         {
-            LifetimeManager.OnBecomeAlive += OnBecomeAlive;
-            LifetimeManager.OnBecomeDead += OnBecomeDead;
-            LifetimeManager.OnBoundaryCrossed += OnBoundaryCrossed;
+            lifetimeManager.OnBecomeAlive += OnBecomeAlive;
+            lifetimeManager.OnBecomeDead += OnBecomeDead;
+            lifetimeManager.OnBoundaryCrossed += OnBoundaryCrossed;
         }
 
         protected internal override void AddInternal(Drawable drawable)
@@ -23,7 +23,7 @@ namespace osu.Framework.Graphics.Containers
             var entry = new DrawableLifetimeEntry(drawable);
             drawableMap[drawable] = entry;
 
-            LifetimeManager.AddEntry(entry);
+            lifetimeManager.AddEntry(entry);
             base.AddInternal(drawable);
         }
 
@@ -35,7 +35,7 @@ namespace osu.Framework.Graphics.Containers
             entry.Dispose();
 
             drawableMap.Remove(drawable);
-            LifetimeManager.RemoveEntry(entry);
+            lifetimeManager.RemoveEntry(entry);
             base.RemoveInternal(drawable);
 
             return true;
@@ -47,7 +47,7 @@ namespace osu.Framework.Graphics.Containers
                 entry.Dispose();
 
             drawableMap.Clear();
-            LifetimeManager.ClearEntries();
+            lifetimeManager.ClearEntries();
             base.ClearInternal(disposeChildren);
         }
 
@@ -60,7 +60,7 @@ namespace osu.Framework.Graphics.Containers
             MakeChildAlive(drawable);
         }
 
-        protected override bool CheckChildrenLife() => LifetimeManager.Update(Time.Current);
+        protected override bool CheckChildrenLife() => lifetimeManager.Update(Time.Current);
 
         protected virtual void OnBecomeAlive(LifetimeEntry entry)
         {
