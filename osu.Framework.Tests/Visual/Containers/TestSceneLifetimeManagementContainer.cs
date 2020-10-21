@@ -214,6 +214,24 @@ namespace osu.Framework.Tests.Visual.Containers
             AddStep("process single frame when children alive", () => container.UpdateSubTree());
         }
 
+        [Test]
+        public void TestCompareRanges()
+        {
+            // In the past
+            Assert.That(LifetimeManager.CompareRanges((0, 1), (2, 3)), Is.EqualTo(-1));
+
+            // In the future
+            Assert.That(LifetimeManager.CompareRanges((1, 2), (0, 1)), Is.EqualTo(1));
+            Assert.That(LifetimeManager.CompareRanges((2, 3), (0, 1)), Is.EqualTo(1));
+
+            // Current
+            Assert.That(LifetimeManager.CompareRanges((0, 1), (1, 2)), Is.EqualTo(0));
+            Assert.That(LifetimeManager.CompareRanges((0, 2), (1, 2)), Is.EqualTo(0));
+            Assert.That(LifetimeManager.CompareRanges((0, 2), (1, 3)), Is.EqualTo(0));
+            Assert.That(LifetimeManager.CompareRanges((2, 4), (1, 3)), Is.EqualTo(0));
+            Assert.That(LifetimeManager.CompareRanges((2, 3), (1, 3)), Is.EqualTo(0));
+        }
+
         [Test, Ignore("Takes too long. Unignore when you changed relevant code.")]
         public void TestFuzz()
         {

@@ -176,7 +176,7 @@ namespace osu.Framework.Graphics
             Debug.Assert(!futureEntries.Contains(entry) && !pastEntries.Contains(entry));
             Debug.Assert(oldState != LifetimeState.Current || activeEntries.Contains(entry));
 
-            LifetimeState newState = compareRanges((startTime, endTime), (entry.LifetimeStart, entry.LifetimeEnd)) switch
+            LifetimeState newState = CompareRanges((startTime, endTime), (entry.LifetimeStart, entry.LifetimeEnd)) switch
             {
                 -1 => LifetimeState.Future,
                 0 => LifetimeState.Current,
@@ -223,12 +223,12 @@ namespace osu.Framework.Graphics
             return aliveEntriesChanged;
         }
 
-        private int compareRanges((double start, double end) first, (double start, double end) second)
+        public static int CompareRanges((double start, double end) a, (double start, double end) b)
         {
-            if (first.end > second.start)
+            if (a.end < b.start)
                 return -1;
 
-            if (first.start >= second.end)
+            if (a.start >= b.end)
                 return 1;
 
             return 0;
