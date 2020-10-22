@@ -53,6 +53,8 @@ namespace osu.Framework.Lists
             Comparer = comparer;
         }
 
+        public void Sort() => list.Sort(Comparer);
+
         public void AddRange(IEnumerable<T> collection)
         {
             foreach (var i in collection)

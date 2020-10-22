@@ -599,6 +599,12 @@ namespace osu.Framework.Graphics.Containers
             ChildDepthChanged?.Invoke(child);
         }
 
+        protected internal void SortInternal()
+        {
+            internalChildren.Sort();
+            aliveInternalChildren.Sort();
+        }
+
         private void ensureChildMutationAllowed()
         {
             switch (LoadState)
