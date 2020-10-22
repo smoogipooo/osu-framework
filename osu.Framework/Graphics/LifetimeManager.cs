@@ -30,6 +30,7 @@ namespace osu.Framework.Graphics
         {
             entry.RequestLifetimeUpdate += requestLifetimeUpdate;
             entry.ChildId = ++currentChildId;
+            entry.State = LifetimeState.New;
 
             newEntries.Add(entry);
         }
@@ -38,13 +39,36 @@ namespace osu.Framework.Graphics
         {
             entry.RequestLifetimeUpdate -= requestLifetimeUpdate;
 
-            if (newEntries.Remove(entry) || activeEntries.Remove(entry) || pastEntries.Remove(entry) || futureEntries.Remove(entry))
+            bool removed = false;
+
+            switch (entry.State)
             {
-                entry.ChildId = 0;
-                return true;
+                case LifetimeState.New:
+                    removed = newEntries.Remove(entry);
+                    break;
+
+                case LifetimeState.Current:
+                    removed = activeEntries.Remove(entry);
+
+                    if (removed)
+                        OnBecomeDead?.Invoke(entry);
+
+                    break;
+
+                case LifetimeState.Past:
+                    removed = pastEntries.Remove(entry);
+                    break;
+
+                case LifetimeState.Future:
+                    removed = futureEntries.Remove(entry);
+                    break;
             }
 
-            return false;
+            if (!removed)
+                return false;
+
+            entry.ChildId = 0;
+            return true;
         }
 
         public void ClearEntries()
