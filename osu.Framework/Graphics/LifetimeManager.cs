@@ -152,7 +152,7 @@ namespace osu.Framework.Graphics
                 var entry = futureEntries.Min;
                 Debug.Assert(entry.State == LifetimeState.Future);
 
-                if (CompareRanges((entry.LifetimeStart, entry.LifetimeEnd), (startTime, endTime)) == 1)
+                if (CompareRanges((entry.LifetimeStart, entry.LifetimeEnd), (startTime, endTime)) == LifetimeState.Future)
                     break;
 
                 futureEntries.Remove(entry);
@@ -167,7 +167,7 @@ namespace osu.Framework.Graphics
                 var entry = pastEntries.Max;
                 Debug.Assert(entry.State == LifetimeState.Past);
 
-                if (CompareRanges((entry.LifetimeStart, entry.LifetimeEnd), (startTime, endTime)) == -1)
+                if (CompareRanges((entry.LifetimeStart, entry.LifetimeEnd), (startTime, endTime)) == LifetimeState.Past)
                     break;
 
                 pastEntries.Remove(entry);
@@ -200,13 +200,7 @@ namespace osu.Framework.Graphics
             Debug.Assert(!futureEntries.Contains(entry) && !pastEntries.Contains(entry));
             Debug.Assert(oldState != LifetimeState.Current || activeEntries.Contains(entry));
 
-            LifetimeState newState = CompareRanges((entry.LifetimeStart, entry.LifetimeEnd), (startTime, endTime)) switch
-            {
-                -1 => LifetimeState.Past,
-                0 => LifetimeState.Current,
-                1 => LifetimeState.Future,
-                _ => throw new InvalidOperationException("Invalid comparison")
-            };
+            LifetimeState newState = CompareRanges((entry.LifetimeStart, entry.LifetimeEnd), (startTime, endTime));
 
             // If the state hasn't changed...
             if (newState == oldState)
@@ -247,15 +241,15 @@ namespace osu.Framework.Graphics
             return aliveEntriesChanged;
         }
 
-        public static int CompareRanges((double start, double end) a, (double start, double end) b)
+        public static LifetimeState CompareRanges((double start, double end) a, (double start, double end) b)
         {
             if (a.end < b.start)
-                return -1;
+                return LifetimeState.Past;
 
             if (a.start >= b.end)
-                return 1;
+                return LifetimeState.Future;
 
-            return 0;
+            return LifetimeState.Current;
         }
 
         private void enqueueEvents(LifetimeEntry entry, LifetimeState oldState, LifetimeState newState)
