@@ -8,6 +8,16 @@ namespace osu.Framework.Graphics.Containers
 {
     public class LifetimeManagementContainer : CompositeDrawable
     {
+        /// <summary>
+        /// The amount of time in the past from the current point in time for which <see cref="Drawable"/>s should be considered alive.
+        /// </summary>
+        public double PastLifetimeExtension { get; set; }
+
+        /// <summary>
+        /// The amount of time in the future from the current point in time for which <see cref="Drawable"/>s should be considered alive.
+        /// </summary>
+        public double FutureLifetimeExtension { get; set; }
+
         private readonly LifetimeManager lifetimeManager = new LifetimeManager();
         private readonly Dictionary<Drawable, DrawableLifetimeEntry> drawableMap = new Dictionary<Drawable, DrawableLifetimeEntry>();
 
@@ -60,7 +70,7 @@ namespace osu.Framework.Graphics.Containers
             MakeChildAlive(drawable);
         }
 
-        protected override bool CheckChildrenLife() => lifetimeManager.Update(Time.Current);
+        protected override bool CheckChildrenLife() => lifetimeManager.Update(Time.Current - PastLifetimeExtension, Time.Current + FutureLifetimeExtension);
 
         protected virtual void OnBecomeAlive(LifetimeEntry entry)
         {
