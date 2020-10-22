@@ -128,7 +128,7 @@ namespace osu.Framework.Graphics
                 var entry = futureEntries.Min;
                 Debug.Assert(entry.State == LifetimeState.Future);
 
-                if (entry.LifetimeStart > startTime)
+                if (CompareRanges((entry.LifetimeStart, entry.LifetimeEnd), (startTime, endTime)) == 1)
                     break;
 
                 futureEntries.Remove(entry);
@@ -143,7 +143,7 @@ namespace osu.Framework.Graphics
                 var entry = pastEntries.Max;
                 Debug.Assert(entry.State == LifetimeState.Past);
 
-                if (entry.LifetimeEnd <= endTime)
+                if (CompareRanges((entry.LifetimeStart, entry.LifetimeEnd), (startTime, endTime)) == -1)
                     break;
 
                 pastEntries.Remove(entry);
@@ -176,11 +176,11 @@ namespace osu.Framework.Graphics
             Debug.Assert(!futureEntries.Contains(entry) && !pastEntries.Contains(entry));
             Debug.Assert(oldState != LifetimeState.Current || activeEntries.Contains(entry));
 
-            LifetimeState newState = CompareRanges((startTime, endTime), (entry.LifetimeStart, entry.LifetimeEnd)) switch
+            LifetimeState newState = CompareRanges((entry.LifetimeStart, entry.LifetimeEnd), (startTime, endTime)) switch
             {
-                -1 => LifetimeState.Future,
+                -1 => LifetimeState.Past,
                 0 => LifetimeState.Current,
-                1 => LifetimeState.Past,
+                1 => LifetimeState.Future,
                 _ => throw new InvalidOperationException("Invalid comparison")
             };
 
