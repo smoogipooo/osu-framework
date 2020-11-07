@@ -12,15 +12,16 @@ using SixLabors.Memory;
 
 namespace osu.Framework.Graphics.OpenGL.Buffers
 {
-    public abstract class VertexBuffer<T> : IDisposable
+    public abstract class VertexBuffer<T> : IVertexBuffer, IDisposable
         where T : struct, IEquatable<T>, IVertex
     {
         protected static readonly int STRIDE = VertexUtils<DepthWrappingVertex<T>>.STRIDE;
 
         private readonly BufferUsageHint usage;
 
-        private IMemoryOwner<DepthWrappingVertex<T>> memoryOwner;
         private Memory<DepthWrappingVertex<T>> vertexMemory;
+        private IMemoryOwner<DepthWrappingVertex<T>> memoryOwner;
+        private NativeMemoryTracker.NativeMemoryLease memoryLease;
 
         private bool isInitialised;
         private int vaoId;
@@ -30,8 +31,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         {
             this.usage = usage;
 
-            memoryOwner = SixLabors.ImageSharp.Configuration.Default.MemoryAllocator.Allocate<DepthWrappingVertex<T>>(amountVertices, AllocationOptions.Clean);
-            vertexMemory = memoryOwner.Memory;
+            Size = amountVertices;
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         /// <returns>Whether the vertex changed.</returns>
         public bool SetVertex(int vertexIndex, T vertex)
         {
-            ref var currentVertex = ref vertexMemory.Span[vertexIndex];
+            ref var currentVertex = ref getMemory().Span[vertexIndex];
 
             bool isNewVertex = !currentVertex.Vertex.Equals(vertex) || currentVertex.BackbufferDrawDepth != GLWrapper.BackbufferDrawDepth;
 
@@ -55,9 +55,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
         /// <summary>
         /// Gets the number of vertices in this <see cref="VertexBuffer{T}"/>.
         /// </summary>
-        public int Size => vertexMemory.Length;
-
-        private NativeMemoryTracker.NativeMemoryLease memoryLease;
+        public int Size { get; }
 
         /// <summary>
         /// Initialises this <see cref="VertexBuffer{T}"/>. Guaranteed to be run on the draw thread.
@@ -71,10 +69,9 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             vboId = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, vboId);
             GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)size, IntPtr.Zero, usage);
+            memoryLease = NativeMemoryTracker.AddMemory(this, size);
 
             VertexUtils<DepthWrappingVertex<T>>.SetAttributes();
-
-            memoryLease = NativeMemoryTracker.AddMemory(this, size);
         }
 
         ~VertexBuffer()
@@ -88,23 +85,14 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
             GC.SuppressFinalize(this);
         }
 
-        protected bool IsDisposed;
+        protected bool IsDisposed { get; private set; }
 
         protected virtual void Dispose(bool disposing)
         {
             if (IsDisposed)
                 return;
 
-            memoryOwner.Dispose();
-            memoryOwner = null;
-            vertexMemory = null;
-
-            if (isInitialised)
-            {
-                memoryLease?.Dispose();
-                GL.DeleteBuffer(vboId);
-                GL.DeleteVertexArray(vaoId);
-            }
+            ((IVertexBuffer)this).Free();
 
             IsDisposed = true;
         }
@@ -133,7 +121,7 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
 
         public void Draw()
         {
-            DrawRange(0, vertexMemory.Length);
+            DrawRange(0, Size);
         }
 
         public void DrawRange(int startIndex, int endIndex)
@@ -146,19 +134,60 @@ namespace osu.Framework.Graphics.OpenGL.Buffers
 
         public void Update()
         {
-            UpdateRange(0, vertexMemory.Length);
+            UpdateRange(0, Size);
         }
 
         public void UpdateRange(int startIndex, int endIndex)
         {
             Bind(false);
 
-            int amountVertices = endIndex - startIndex;
+            int countVertices = endIndex - startIndex;
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, vboId);
-            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(startIndex * STRIDE), (IntPtr)(amountVertices * STRIDE), ref vertexMemory.Span[startIndex]);
+            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(startIndex * STRIDE), (IntPtr)(countVertices * STRIDE), ref getMemory().Span[startIndex]);
 
-            FrameStatistics.Add(StatisticsCounterType.VerticesUpl, amountVertices);
+            FrameStatistics.Add(StatisticsCounterType.VerticesUpl, countVertices);
+        }
+
+        private ref Memory<DepthWrappingVertex<T>> getMemory()
+        {
+            ThreadSafety.EnsureDrawThread();
+
+            if (!InUse)
+            {
+                memoryOwner = SixLabors.ImageSharp.Configuration.Default.MemoryAllocator.Allocate<DepthWrappingVertex<T>>(Size, AllocationOptions.Clean);
+                vertexMemory = memoryOwner.Memory;
+
+                GLWrapper.RegisterVertexBufferUse(this);
+            }
+
+            LastUseResetId = GLWrapper.ResetId;
+
+            return ref vertexMemory;
+        }
+
+        public ulong LastUseResetId { get; private set; }
+
+        public bool InUse => LastUseResetId > 0;
+
+        void IVertexBuffer.Free()
+        {
+            if (isInitialised)
+            {
+                memoryLease?.Dispose();
+                memoryLease = null;
+
+                GL.DeleteBuffer(vboId);
+                GL.DeleteVertexArray(vaoId);
+            }
+
+            memoryOwner?.Dispose();
+            memoryOwner = null;
+            vertexMemory = Memory<DepthWrappingVertex<T>>.Empty;
+
+            LastUseResetId = 0;
+
+            isInitialised = false;
         }
     }
 }
