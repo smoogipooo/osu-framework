@@ -25,6 +25,7 @@ using System.Threading;
 using JetBrains.Annotations;
 using osu.Framework.Bindables;
 using osu.Framework.Development;
+using osu.Framework.Extensions.EnumExtensions;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Input.Bindings;
@@ -661,10 +662,10 @@ namespace osu.Framework.Graphics
                 {
                     offset = Parent.RelativeChildOffset;
 
-                    if (!RelativePositionAxes.HasFlag(Axes.X))
+                    if (!RelativePositionAxes.HasFlagN(Axes.X))
                         offset.X = 0;
 
-                    if (!RelativePositionAxes.HasFlag(Axes.Y))
+                    if (!RelativePositionAxes.HasFlagN(Axes.Y))
                         offset.Y = 0;
                 }
 
@@ -790,8 +791,8 @@ namespace osu.Framework.Graphics
 
                 relativeSizeAxes = value;
 
-                if (relativeSizeAxes.HasFlag(Axes.X) && Width == 0) Width = 1;
-                if (relativeSizeAxes.HasFlag(Axes.Y) && Height == 0) Height = 1;
+                if (relativeSizeAxes.HasFlagN(Axes.X) && Width == 0) Width = 1;
+                if (relativeSizeAxes.HasFlagN(Axes.Y) && Height == 0) Height = 1;
 
                 updateBypassAutoSizeAxes();
 
@@ -885,9 +886,9 @@ namespace osu.Framework.Graphics
             {
                 Vector2 conversion = relativeToAbsoluteFactor;
 
-                if (relativeAxes.HasFlag(Axes.X))
+                if (relativeAxes.HasFlagN(Axes.X))
                     v.X *= conversion.X;
-                if (relativeAxes.HasFlag(Axes.Y))
+                if (relativeAxes.HasFlagN(Axes.Y))
                     v.Y *= conversion.Y;
 
                 // FillMode only makes sense if both axes are relatively sized as the general rule
@@ -1122,14 +1123,14 @@ namespace osu.Framework.Graphics
                     throw new InvalidOperationException(@"Can not obtain relative origin position for custom origins.");
 
                 Vector2 result = Vector2.Zero;
-                if (origin.HasFlag(Anchor.x1))
+                if (origin.HasFlagN(Anchor.x1))
                     result.X = 0.5f;
-                else if (origin.HasFlag(Anchor.x2))
+                else if (origin.HasFlagN(Anchor.x2))
                     result.X = 1;
 
-                if (origin.HasFlag(Anchor.y1))
+                if (origin.HasFlagN(Anchor.y1))
                     result.Y = 0.5f;
-                else if (origin.HasFlag(Anchor.y2))
+                else if (origin.HasFlagN(Anchor.y2))
                     result.Y = 1;
 
                 return result;
@@ -1211,14 +1212,14 @@ namespace osu.Framework.Graphics
                     return customRelativeAnchorPosition;
 
                 Vector2 result = Vector2.Zero;
-                if (anchor.HasFlag(Anchor.x1))
+                if (anchor.HasFlagN(Anchor.x1))
                     result.X = 0.5f;
-                else if (anchor.HasFlag(Anchor.x2))
+                else if (anchor.HasFlagN(Anchor.x2))
                     result.X = 1;
 
-                if (anchor.HasFlag(Anchor.y1))
+                if (anchor.HasFlagN(Anchor.y1))
                     result.Y = 0.5f;
-                else if (anchor.HasFlag(Anchor.y2))
+                else if (anchor.HasFlagN(Anchor.y2))
                     result.Y = 1;
 
                 return result;
@@ -1256,14 +1257,14 @@ namespace osu.Framework.Graphics
         {
             Vector2 result = Vector2.Zero;
 
-            if (anchor.HasFlag(Anchor.x1))
+            if (anchor.HasFlagN(Anchor.x1))
                 result.X = size.X / 2f;
-            else if (anchor.HasFlag(Anchor.x2))
+            else if (anchor.HasFlagN(Anchor.x2))
                 result.X = size.X;
 
-            if (anchor.HasFlag(Anchor.y1))
+            if (anchor.HasFlagN(Anchor.y1))
                 result.Y = size.Y / 2f;
-            else if (anchor.HasFlag(Anchor.y2))
+            else if (anchor.HasFlagN(Anchor.y2))
                 result.Y = size.Y;
 
             return result;

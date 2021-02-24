@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using osu.Framework.Utils;
 
 namespace osu.Framework.Extensions.EnumExtensions
@@ -50,6 +51,15 @@ namespace osu.Framework.Extensions.EnumExtensions
 
                 throw new ArgumentException($"Not all values of {typeof(T)} have {nameof(OrderAttribute)} specified.");
             });
+        }
+
+        public static bool HasFlagN<T>(this T enumValue, T value)
+            where T : unmanaged, Enum
+        {
+            int intVal1 = Unsafe.As<T, int>(ref enumValue);
+            int intVal2 = Unsafe.As<T, int>(ref value);
+
+            return (intVal1 & intVal2) > 0;
         }
     }
 }
