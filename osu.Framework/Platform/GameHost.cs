@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -528,8 +527,6 @@ namespace osu.Framework.Platform
 
         public void Run(Game game)
         {
-            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
-
             if (LimitedMemoryEnvironment)
             {
                 // recommended middle-ground https://github.com/SixLabors/docs/blob/master/articles/ImageSharp/MemoryManagement.md#working-in-memory-constrained-environments
