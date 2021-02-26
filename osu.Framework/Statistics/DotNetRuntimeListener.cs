@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Diagnostics.Tracing;
+using System.Threading;
 
 namespace osu.Framework.Statistics
 {
@@ -12,10 +13,21 @@ namespace osu.Framework.Statistics
 
         private const string statistics_grouping = "GC";
 
+        private Timer timer;
+        private ulong allocated;
+
         protected override void OnEventSourceCreated(EventSource eventSource)
         {
+            timer = new Timer(onOneSecondTimerElapsed, null, 1000, 1000);
+
             if (eventSource.Name == "Microsoft-Windows-DotNETRuntime")
                 EnableEvents(eventSource, EventLevel.Verbose, (EventKeywords)gc_keyword);
+        }
+
+        private void onOneSecondTimerElapsed(object? state)
+        {
+            addStatistic<ulong>($"Allocations/sec", allocated);
+            allocated = 0;
         }
 
         protected override void OnEventWritten(EventWrittenEventArgs data)
@@ -35,16 +47,27 @@ namespace osu.Framework.Statistics
                     addStatistic<ulong>("Finalization queue length", data.Payload[9]);
                     addStatistic<uint>("Pinned objects", data.Payload[10]);
                     break;
+
+                case EventType.GCAllocationTick_V2 when data.Payload?[3] != null:
+                    allocated += (ulong)data.Payload[3];
+                    break;
             }
         }
 
         private void addStatistic<T>(string name, object data)
             => GlobalStatistics.Get<T>(statistics_grouping, name).Value = (T)data;
 
+        public override void Dispose()
+        {
+            base.Dispose();
+            timer?.Dispose();
+        }
+
         private enum EventType
         {
             GCStart_V1 = 1,
             GCHeapStats_V1 = 4,
+            GCAllocationTick_V2 = 10,
         }
     }
 }
