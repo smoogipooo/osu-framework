@@ -14,7 +14,7 @@ namespace osu.Framework.Audio.Handles
 
         protected override bool ReleaseHandle()
         {
-            Bass.ChannelStop(handle.ToInt32()); // Todo: Is this required?
+            Bass.ChannelStop(handle.ToInt32());
             return true;
         }
     }
