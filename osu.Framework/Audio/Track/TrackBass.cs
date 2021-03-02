@@ -220,6 +220,9 @@ namespace osu.Framework.Audio.Track
 
         protected override void Dispose(bool disposing)
         {
+            if (IsDisposed)
+                return;
+
             handle?.Dispose();
             activeStream = 0;
             tempoAdjustStream = 0;
