@@ -6,16 +6,16 @@ using ManagedBass;
 
 namespace osu.Framework.Audio.Handles
 {
-    public sealed class SafeBassSampleHandle : SafeBassHandle
+    public class SafeBassChannelHandle : SafeBassHandle
     {
-        public SafeBassSampleHandle(IntPtr handle, bool ownsHandle)
+        public SafeBassChannelHandle(IntPtr handle, bool ownsHandle)
             : base(handle, ownsHandle)
         {
         }
 
         protected override bool ReleaseHandle()
         {
-            Bass.SampleFree(handle.ToInt32());
+            Bass.ChannelStop(handle.ToInt32()); // Todo: Is this required?
             return true;
         }
     }
