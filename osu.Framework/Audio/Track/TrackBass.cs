@@ -9,6 +9,7 @@ using ManagedBass.Fx;
 using osu.Framework.IO;
 using System.Threading.Tasks;
 using osu.Framework.Audio.Callbacks;
+using osu.Framework.Audio.Handles;
 
 namespace osu.Framework.Audio.Track
 {
@@ -47,6 +48,7 @@ namespace osu.Framework.Audio.Track
         private SyncCallback endMixtimeCallback;
         private SyncCallback stopCallback;
         private SyncCallback endCallback;
+        private SafeBassStreamHandle handle;
 
         private volatile bool isLoaded;
 
@@ -90,6 +92,7 @@ namespace osu.Framework.Audio.Track
                 Preview = quick;
 
                 activeStream = prepareStream(data, quick);
+                handle = new SafeBassStreamHandle(activeStream, true);
 
                 long byteLength = Bass.ChannelGetLength(activeStream);
 
@@ -217,14 +220,9 @@ namespace osu.Framework.Audio.Track
 
         protected override void Dispose(bool disposing)
         {
-            if (activeStream != 0)
-            {
-                isRunning = false;
-                Bass.ChannelStop(activeStream);
-                Bass.StreamFree(activeStream);
-            }
-
+            handle?.Dispose();
             activeStream = 0;
+            tempoAdjustStream = 0;
 
             dataStream?.Dispose();
             dataStream = null;
@@ -240,6 +238,8 @@ namespace osu.Framework.Audio.Track
 
             endMixtimeCallback?.Dispose();
             endMixtimeCallback = null;
+
+            isRunning = false;
 
             base.Dispose(disposing);
         }
