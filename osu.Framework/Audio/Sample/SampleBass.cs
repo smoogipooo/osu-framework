@@ -1,23 +1,31 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Framework.Audio.Handles;
+
 namespace osu.Framework.Audio.Sample
 {
     internal sealed class SampleBass : Sample
     {
-        public int SampleId => factory.SampleId;
+        public override bool IsLoaded => handle.IsLoaded;
 
-        public override bool IsLoaded => factory.IsLoaded;
+        private readonly SafeBassSampleHandle handle;
 
-        private readonly SampleBassFactory factory;
-
-        internal SampleBass(SampleBassFactory factory)
+        internal SampleBass(SafeBassSampleHandle handle)
         {
-            this.factory = factory;
-
-            PlaybackConcurrency.BindTo(factory.PlaybackConcurrency);
+            this.handle = handle;
         }
 
-        protected override SampleChannel CreateChannel() => new SampleChannelBass(this);
+        protected override SampleChannel CreateChannel() => new SampleChannelBass(new SafeBassSampleHandle(handle, false));
+
+        protected override void Dispose(bool disposing)
+        {
+            if (IsDisposed)
+                return;
+
+            handle?.Dispose();
+
+            base.Dispose(disposing);
+        }
     }
 }

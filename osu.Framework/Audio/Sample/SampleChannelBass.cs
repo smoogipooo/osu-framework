@@ -9,7 +9,6 @@ namespace osu.Framework.Audio.Sample
 {
     internal sealed class SampleChannelBass : SampleChannel, IBassAudio
     {
-        private readonly SampleBass sample;
         private volatile bool userRequestedPlay;
 
         public override bool Playing => playing;
@@ -18,11 +17,12 @@ namespace osu.Framework.Audio.Sample
         private readonly BassRelativeFrequencyHandler relativeFrequencyHandler;
         private BassAmplitudeProcessor bassAmplitudeProcessor;
 
+        private readonly SafeBassSampleHandle sampleHandle;
         private SafeBassChannelHandle channelHandle;
 
-        public SampleChannelBass(SampleBass sample)
+        public SampleChannelBass(SafeBassSampleHandle sampleHandle)
         {
-            this.sample = sample;
+            this.sampleHandle = sampleHandle;
 
             relativeFrequencyHandler = new BassRelativeFrequencyHandler
             {
@@ -169,7 +169,7 @@ namespace osu.Framework.Audio.Sample
             if (channelHandle.IsLoaded)
                 return;
 
-            channelHandle = new SafeBassChannelHandle(Bass.SampleGetChannel(sample.SampleId), true);
+            channelHandle = new SafeBassChannelHandle(Bass.SampleGetChannel(sampleHandle), true);
 
             if (!channelHandle.IsLoaded)
                 return;
@@ -186,6 +186,7 @@ namespace osu.Framework.Audio.Sample
             if (IsDisposed)
                 return;
 
+            sampleHandle?.Dispose();
             channelHandle?.Dispose();
             playing = false;
 

@@ -15,9 +15,7 @@ namespace osu.Framework.Audio.Sample
     /// </summary>
     internal sealed class SampleBassFactory : AudioCollectionManager<AdjustableAudioComponent>
     {
-        public int SampleId => handle.DangerousGetHandle().ToInt32();
-
-        public override bool IsLoaded => !handle.IsInvalid && !handle.IsClosed;
+        public override bool IsLoaded => handle?.IsLoaded == true;
 
         public double Length { get; private set; }
 
@@ -39,7 +37,7 @@ namespace osu.Framework.Audio.Sample
 
                     if (IsLoaded)
                     {
-                        Length = Bass.ChannelBytes2Seconds(SampleId, data.Length) * 1000;
+                        Length = Bass.ChannelBytes2Seconds(handle, data.Length) * 1000;
                         memoryLease = NativeMemoryTracker.AddMemory(this, data.Length);
                     }
                 });
@@ -68,7 +66,7 @@ namespace osu.Framework.Audio.Sample
                 return;
 
             // counter-intuitively, this is the correct API to use to migrate a sample to a new device.
-            Bass.ChannelSetDevice(SampleId, deviceIndex);
+            Bass.ChannelSetDevice(handle, deviceIndex);
             BassUtils.CheckFaulted(true);
         }
 
@@ -80,7 +78,11 @@ namespace osu.Framework.Audio.Sample
                 return Bass.SampleLoad(dataHandle.Address, 0, data.Length, PlaybackConcurrency.Value, flags);
         }
 
-        public Sample CreateSample() => new SampleBass(this) { OnPlay = onPlay };
+        public Sample CreateSample() => new SampleBass(new SafeBassSampleHandle(handle, false))
+        {
+            OnPlay = onPlay,
+            PlaybackConcurrency = { BindTarget = PlaybackConcurrency }
+        };
 
         private void onPlay(Sample sample)
         {
