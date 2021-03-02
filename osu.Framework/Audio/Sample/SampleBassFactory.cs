@@ -28,7 +28,7 @@ namespace osu.Framework.Audio.Sample
         internal readonly Bindable<int> PlaybackConcurrency = new Bindable<int>(Sample.DEFAULT_CONCURRENCY);
 
         private NativeMemoryTracker.NativeMemoryLease memoryLease;
-        private SafeSampleBassHandle handle;
+        private SafeBassSampleHandle handle;
 
         public SampleBassFactory(byte[] data)
         {
@@ -36,7 +36,7 @@ namespace osu.Framework.Audio.Sample
             {
                 EnqueueAction(() =>
                 {
-                    handle = new SafeSampleBassHandle(loadSample(data), true);
+                    handle = new SafeBassSampleHandle(loadSample(data), true);
 
                     if (IsLoaded)
                     {

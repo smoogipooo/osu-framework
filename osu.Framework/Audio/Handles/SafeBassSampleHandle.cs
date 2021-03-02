@@ -7,9 +7,9 @@ using ManagedBass;
 
 namespace osu.Framework.Audio.Handles
 {
-    public sealed class SafeSampleBassHandle : SafeHandle
+    public sealed class SafeBassSampleHandle : SafeHandle
     {
-        public SafeSampleBassHandle(IntPtr handle, bool ownsHandle)
+        public SafeBassSampleHandle(IntPtr handle, bool ownsHandle)
             : base(handle, ownsHandle)
         {
         }
