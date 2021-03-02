@@ -13,6 +13,10 @@ namespace osu.Framework.Audio.Handles
         {
         }
 
+        public bool IsLoaded => !IsInvalid && !IsClosed;
+
         public sealed override bool IsInvalid => handle == IntPtr.Zero;
+
+        public static implicit operator int(SafeBassHandle handle) => handle.DangerousGetHandle().ToInt32();
     }
 }
