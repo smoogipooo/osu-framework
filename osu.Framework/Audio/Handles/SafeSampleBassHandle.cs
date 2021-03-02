@@ -5,9 +5,9 @@ using System;
 using System.Runtime.InteropServices;
 using ManagedBass;
 
-namespace osu.Framework.Audio.Sample
+namespace osu.Framework.Audio.Handles
 {
-    internal sealed class SafeSampleBassHandle : SafeHandle
+    public sealed class SafeSampleBassHandle : SafeHandle
     {
         public SafeSampleBassHandle(IntPtr handle, bool ownsHandle)
             : base(handle, ownsHandle)

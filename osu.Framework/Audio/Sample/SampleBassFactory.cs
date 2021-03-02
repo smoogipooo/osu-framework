@@ -5,6 +5,7 @@ using System;
 using System.Runtime.InteropServices;
 using ManagedBass;
 using osu.Framework.Allocation;
+using osu.Framework.Audio.Handles;
 using osu.Framework.Bindables;
 using osu.Framework.Platform;
 
