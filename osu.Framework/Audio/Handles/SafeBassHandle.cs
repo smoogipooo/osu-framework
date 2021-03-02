@@ -8,8 +8,8 @@ namespace osu.Framework.Audio.Handles
 {
     public abstract class SafeBassHandle : SafeHandle
     {
-        protected SafeBassHandle(IntPtr handle, bool ownsHandle)
-            : base(handle, ownsHandle)
+        protected SafeBassHandle(int handle, bool ownsHandle)
+            : base(new IntPtr(handle), ownsHandle)
         {
         }
 

@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Runtime.InteropServices;
 using ManagedBass;
 using osu.Framework.Allocation;
@@ -73,12 +72,12 @@ namespace osu.Framework.Audio.Sample
             BassUtils.CheckFaulted(true);
         }
 
-        private IntPtr loadSample(byte[] data)
+        private int loadSample(byte[] data)
         {
             const BassFlags flags = BassFlags.Default | BassFlags.SampleOverrideLongestPlaying;
 
             using (var dataHandle = new ObjectHandle<byte[]>(data, GCHandleType.Pinned))
-                return new IntPtr(Bass.SampleLoad(dataHandle.Address, 0, data.Length, PlaybackConcurrency.Value, flags));
+                return Bass.SampleLoad(dataHandle.Address, 0, data.Length, PlaybackConcurrency.Value, flags);
         }
 
         public Sample CreateSample() => new SampleBass(this) { OnPlay = onPlay };
