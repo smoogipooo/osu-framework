@@ -14,8 +14,7 @@ namespace osu.Framework.Audio.Handles
 
         protected override bool ReleaseHandle()
         {
-            Bass.SampleFree(handle.ToInt32());
-            return true;
+            return Bass.SampleFree(handle.ToInt32());
         }
     }
 }
