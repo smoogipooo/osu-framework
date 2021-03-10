@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using osu.Framework.Development;
 using osu.Framework.Graphics.OpenGL;
 using osu.Framework.Platform;
+using osu.Framework.Platform.Linux.Native;
 using osuTK;
 
 namespace osu.Framework.Threading
