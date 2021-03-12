@@ -398,7 +398,18 @@ namespace osu.Framework.Platform
                                         WindowState.ToFlags();
 
             SDL.SDL_SetHint(SDL.SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1");
+
+            // EGL/ANGLE driver attributes.
+            SDL.SDL_SetHint("SDL_OPENGL_ES_DRIVER", "1");
+            SDL.SDL_SetHint("SDL_VIDEO_WIN_D3DCOMPILER", "1");
+
+            // Linux-specific hint to not use GLX and use libEGL instead.
             SDL.SDL_SetHint(SDL.SDL_HINT_VIDEO_X11_FORCE_EGL, "1");
+
+            // EGL attributes. These need to be here before the window is created, since EGL initialisation occurs early on.
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_EGL, 1);
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+            SDL.SDL_GL_SetAttribute(SDL.SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, SDL.SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_ES);
 
             SDLWindowHandle = SDL.SDL_CreateWindow(title, Position.X, Position.Y, Size.Width, Size.Height, flags);
 
